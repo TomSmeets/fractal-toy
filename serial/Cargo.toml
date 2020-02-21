@@ -1,0 +1,30 @@
+[package]
+name = "serial"
+version = "0.1.0"
+authors = ["TomSmeets <tom@tsmeets.nl>"]
+edition = "2018"
+
+[lib]
+path = "src/lib.rs"
+crate_type = [ "lib", "cdylib"]
+
+[[bin]]
+name = "main"
+path = "src/main.rs"
+
+# [[bin]]
+# name = "runner"
+# path = "src/bin/runner.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+bincode    = "1.0"
+libloading = "0.5"
+sdl2       = { version = "0.33" }
+
+[profile.release]
+opt-level = 's'     # Optimize for size.
+lto = true          # Enable Link Time Optimization
+codegen-units = 1   # Reduce number of codegen units to increase optimizations.
+panic = 'abort'     # Abort on panic
