@@ -12,9 +12,9 @@ crate_type = [ "lib", "cdylib"]
 name = "main"
 path = "src/main.rs"
 
-# [[bin]]
-# name = "runner"
-# path = "src/bin/runner.rs"
+[[bin]]
+name = "runner"
+path = "src/bin/runner.rs"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }

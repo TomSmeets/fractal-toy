@@ -69,9 +69,9 @@
     export PATH="${lib.concatMapStringsSep ":" (x: x + "/bin/") (paths ++ [
       basepkgs
       pkgs.rustup
-    ])}"
+    ])}:$PATH"
 
-    export RUSTFLAGS='-C linker=${linker} ${lib.concatMapStringsSep " " (x: "-L " + x + "/lib/") libs}'
+    export RUSTFLAGS='${lib.concatMapStringsSep " " (x: "-L " + x + "/lib/") libs}'
 
     exec ${pkgs.bashInteractive}/bin/bash
   '';
@@ -98,7 +98,7 @@
     };
 
     simple = mkEnv {
-      paths = [ pkgs.stdenv.cc ];
+      paths = [ pkgs.stdenv.cc pkgs.llvmPackages_latest.llvm ];
       libs = [ (sdl2 pkgs) ];
       linker = "cc";
     };
