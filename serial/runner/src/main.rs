@@ -1,5 +1,3 @@
-extern crate serial;
-
 use std::env;
 use std::fs;
 use std::path::*;
@@ -25,6 +23,7 @@ fn main() {
 
     let mut lib = Library::open(Some(&lib_path), 1).unwrap();
 
+    println!("init");
     let mut s : State = State::new();
 
 
@@ -35,6 +34,9 @@ fn main() {
     while !quit {
         let t_new = lib_path.metadata().unwrap().modified().unwrap();
         if t_new != t_old {
+            println!("unload");
+            s.unload();
+
             println!("reload! {:?}", t_new);
             t_old = t_new;
 
@@ -49,8 +51,11 @@ fn main() {
 
             fs::copy(&lib_path, &tmp_path).unwrap();
             lib = Library::open(Some(&tmp_path), 1).unwrap();
-            fs::remove_file(tmp_path).unwrap();
+            // fs::remove_file(tmp_path).unwrap();
             i += 1;
+
+            println!("reload");
+            s.reload();
         }
 
         unsafe {

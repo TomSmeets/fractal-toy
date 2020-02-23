@@ -1,12 +1,13 @@
 pub mod state;
+pub mod input;
+pub mod fractal;
 pub mod game;
 
 use crate::game::*;
 
 #[no_mangle]
-pub extern fn prog_update(state: *mut State) -> bool {
-    let s = unsafe { state.as_mut().unwrap() };
-    s.update()
+pub extern fn prog_update(state: &mut State) -> bool {
+    state.update()
 }
 
 #[no_mangle]
