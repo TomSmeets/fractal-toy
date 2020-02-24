@@ -10,6 +10,7 @@ use std::hash::*;
 use crate::math::*;
 use crate::input::*;
 use crate::fractal::*;
+use crate::quadtree::*;
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[derive(Clone)]
@@ -54,7 +55,7 @@ pub struct State {
     sdl: Sdl,
     message: String,
     input: Input,
-    textures: HashMap<TilePos, Texture>,
+    textures: QuadTree<Texture>,
 
     offset: Vector2<f64>,
     zoom: f64,
@@ -62,11 +63,11 @@ pub struct State {
     window_size: Vector2<u32>,
 }
 
-fn mk_texture<T>(canvas: &TextureCreator<T>, p: TilePos) -> Texture {
+fn mk_texture<T>(canvas: &TextureCreator<T>, p: QuadTreePosition) -> Texture {
     let size = 256;
     let mut texture = canvas.create_texture_static(PixelFormatEnum::RGBA8888, size, size).unwrap();
     let mut pixels = vec![0; (size*size*4) as usize];
-    draw_tile(&mut pixels, p.x, p.y, p.z);
+    draw_tile(&mut pixels, p.x as i64, p.y as i64, p.z as i32);
     texture.update(None, &pixels, (4*size) as usize).unwrap();
     texture
 }
@@ -85,7 +86,7 @@ impl State {
             sdl: Sdl::new(),
             message: "Hello".to_string(),
             input: Input::new(),
-            textures: HashMap::new(),
+            textures: QuadTree::new(),
             offset:   Vector2::zero(),
             zoom: 1.0,
             window_size: Vector2::new(800, 600),
@@ -136,7 +137,7 @@ impl State {
         if down {
             // TODO: make pretty
             let z = self.zoom.floor() as i32 + 2;
-            let scale = 2.0_f64.powi(z);
+            let scale = 2.0_f64.powi(z as i32);
 
             let m = Vector2::new(self.input.mouse.x as f64, self.input.mouse.y as f64);
             let w = self.window_size.x as f64;
@@ -145,14 +146,27 @@ impl State {
             let px = ((m.x / w - 0.5) / zz + self.offset.x) * scale;
             let py = ((m.y / w - 0.5) / zz + self.offset.y) * scale;
 
-            let p = TilePos { x: px.floor() as i64, y: py.floor() as i64, z: z};
+            let p = QuadTreePosition { x: px.floor() as u64, y: py.floor() as u64, z: z  as u64};
             println!("{:?}!", p);
-            if !self.textures.contains_key(&p){
-                let t = mk_texture(&self.sdl.canvas.texture_creator(), p.clone());
-                self.textures.insert(p, t);
+            if let None = self.textures.get_at(p){
+                let t = mk_texture(&self.sdl.canvas.texture_creator(), p);
+                self.textures.insert_at(p, t);
                 println!("does not exist!");
             }
 
+        }
+
+        let ps = [
+            QuadTreePosition {x: 0, y: 0, z: 1},
+            QuadTreePosition {x: 1, y: 0, z: 1},
+            QuadTreePosition {x: 1, y: 1, z: 1},
+        ];
+
+        for p in ps.iter() {
+            if let None = self.textures.get_at(p.clone()) {
+                let t = mk_texture(&self.sdl.canvas.texture_creator(), p.clone());
+                self.textures.insert_at(p.clone(), t);
+            }
         }
 
         // doit(1,  0,  1);
@@ -185,11 +199,11 @@ impl State {
         let z = 2.0_f64.powf(self.zoom);
 
 
-        let mut ts : Vec<(&TilePos, &Texture)> = self.textures.iter().collect();
+        let mut ts : Vec<(QuadTreePosition, &Texture)> = self.textures.values();
         // TODO: make fast, quadtree?
-        ts.sort_by(|(a, _), (b, _)| { a.z.cmp(&b.z) });
+        // ts.sort_by(|(a, _), (b, _)| { a.z.cmp(&b.z) });
         for (k, v) in ts {
-            let scale = 0.5_f64.powi(k.z);
+            let scale = 0.5_f64.powi(k.z as i32);
 
             let x = (k.x as f64)*scale - self.offset.x as f64;
             let y = (k.y as f64)*scale - self.offset.y as f64;
