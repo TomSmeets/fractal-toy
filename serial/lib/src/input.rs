@@ -1,9 +1,7 @@
-use cgmath::*;
 use sdl2::event::*;
 use sdl2::keyboard::Keycode;
 
-type V2  = Vector2<f64>;
-type V2i = Vector2<i32>;
+use crate::math::*;
 
 pub struct Input {
     pub mouse: V2i,
@@ -14,16 +12,16 @@ pub struct Input {
 impl Input {
     pub fn new() -> Self {
         Input {
-            mouse:    Vector2::zero(),
-            dir_move: Vector2::zero(),
-            dir_look: Vector2::zero(),
+            mouse:    V2i::zero(),
+            dir_move: V2::zero(),
+            dir_look: V2::zero(),
         }
     }
 
-    pub fn handle(&mut self, e: &Event) {
+    pub fn handle_sdl(&mut self, e: &Event) {
         match e {
-            Event::KeyUp   { keycode: Some(key), .. } => self.handle_key(*key, false),
-            Event::KeyDown { keycode: Some(key), .. } => self.handle_key(*key, true),
+            Event::KeyUp   { keycode: Some(key), .. } => self.handle_sdl_key(*key, false),
+            Event::KeyDown { keycode: Some(key), .. } => self.handle_sdl_key(*key, true),
             Event::MouseMotion {x, y, ..} => {
                 self.mouse.x = *x as i32;
                 self.mouse.y = *y as i32;
@@ -32,7 +30,7 @@ impl Input {
         }
     }
 
-    fn handle_key(&mut self, key: Keycode, down: bool) {
+    fn handle_sdl_key(&mut self, key: Keycode, down: bool) {
         println!("key {:?} {}", key, if down { "down" } else { "up" });
 
         let v = if down { 1.0 } else { 0.0 };

@@ -1,4 +1,4 @@
-use cgmath::*;
+use crate::math::*;
 
 pub fn draw_tile(pixels: &mut [u8], x: i64, y: i64, z: i32) {
     let resolution : u32 = 256;

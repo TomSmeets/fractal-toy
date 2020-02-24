@@ -1,3 +1,5 @@
+pub mod math;
+pub mod quadtree;
 pub mod state;
 pub mod input;
 pub mod fractal;

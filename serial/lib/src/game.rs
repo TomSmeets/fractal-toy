@@ -4,12 +4,10 @@ use sdl2::keyboard::Keycode;
 use sdl2::rect::*;
 use sdl2::render::*;
 
-use cgmath::prelude::*;
-use cgmath::*;
-
 use std::collections::*;
 use std::hash::*;
 
+use crate::math::*;
 use crate::input::*;
 use crate::fractal::*;
 
@@ -50,8 +48,6 @@ impl Sdl {
     }
 }
 
-
-
 // TODO: implemnt save and load, this will handle some types that dont work with reload.
 // For example the btreemap
 pub struct State {
@@ -90,7 +86,7 @@ impl State {
             message: "Hello".to_string(),
             input: Input::new(),
             textures: HashMap::new(),
-            offset: Vector2::zero(),
+            offset:   Vector2::zero(),
             zoom: 1.0,
             window_size: Vector2::new(800, 600),
         }
@@ -103,7 +99,7 @@ impl State {
 
         let mut down = false;
         for event in self.sdl.event.poll_iter() {
-            self.input.handle(&event);
+            self.input.handle_sdl(&event);
             match event {
                 Event::Quit {..} => { quit = true; }
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } => { quit = true; },
@@ -138,6 +134,7 @@ impl State {
 
 
         if down {
+            // TODO: make pretty
             let z = self.zoom.floor() as i32 + 2;
             let scale = 2.0_f64.powi(z);
 
@@ -189,6 +186,7 @@ impl State {
 
 
         let mut ts : Vec<(&TilePos, &Texture)> = self.textures.iter().collect();
+        // TODO: make fast, quadtree?
         ts.sort_by(|(a, _), (b, _)| { a.z.cmp(&b.z) });
         for (k, v) in ts {
             let scale = 0.5_f64.powi(k.z);

@@ -393,6 +393,7 @@ dependencies = [
  "bincode",
  "cgmath",
  "num",
+ "rand",
  "sdl2",
  "serde",
  "serde_json",
