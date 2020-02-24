@@ -4,7 +4,6 @@ use sdl2::keyboard::Keycode;
 use sdl2::rect::*;
 use sdl2::render::*;
 
-use num::complex::*;
 use cgmath::prelude::*;
 use cgmath::*;
 
@@ -22,16 +21,43 @@ pub struct TilePos {
     z: i32,
 }
 
-// TODO: implemnt save and load, this will handle some types that dont work with reload.
-// For example the btreemap
-pub struct State {
+
+pub struct Sdl {
     ctx:   sdl2::Sdl,
     event: sdl2::EventPump,
     canvas: Canvas<sdl2::video::Window>,
+
+}
+
+impl Sdl {
+    fn new() -> Self {
+        let sdl_context = sdl2::init().unwrap();
+        let video_subsystem = sdl_context.video().unwrap();
+
+        let window = video_subsystem.window("rust-sdl2 demo", 800, 600)
+            .position_centered()
+            .build()
+            .unwrap();
+
+        let event = sdl_context.event_pump().unwrap();
+        let canvas = window.into_canvas().present_vsync().build().unwrap();
+
+        Sdl {
+            ctx: sdl_context,
+            event: event,
+            canvas: canvas,
+        }
+    }
+}
+
+
+
+// TODO: implemnt save and load, this will handle some types that dont work with reload.
+// For example the btreemap
+pub struct State {
+    sdl: Sdl,
     message: String,
-
     input: Input,
-
     textures: HashMap<TilePos, Texture>,
 
     offset: Vector2<f64>,
@@ -55,24 +81,12 @@ impl State {
     pub fn reload(&mut self) { }
 
     pub fn new() -> State {
-        let sdl_context = sdl2::init().unwrap();
-        let video_subsystem = sdl_context.video().unwrap();
-
-        let window = video_subsystem.window("rust-sdl2 demo", 800, 600)
-            .position_centered()
-            .build()
-            .unwrap();
-
-        let event = sdl_context.event_pump().unwrap();
-        let canvas = window.into_canvas().present_vsync().build().unwrap();
 
         // let sz = Vector2::new(64, 64);
         // let texture = canvas.create_texture_static(PixelFormatEnum::RGBA8888, sz.x, sz.y).unwrap();
 
         State {
-            ctx: sdl_context,
-            event: event,
-            canvas: canvas,
+            sdl: Sdl::new(),
             message: "Hello".to_string(),
             input: Input::new(),
             textures: HashMap::new(),
@@ -87,12 +101,13 @@ impl State {
 
         let dt = 1.0 / 60.0;
 
-        for event in self.event.poll_iter() {
+        let mut down = false;
+        for event in self.sdl.event.poll_iter() {
             self.input.handle(&event);
             match event {
                 Event::Quit {..} => { quit = true; }
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } => { quit = true; },
-                Event::KeyDown { keycode: Some(Keycode::C), .. } => { self.canvas.clear(); },
+                Event::KeyDown { keycode: Some(Keycode::C), .. } => { down = true; },
                 Event::KeyDown { keycode: Some(Keycode::F), .. } => {
                     self.textures.clear();
                 },
@@ -122,7 +137,7 @@ impl State {
         // self.textures = BTreeMap::new();
 
 
-        {
+        if down {
             let z = self.zoom.floor() as i32 + 2;
             let scale = 2.0_f64.powi(z);
 
@@ -136,7 +151,7 @@ impl State {
             let p = TilePos { x: px.floor() as i64, y: py.floor() as i64, z: z};
             println!("{:?}!", p);
             if !self.textures.contains_key(&p){
-                let t = mk_texture(&self.canvas.texture_creator(), p.clone());
+                let t = mk_texture(&self.sdl.canvas.texture_creator(), p.clone());
                 self.textures.insert(p, t);
                 println!("does not exist!");
             }
@@ -165,19 +180,23 @@ impl State {
         // }
         //
 
-        self.canvas.set_draw_color(Color::RGB(255, 255, 0));
-        self.canvas.clear();
+        self.sdl.canvas.set_draw_color(Color::RGB(255, 255, 0));
+        self.sdl.canvas.clear();
 
         // println!("texture count: {:?}", self.textures.len());
         let w = self.window_size.x as f64;
         let z = 2.0_f64.powf(self.zoom);
-        for (k, v) in &self.textures {
+
+
+        let mut ts : Vec<(&TilePos, &Texture)> = self.textures.iter().collect();
+        ts.sort_by(|(a, _), (b, _)| { a.z.cmp(&b.z) });
+        for (k, v) in ts {
             let scale = 0.5_f64.powi(k.z);
 
             let x = (k.x as f64)*scale - self.offset.x as f64;
             let y = (k.y as f64)*scale - self.offset.y as f64;
 
-            self.canvas.copy(v, None, Some((
+            self.sdl.canvas.copy(v, None, Some((
                 (w*(z*x + 0.5)).floor()    as i32, (w*(z*y + 0.5)).floor()    as i32,
                 (w*z*scale).ceil() as u32, (w*z*scale).ceil() as u32
             ).into())).unwrap();
@@ -186,11 +205,11 @@ impl State {
         {
             let w = 20;
             let m = self.input.mouse;
-            self.canvas.set_draw_color(Color::RGB(255, 0, 0));
-            self.canvas.fill_rect(Rect::from_center((m.x, m.y), w, w)).unwrap();
+            self.sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
+            self.sdl.canvas.fill_rect(Rect::from_center((m.x, m.y), w, w)).unwrap();
         }
 
-        self.canvas.present();
+        self.sdl.canvas.present();
         return quit;
     }
 }
