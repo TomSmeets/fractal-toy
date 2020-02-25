@@ -105,6 +105,11 @@ impl State {
                 Event::Quit {..} => { quit = true; }
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } => { quit = true; },
                 Event::KeyDown { keycode: Some(Keycode::C), .. } => { down = true; },
+
+                Event::KeyDown { keycode: Some(Keycode::R), .. } => {
+                    let z = self.zoom.floor() as i32 + 2;
+                    self.textures.reduce_to(z);
+                },
                 Event::KeyDown { keycode: Some(Keycode::F), .. } => {
                     self.textures.clear();
                 },
@@ -128,12 +133,6 @@ impl State {
         self.offset += dt*self.input.dir_move*0.5_f64.powf(self.zoom);
         self.zoom   += 2.0*dt*self.input.dir_look.y;
 
-
-        println!("{:?}", self.offset);
-
-        // self.textures = BTreeMap::new();
-
-
         if down {
             // TODO: make pretty
             let z = self.zoom.floor() as i32 + 2;
@@ -147,11 +146,13 @@ impl State {
             let py = ((m.y / w - 0.5) / zz + self.offset.y) * scale;
 
             let p = QuadTreePosition { x: px.floor() as u64, y: py.floor() as u64, z: z  as u64};
-            println!("{:?}!", p);
-            if let None = self.textures.get_at(p){
-                let t = mk_texture(&self.sdl.canvas.texture_creator(), p);
-                self.textures.insert_at(p, t);
-                println!("does not exist!");
+            if px >= 0.0 && py >= 0.0 && p.x <= p.dim() && p.y <= p.dim() {
+                println!("{:?}!", p);
+                if let None = self.textures.get_at(p){
+                    let t = mk_texture(&self.sdl.canvas.texture_creator(), p);
+                    self.textures.insert_at(p, t);
+                    println!("does not exist!");
+                }
             }
 
         }

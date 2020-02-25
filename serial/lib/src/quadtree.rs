@@ -27,7 +27,7 @@ impl QuadTreePosition {
         assert!(self.y <= dim);
     }
 
-    fn dim(&self) -> u64 {
+    pub fn dim(&self) -> u64 {
         if self.z == 0 {
             0
         } else {
