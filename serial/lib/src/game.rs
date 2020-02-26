@@ -64,6 +64,12 @@ fn mk_texture<T>(canvas: &TextureCreator<T>, p: QuadTreePosition) -> Texture {
 	texture
 }
 
+impl Default for State {
+	fn default() -> State {
+		State::new()
+	}
+}
+
 impl State {
 	pub fn unload(&mut self) {}
 	pub fn reload(&mut self) {}

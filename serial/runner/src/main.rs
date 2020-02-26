@@ -8,59 +8,57 @@ extern crate libloading as lib;
 use libloading::os::unix::*;
 
 fn main() {
-    let exe = env::current_exe().unwrap();
-    let dir = exe.parent().unwrap();
+	let exe = env::current_exe().unwrap();
+	let dir = exe.parent().unwrap();
 
-    let lib_path = {
-        let mut buf = PathBuf::new();
-        buf.push(dir);
-        buf.push("lib.so");
-        buf
-    };
+	let lib_path = {
+		let mut buf = PathBuf::new();
+		buf.push(dir);
+		buf.push("lib.so");
+		buf
+	};
 
-    println!("self: {:?}", lib_path);
+	println!("self: {:?}", lib_path);
 
+	let mut lib = Library::open(Some(&lib_path), 1).unwrap();
 
-    let mut lib = Library::open(Some(&lib_path), 1).unwrap();
+	println!("init");
+	let mut s: State = State::new();
 
-    println!("init");
-    let mut s : State = State::new();
+	let mut i = 0;
+	let mut quit = false;
+	// let mut update: Option< &Symbol<unsafe extern fn(*mut State) -> bool> > = None;
+	let mut t_old = std::time::UNIX_EPOCH;
+	while !quit {
+		let t_new = lib_path.metadata().unwrap().modified().unwrap();
+		if t_new != t_old {
+			println!("unload");
+			s.unload();
 
+			println!("reload! {:?}", t_new);
+			t_old = t_new;
 
-    let mut i = 0;
-    let mut quit = false;
-    // let mut update: Option< &Symbol<unsafe extern fn(*mut State) -> bool> > = None;
-    let mut t_old = std::time::UNIX_EPOCH;
-    while !quit {
-        let t_new = lib_path.metadata().unwrap().modified().unwrap();
-        if t_new != t_old {
-            println!("unload");
-            s.unload();
+			drop(lib);
 
-            println!("reload! {:?}", t_new);
-            t_old = t_new;
+			let tmp_path = {
+				let mut buf = PathBuf::new();
+				buf.push(dir);
+				buf.push(format!("tmp_{}.so", i));
+				buf
+			};
 
-            drop(lib);
+			fs::copy(&lib_path, &tmp_path).unwrap();
+			lib = Library::open(Some(&tmp_path), 1).unwrap();
+			// fs::remove_file(tmp_path).unwrap();
+			i += 1;
 
-            let tmp_path = {
-                let mut buf = PathBuf::new();
-                buf.push(dir);
-                buf.push(format!("tmp_{}.so", i));
-                buf
-            };
+			println!("reload");
+			s.reload();
+		}
 
-            fs::copy(&lib_path, &tmp_path).unwrap();
-            lib = Library::open(Some(&tmp_path), 1).unwrap();
-            // fs::remove_file(tmp_path).unwrap();
-            i += 1;
-
-            println!("reload");
-            s.reload();
-        }
-
-        unsafe {
-            let l_update : Symbol<unsafe extern fn(*mut State) -> bool> = lib.get(b"prog_update").unwrap();
-            quit = l_update(&mut s);
-        }
-    }
+		unsafe {
+			let l_update: Symbol<unsafe extern "C" fn(*mut State) -> bool> = lib.get(b"prog_update").unwrap();
+			quit = l_update(&mut s);
+		}
+	}
 }
