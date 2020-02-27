@@ -3,6 +3,7 @@ pub mod game;
 pub mod input;
 pub mod math;
 pub mod quadtree;
+pub mod sdl;
 pub mod state;
 
 use crate::game::*;

@@ -23,7 +23,7 @@ impl QuadTreePosition {
 	}
 
 	pub fn child(&mut self, x: u8, y: u8) {
-		self.path.push(y*2 + x);
+		self.path.push(y * 2 + x);
 	}
 
 	pub fn float_top_left_with_size(&self) -> (f64, f64, f64) {
@@ -41,7 +41,4 @@ impl QuadTreePosition {
 		}
 		(x, y, s)
 	}
-
-	// let (x, y) = p.float_top_left();
-	// let size = p.float_size();
 }

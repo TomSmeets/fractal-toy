@@ -55,32 +55,41 @@ impl<T> QuadTree<T> {
 	}
 
 	pub fn values(&self) -> Vec<(QuadTreePosition, &T)> {
-    	self.values_from(QuadTreePosition::root())
+		self.values_from(QuadTreePosition::root())
 	}
 
 	fn values_from(&self, p: QuadTreePosition) -> Vec<(QuadTreePosition, &T)> {
-    	let mut vs = Vec::new();
-    	if let Some(v) = &self.value {
-        	vs.push((p.clone(), v));
-    	}
-    	if let Some(ns) = &self.nodes {
-        	for (i, n) in ns.as_ref().iter().enumerate() {
-            	let mut p2 = p.clone();
-            	p2.child(i as u8 % 2, i as u8 / 2);
-            	vs.append(&mut n.values_from(p2));
-        	}
-    	}
-    	vs
+		let mut vs = Vec::new();
+		if let Some(v) = &self.value {
+			vs.push((p.clone(), v));
+		}
+		if let Some(ns) = &self.nodes {
+			for (i, n) in ns.as_ref().iter().enumerate() {
+				let mut p2 = p.clone();
+				p2.child(i as u8 % 2, i as u8 / 2);
+				vs.append(&mut n.values_from(p2));
+			}
+		}
+		vs
 	}
 
 	pub fn insert_at(&mut self, p: &[u8], value: T) {
-    	if p.len() == 0 {
-        	self.value = Some(value);
-        	return;
-    	}
+		if p.len() == 0 {
+			self.value = Some(value);
+			return;
+		}
 
-        let ns = self.children_or_make();
-        ns[p[0] as usize].insert_at(&p[1..], value);
+		let ns = self.children_or_make();
+		ns[p[0] as usize].insert_at(&p[1..], value);
+	}
+
+	pub fn at(&mut self, p: &[u8]) -> Option<&mut Self> {
+		if p.len() == 0 {
+			return Some(self);
+		}
+
+		let ns = self.children_or_make();
+		ns[p[0] as usize].at(&p[1..])
 	}
 
 	/*

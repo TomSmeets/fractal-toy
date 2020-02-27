@@ -1,62 +1,25 @@
 use sdl2::event::*;
 use sdl2::keyboard::Keycode;
+use sdl2::mouse::*;
 use sdl2::pixels::*;
 use sdl2::rect::*;
 use sdl2::render::*;
-use sdl2::video::*;
-
-use std::hash::*;
 
 use crate::fractal::*;
 use crate::input::*;
 use crate::math::*;
 use crate::quadtree::pos::*;
 use crate::quadtree::*;
-
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
-pub struct TilePos {
-	x: i64,
-	y: i64,
-	z: i32,
-}
-
-pub struct Sdl {
-	ctx: sdl2::Sdl,
-	video: sdl2::VideoSubsystem,
-	event: sdl2::EventPump,
-	canvas: Canvas<Window>,
-}
-
-impl Sdl {
-	fn new() -> Self {
-		let ctx = sdl2::init().unwrap();
-		let video = ctx.video().unwrap();
-
-		let window = video
-			.window("rust-sdl2 demo", 800, 600)
-			.position_centered()
-			.build()
-			.unwrap();
-
-		let event = ctx.event_pump().unwrap();
-		let canvas = window.into_canvas().present_vsync().build().unwrap();
-
-		Sdl {
-			ctx,
-			video,
-			event,
-			canvas,
-		}
-	}
-}
+use crate::sdl::*;
 
 // TODO: implemnt save and load, this will handle some types that dont work with reload.
 // For example the btreemap
 pub struct State {
 	sdl: Sdl,
-	message: String,
 	input: Input,
 	textures: QuadTree<Texture>,
+
+	pos: QuadTreePosition,
 
 	offset: Vector2<f64>,
 	zoom: f64,
@@ -91,8 +54,8 @@ impl State {
 
 		// TODO: get window size
 		State {
-			sdl: sdl,
-			message: "Hello".to_string(),
+			sdl,
+			pos: QuadTreePosition::root(),
 			input: Input::new(),
 			textures: QuadTree::new(),
 			offset: Vector2::zero(),
@@ -119,23 +82,45 @@ impl State {
 					Keycode::Q => quit = true,
 					Keycode::C => down = true,
 					Keycode::R => {
-						let z = self.zoom.floor() as i32 + 2;
 						self.textures.reduce_to(1);
 					}
 					Keycode::F => self.textures.clear(),
-					_ => {}
+					Keycode::Num0 => self.pos.parent(),
+					Keycode::Num1 => self.pos.child(0, 0),
+					Keycode::Num2 => self.pos.child(1, 0),
+					Keycode::Num3 => self.pos.child(0, 1),
+					Keycode::Num4 => self.pos.child(1, 1),
+					_ => (),
 				},
+
+				Event::MouseButtonDown {
+					mouse_btn: MouseButton::Right,
+					..
+				} => {
+					self.pos.parent();
+				}
+
+				Event::MouseButtonDown {
+					mouse_btn: MouseButton::Left,
+					x,
+					y,
+					..
+				} => {
+					let qx = (x * 2) / self.window_size.x as i32;
+					let qy = (y * 2) / self.window_size.x as i32;
+					self.pos.child(qx as u8, qy as u8);
+					let t = mk_texture(&self.sdl.canvas.texture_creator(), self.pos.clone());
+					self.textures.at(&self.pos.path).unwrap().value = Some(t);
+				}
 
 				Event::MouseWheel { y, .. } => {
 					self.zoom += 0.5 * (y as f64);
-					self.message = "WHEEL!".to_owned();
 				}
 
 				Event::Window {
 					win_event: WindowEvent::Resized(x, y),
 					..
 				} => {
-					self.message = "resize!".to_owned();
 					self.window_size.x = (x as u32).max(1);
 					self.window_size.y = (y as u32).max(1);
 				}
@@ -177,15 +162,17 @@ impl State {
 		*/
 
 		if down {
-			let mut p = QuadTreePosition::root();
-			for i in 0..16 {
-				let t = mk_texture(&self.sdl.canvas.texture_creator(), p.clone());
-				self.textures.insert_at(&p.path, t);
-				p.child(0, if i < 1 { 0 } else { 1 });
+			for i in 0..=1 {
+				for j in 0..=1 {
+					let mut p = self.pos.clone();
+					p.child(i, j);
+					let t = mk_texture(&self.sdl.canvas.texture_creator(), p.clone());
+					self.textures.insert_at(&p.path, t);
+				}
 			}
 		}
 
-		let vs = self.textures.values();
+		let vs = self.textures.at(&self.pos.path).unwrap().values();
 
 		self.sdl.canvas.set_draw_color(Color::RGB(32, 32, 32));
 		self.sdl.canvas.clear();

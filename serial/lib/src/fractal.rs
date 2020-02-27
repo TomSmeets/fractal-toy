@@ -25,11 +25,11 @@ fn draw_mandel(pixels: &mut [u8], w: u32, h: u32, zoom: f64, offset: Vector2<f64
 			// -1 , 1
 			c0 = zoom * c0 + offset;
 
-            let itr = mandel(256, c0);
+			let itr = mandel(256, c0);
 
-            let mut v = itr as f32 / 256.0;
-            v *= v;
-            v = 1. - v;
+			let mut v = itr as f32 / 256.0;
+			v *= v;
+			v = 1. - v;
 
 			let hsv = Hsv::new(itr as f32 / 32.0 * 360., v, v);
 			let rgb = Srgb::from(hsv).into_linear();
