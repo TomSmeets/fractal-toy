@@ -31,12 +31,21 @@ impl Sdl {
 		let ctx = sdl2::init().unwrap();
 		let video = ctx.video().unwrap();
 
-		let window = video.window("rust-sdl2 demo", 800, 600).position_centered().build().unwrap();
+		let window = video
+			.window("rust-sdl2 demo", 800, 600)
+			.position_centered()
+			.build()
+			.unwrap();
 
 		let event = ctx.event_pump().unwrap();
 		let canvas = window.into_canvas().present_vsync().build().unwrap();
 
-		Sdl { ctx, video, event, canvas }
+		Sdl {
+			ctx,
+			video,
+			event,
+			canvas,
+		}
 	}
 }
 
@@ -56,7 +65,9 @@ pub struct State {
 
 fn mk_texture<T>(canvas: &TextureCreator<T>, p: QuadTreePosition) -> Texture {
 	let size = 256;
-	let mut texture = canvas.create_texture_static(PixelFormatEnum::RGBA8888, size, size).unwrap();
+	let mut texture = canvas
+		.create_texture_static(PixelFormatEnum::RGBA8888, size, size)
+		.unwrap();
 	let mut pixels = vec![0; (size * size * 4) as usize];
 	draw_tile(&mut pixels, p.x as i64, p.y as i64, p.z as i32);
 
@@ -101,20 +112,18 @@ impl State {
 				Event::Quit { .. } => {
 					quit = true;
 				}
-				Event::KeyDown { keycode: Some(Keycode::Q), .. } => {
-					quit = true;
-				}
-				Event::KeyDown { keycode: Some(Keycode::C), .. } => {
-					down = true;
-				}
-
-				Event::KeyDown { keycode: Some(Keycode::R), .. } => {
-					let z = self.zoom.floor() as i32 + 2;
-					self.textures.reduce_to(z);
-				}
-				Event::KeyDown { keycode: Some(Keycode::F), .. } => {
-					self.textures.clear();
-				}
+				Event::KeyDown {
+					keycode: Some(key), ..
+				} => match key {
+					Keycode::Q => quit = true,
+					Keycode::C => down = true,
+					Keycode::R => {
+						let z = self.zoom.floor() as i32 + 2;
+						self.textures.reduce_to(z);
+					}
+					Keycode::F => self.textures.clear(),
+					_ => {}
+				},
 
 				Event::MouseWheel { y, .. } => {
 					self.zoom += 0.5 * (y as f64);
@@ -166,7 +175,11 @@ impl State {
 
 		{
 			// Insert some tiles at known positions for testing purposes
-			let ps = [QuadTreePosition { x: 0, y: 0, z: 1 }, QuadTreePosition { x: 1, y: 0, z: 1 }, QuadTreePosition { x: 1, y: 1, z: 1 }];
+			let ps = [
+				QuadTreePosition { x: 0, y: 0, z: 1 },
+				QuadTreePosition { x: 1, y: 0, z: 1 },
+				QuadTreePosition { x: 1, y: 1, z: 1 },
+			];
 
 			for p in ps.iter() {
 				if let None = self.textures.get_at(p.clone()) {
@@ -212,7 +225,10 @@ impl State {
 			let w = 20;
 			let m = self.input.mouse;
 			self.sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
-			self.sdl.canvas.fill_rect(Rect::from_center((m.x, m.y), w, w)).unwrap();
+			self.sdl
+				.canvas
+				.fill_rect(Rect::from_center((m.x, m.y), w, w))
+				.unwrap();
 		}
 
 		self.sdl.canvas.present();

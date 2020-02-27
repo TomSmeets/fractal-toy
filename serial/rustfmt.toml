@@ -1,3 +1,2 @@
-max_width = 200
+# max_width = 120
 hard_tabs = true
-fn_single_line = true

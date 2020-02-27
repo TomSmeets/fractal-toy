@@ -57,7 +57,8 @@ fn main() {
 		}
 
 		unsafe {
-			let l_update: Symbol<unsafe extern "C" fn(*mut State) -> bool> = lib.get(b"prog_update").unwrap();
+			let l_update: Symbol<unsafe extern "C" fn(*mut State) -> bool> =
+				lib.get(b"prog_update").unwrap();
 			quit = l_update(&mut s);
 		}
 	}
