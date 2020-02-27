@@ -1,27 +1,23 @@
 use std::io::{self, BufRead, Read, Write};
 
 pub fn main() {
-    let stdin  = io::stdin();
-    let mut stdout = io::stdout();
-    let mut handle = stdin.lock();
-
-    loop {
-        let mut buffer = String::new();
-        print!("> ");
-        stdout.flush();
-        match handle.read_line(&mut buffer) {
-            Ok(n) => {
-                if n == 0 {
-                    break;
-                }
-                println!("n = {}", n);
-                print!("{}", buffer);
-            }
-            Err(e) => {
-                println!("error: {}", e);
-                break;
-            }
-        }
-    }
+    println!("before");
+    my_very_unique_function();
+    println!("after");
 }
 
+
+pub fn my_very_unique_function() {
+    let a = 1;
+    let b = 2;
+    println!("a + b = {}", a + b);
+
+    let mut s1 = String::from("Hello");
+    let mut s2 = String::from("World");
+    println!("s1: {}", s1);
+    println!("s2: {}", s2);
+
+    s1 += &s2;
+    println!("s1: {}", s1);
+    println!("s2: {}", s2);
+}
