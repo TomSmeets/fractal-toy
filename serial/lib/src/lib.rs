@@ -10,10 +10,10 @@ use crate::game::*;
 
 #[no_mangle]
 pub extern "C" fn prog_update(state: &mut State) -> bool {
-	state.update()
+    state.update()
 }
 
 #[no_mangle]
 pub extern "C" fn prog_init() -> *mut State {
-	return Box::into_raw(Box::new(State::new()));
+    return Box::into_raw(Box::new(State::new()));
 }
