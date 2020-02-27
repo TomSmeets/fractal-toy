@@ -1,23 +1,18 @@
-use std::io::{self, BufRead, Read, Write};
+use winit::{event::*, event_loop::*, window::*};
 
-pub fn main() {
-    println!("before");
-    my_very_unique_function();
-    println!("after");
-}
+fn main() {
+    let event_loop = EventLoop::new();
+    let window = WindowBuilder::new().build(&event_loop).unwrap();
 
+    event_loop.run(move |event, _, control_flow| {
+        *control_flow = ControlFlow::Wait;
 
-pub fn my_very_unique_function() {
-    let a = 1;
-    let b = 2;
-    println!("a + b = {}", a + b);
-
-    let mut s1 = String::from("Hello");
-    let mut s2 = String::from("World");
-    println!("s1: {}", s1);
-    println!("s2: {}", s2);
-
-    s1 += &s2;
-    println!("s1: {}", s1);
-    println!("s2: {}", s2);
+        match event {
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                window_id,
+            } if window_id == window.id() => *control_flow = ControlFlow::Exit,
+            _ => (),
+        }
+    });
 }
