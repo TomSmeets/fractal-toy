@@ -10,6 +10,7 @@ use std::hash::*;
 use crate::fractal::*;
 use crate::input::*;
 use crate::math::*;
+use crate::quadtree::pos::*;
 use crate::quadtree::*;
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Clone)]
