@@ -1,5 +1,6 @@
 use crate::math::*;
 use crate::quadtree::pos::*;
+use ::palette::*;
 
 pub fn draw_tile(pixels: &mut [u8], p: QuadTreePosition) {
 	let resolution: u32 = 256;
@@ -24,12 +25,19 @@ fn draw_mandel(pixels: &mut [u8], w: u32, h: u32, zoom: f64, offset: Vector2<f64
 			// -1 , 1
 			c0 = zoom * c0 + offset;
 
-			let color = (mandel(256, c0) * 255 / 256) as u8;
+            let itr = mandel(256, c0);
+
+            let mut v = itr as f32 / 256.0;
+            v *= v;
+            v = 1. - v;
+
+			let hsv = Hsv::new(itr as f32 / 32.0 * 360., v, v);
+			let rgb = Srgb::from(hsv).into_linear();
 
 			pixels[(0 + (x + y * w) * 4) as usize] = 255;
-			pixels[(1 + (x + y * w) * 4) as usize] = color;
-			pixels[(2 + (x + y * w) * 4) as usize] = color;
-			pixels[(3 + (x + y * w) * 4) as usize] = color;
+			pixels[(1 + (x + y * w) * 4) as usize] = (rgb.red * 255.) as u8;
+			pixels[(2 + (x + y * w) * 4) as usize] = (rgb.green * 255.) as u8;
+			pixels[(3 + (x + y * w) * 4) as usize] = (rgb.blue * 255.) as u8;
 		}
 	}
 }
