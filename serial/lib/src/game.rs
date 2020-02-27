@@ -70,7 +70,7 @@ fn mk_texture<T>(canvas: &TextureCreator<T>, p: QuadTreePosition) -> Texture {
 		.create_texture_static(PixelFormatEnum::RGBA8888, size, size)
 		.unwrap();
 	let mut pixels = vec![0; (size * size * 4) as usize];
-	draw_tile(&mut pixels, p.x as i64, p.y as i64, p.z as i32);
+	draw_tile(&mut pixels, p);
 
 	texture.update(None, &pixels, (4 * size) as usize).unwrap();
 	texture
@@ -120,7 +120,7 @@ impl State {
 					Keycode::C => down = true,
 					Keycode::R => {
 						let z = self.zoom.floor() as i32 + 2;
-						self.textures.reduce_to(z);
+						self.textures.reduce_to(1);
 					}
 					Keycode::F => self.textures.clear(),
 					_ => {}
@@ -147,6 +147,7 @@ impl State {
 		self.offset += dt * self.input.dir_move * 0.5_f64.powf(self.zoom);
 		self.zoom += 2.0 * dt * self.input.dir_look.y;
 
+		/*
 		if down {
 			// TODO: make pretty
 			let z = self.zoom.floor() as i32 + 2;
@@ -156,8 +157,8 @@ impl State {
 			let w = self.window_size.x as f64;
 			let zz = 2.0_f64.powf(self.zoom);
 
-			let px = ((m.x / w - 0.5) / zz + self.offset.x) * scale;
-			let py = ((m.y / w - 0.5) / zz + self.offset.y) * scale;
+			let px = ((m.x / w - 0.5) / zz + self.offset.x)*scale;
+			let py = ((m.y / w - 0.5) / zz + self.offset.y)*scale;
 
 			let p = QuadTreePosition {
 				x: px.floor() as u64,
@@ -173,53 +174,33 @@ impl State {
 				}
 			}
 		}
+		*/
 
-		{
-			// Insert some tiles at known positions for testing purposes
-			let ps = [
-				QuadTreePosition { x: 0, y: 0, z: 1 },
-				QuadTreePosition { x: 1, y: 0, z: 1 },
-				QuadTreePosition { x: 1, y: 1, z: 1 },
-			];
-
-			for p in ps.iter() {
-				if let None = self.textures.get_at(p.clone()) {
-					let t = mk_texture(&self.sdl.canvas.texture_creator(), p.clone());
-					self.textures.insert_at(p.clone(), t);
-				}
+		if down {
+			let mut p = QuadTreePosition::root();
+			for i in 0..16 {
+				let t = mk_texture(&self.sdl.canvas.texture_creator(), p.clone());
+				self.textures.insert_at(&p.path, t);
+				p.child(0, if i < 1 { 0 } else { 1 });
 			}
 		}
 
-		self.sdl.canvas.set_draw_color(Color::RGB(255, 255, 0));
+		let vs = self.textures.values();
+
+		self.sdl.canvas.set_draw_color(Color::RGB(32, 32, 32));
 		self.sdl.canvas.clear();
 
-		// println!("texture count: {:?}", self.textures.len());
-		let w = self.window_size.x as f64;
-		let z = 2.0_f64.powf(self.zoom);
+		for (p, v) in &vs {
+			let (x, y, z) = p.float_top_left_with_size();
+			let w = self.window_size.x as f64;
+			let p = (w * x, w * y);
+			let s = (w * z, w * z);
 
-		let ts = self.textures.values();
-		for (k, v) in ts {
-			let scale = 0.5_f64.powi(k.z as i32);
+			let r = Rect::from((p.0 as i32, p.1 as i32, s.0 as u32, s.1 as u32));
+			self.sdl.canvas.copy(v, None, Some(r)).unwrap();
 
-			let x = (k.x as f64) * scale - self.offset.x as f64;
-			let y = (k.y as f64) * scale - self.offset.y as f64;
-
-			self.sdl
-				.canvas
-				.copy(
-					v,
-					None,
-					Some(
-						(
-							(w * (z * x + 0.5)).floor() as i32,
-							(w * (z * y + 0.5)).floor() as i32,
-							(w * z * scale).ceil() as u32,
-							(w * z * scale).ceil() as u32,
-						)
-							.into(),
-					),
-				)
-				.unwrap();
+			self.sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
+			self.sdl.canvas.draw_rect(r).unwrap();
 		}
 
 		{

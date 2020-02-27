@@ -1,12 +1,15 @@
 use crate::math::*;
+use crate::quadtree::pos::*;
 
-pub fn draw_tile(pixels: &mut [u8], x: i64, y: i64, z: i32) {
+pub fn draw_tile(pixels: &mut [u8], p: QuadTreePosition) {
 	let resolution: u32 = 256;
+	// TODO: improve
 	assert!(pixels.len() as u32 == resolution * resolution * 4);
 
-	let scale = 0.5f64.powi(z - 2);
-	let center = Vector2::new(x as f64, y as f64) * scale - Vector2::new(2.0, 2.0);
-	draw_mandel(pixels, resolution, resolution, scale, center);
+	// gets center of this qpos square
+	let (x, y, size) = p.float_top_left_with_size();
+	let center = Vector2::new(x, y) * 4.0 - Vector2::new(2.0, 2.0);
+	draw_mandel(pixels, resolution, resolution, size * 4.0, center);
 }
 
 fn draw_mandel(pixels: &mut [u8], w: u32, h: u32, zoom: f64, offset: Vector2<f64>) {

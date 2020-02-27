@@ -3,8 +3,8 @@ use crate::quadtree::pos::*;
 
 #[derive(Debug)]
 pub struct QuadTree<T> {
-	value: Option<T>,
-	nodes: Option<Box<[Self; 4]>>,
+	pub value: Option<T>,
+	pub nodes: Option<Box<[Self; 4]>>,
 }
 
 impl<T> QuadTree<T> {
@@ -43,115 +43,85 @@ impl<T> QuadTree<T> {
 		self.nodes = None;
 	}
 
-	pub fn insert_at(&mut self, pos: QuadTreePosition, value: T) {
-		if pos.z == 0 {
-			assert_eq!(pos.x, 0);
-			assert_eq!(pos.y, 0);
-			self.insert_value(value);
-			return;
-		}
-
-		// the highest bit decides which quadrant we are
-		let shift_count = pos.z - 1;
-		let highest_bit = 1 << shift_count;
-
-		// shift down the coordinates to extract only the highest bit
-		let qx = (pos.x >> shift_count) & 0x1;
-		let qy = (pos.y >> shift_count) & 0x1;
-		assert!(qx == 0 || qx == 1);
-		assert!(qy == 0 || qy == 1);
-
-		let p2 = QuadTreePosition {
-			x: pos.x & !highest_bit,
-			y: pos.y & !highest_bit,
-			z: pos.z - 1,
-		};
-
-		// create child nodes if nonexistant
-		let ns = self.nodes.get_or_insert_with(|| {
+	pub fn children_or_make(&mut self) -> &mut [Self; 4] {
+		self.nodes.get_or_insert_with(|| {
 			Box::new([
 				QuadTree::new(),
 				QuadTree::new(),
 				QuadTree::new(),
 				QuadTree::new(),
 			])
-		});
-
-		ns[(qy * 2 + qx) as usize].insert_at(p2, value);
+		})
 	}
 
-	pub fn get_at(&mut self, pos: QuadTreePosition) -> Option<&mut T> {
-		if pos.z == 0 {
-			assert_eq!(pos.x, 0);
-			assert_eq!(pos.y, 0);
-			return match &mut self.value {
-				None => None,
-				Some(v) => Some(v),
-			};
-		}
-
-		// the highest bit decides which quadrant we are
-		let shift_count = pos.z - 1;
-		let highest_bit = 1 << shift_count;
-
-		// shift down the coordinates to extract only the highest bit
-		let qx = (pos.x >> shift_count) & 0x1;
-		let qy = (pos.y >> shift_count) & 0x1;
-		assert!(qx == 0 || qx == 1);
-		assert!(qy == 0 || qy == 1);
-
-		let p2 = QuadTreePosition {
-			x: pos.x & !highest_bit,
-			y: pos.y & !highest_bit,
-			z: pos.z - 1,
-		};
-
-		match &mut self.nodes {
-			None => None,
-			Some(ns) => ns[(qy * 2 + qx) as usize].get_at(p2),
-		}
-	}
-
-	// extract values from top down
 	pub fn values(&self) -> Vec<(QuadTreePosition, &T)> {
-		self.values_with_pos(QuadTreePosition { x: 0, y: 0, z: 0 })
+    	self.values_from(QuadTreePosition::root())
 	}
 
-	fn values_with_pos(&self, p: QuadTreePosition) -> Vec<(QuadTreePosition, &T)> {
-		let mut vs = Vec::new();
+	fn values_from(&self, p: QuadTreePosition) -> Vec<(QuadTreePosition, &T)> {
+    	let mut vs = Vec::new();
+    	if let Some(v) = &self.value {
+        	vs.push((p.clone(), v));
+    	}
+    	if let Some(ns) = &self.nodes {
+        	for (i, n) in ns.as_ref().iter().enumerate() {
+            	let mut p2 = p.clone();
+            	p2.child(i as u8 % 2, i as u8 / 2);
+            	vs.append(&mut n.values_from(p2));
+        	}
+    	}
+    	vs
+	}
 
-		match &self.value {
-			None => {}
-			Some(v) => vs.push((p, v)),
+	pub fn insert_at(&mut self, p: &[u8], value: T) {
+    	if p.len() == 0 {
+        	self.value = Some(value);
+        	return;
+    	}
+
+        let ns = self.children_or_make();
+        ns[p[0] as usize].insert_at(&p[1..], value);
+	}
+
+	/*
+	pub fn at(&mut self, p: (u8, u8)) -> Option<&mut Self> {
+		self.nodes
+			.map(|ns| &mut (ns.as_mut()[(p.1 * 2 + p.0) as usize]))
+	}
+
+	pub fn node_at(&mut self, pos: &QuadTreePosition) -> &mut Self {
+		let mut q: &mut Self = &mut self;
+		for (i, j) in pos.path {
+			q = &mut q.children_or_make()[0];
 		}
+		q
+	}
 
-		match &self.nodes {
-			None => {}
-			Some(ns) => {
-				for (i, n) in ns.as_ref().iter().enumerate() {
-					let qx = i % 2;
-					let qy = i / 2;
-
-					let p1 = QuadTreePosition {
-						x: (p.x << 1) + qx as u64,
-						y: (p.y << 1) + qy as u64,
-						z: p.z + 1,
-					};
-					let mut ns = n.values_with_pos(p1);
-					vs.append(&mut ns);
+	pub fn get_at(&mut self, pos: &QuadTreePosition) -> Option<&mut Self> {
+		let mut q: &mut Self = &mut self;
+		for (i, j) in pos.path {
+			match q.nodes {
+				None => return None,
+				Some(ns) => {
+					q = &mut ns[0];
 				}
 			}
-		};
-
-		vs
+		}
+		Some(q)
 	}
+	*/
 }
 
+/*
 #[test]
 fn test_quad() {
 	let mut t = QuadTree::new();
 
+	let f = false;
+	let t = true;
+
 	let mut points = [
+		QuadTreePosition::from([(0, 0)]),
 		QuadTreePosition { x: 0, y: 0, z: 0 },
 		QuadTreePosition { x: 0, y: 0, z: 1 },
 		QuadTreePosition { x: 0, y: 0, z: 2 },
@@ -182,3 +152,4 @@ fn test_quad() {
 
 	println!("{:?}", t);
 }
+*/

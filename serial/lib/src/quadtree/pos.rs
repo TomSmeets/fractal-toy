@@ -1,84 +1,47 @@
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct QuadTreePosition {
-	pub x: u64,
-	pub y: u64,
-	pub z: u64,
+	pub path: Vec<u8>,
 }
 
 impl QuadTreePosition {
-	fn new(x: u64, y: u64, z: u64) -> Self {
-		let q = QuadTreePosition { x, y, z };
-		q.check();
-		q
-	}
-
-	fn check(&self) {
-		let dim = self.dim();
-		assert!(self.x <= dim);
-		assert!(self.y <= dim);
-	}
-
-	pub fn dim(&self) -> u64 {
-		if self.z == 0 {
-			0
-		} else {
-			1 << (self.z - 1)
-		}
-	}
-
-	fn root() -> Self {
-		Self::new(0, 0, 0)
-	}
-
-	fn parent(&self) -> Self {
+	pub fn from(path: &[u8]) -> QuadTreePosition {
 		QuadTreePosition {
-			x: self.x >> 1,
-			y: self.y >> 1,
-			z: self.z - 1,
+			path: path.to_vec(),
 		}
 	}
 
-	fn child(&self, qx: u8, qy: u8) -> Self {
-		QuadTreePosition {
-			x: (self.x << 1) + qx as u64,
-			y: (self.y << 1) + qy as u64,
-			z: self.z + 1,
+	pub fn depth(&self) -> u32 {
+		self.path.len() as u32
+	}
+
+	pub fn root() -> Self {
+		QuadTreePosition { path: Vec::new() }
+	}
+
+	pub fn parent(&mut self) {
+		self.path.pop();
+	}
+
+	pub fn child(&mut self, x: u8, y: u8) {
+		self.path.push(y*2 + x);
+	}
+
+	pub fn float_top_left_with_size(&self) -> (f64, f64, f64) {
+		let mut s = 1.0;
+		let mut x = 0.0;
+		let mut y = 0.0;
+		for i in &self.path {
+			s *= 0.5;
+			if *i % 2 == 1 {
+				x += s;
+			}
+			if *i / 2 == 1 {
+				y += s;
+			}
 		}
-	}
-}
-
-#[test]
-fn test_pos() {
-	let p = QuadTreePosition::root();
-
-	{
-		let q = p.child(0, 0).child(0, 0).child(0, 0);
-		assert_eq!(q.z, 3);
-		assert_eq!(q.x, 0);
-		assert_eq!(q.y, 0);
+		(x, y, s)
 	}
 
-	{
-		let q = p.child(1, 1);
-		assert_eq!(q.z, 1);
-		assert_eq!(q.x, 1);
-		assert_eq!(q.y, 1);
-		assert_eq!(q.parent(), p);
-	}
-
-	{
-		let q = p.child(1, 1).child(1, 1);
-		assert_eq!(q.z, 2);
-		assert_eq!(q.x, 3);
-		assert_eq!(q.y, 3);
-		assert_eq!(q.parent().parent(), p);
-	}
-
-	{
-		let q = p.child(1, 1).child(1, 1).child(1, 1);
-		assert_eq!(q.z, 3);
-		assert_eq!(q.x, 7);
-		assert_eq!(q.y, 7);
-		assert_eq!(q.parent().parent().parent(), p);
-	}
+	// let (x, y) = p.float_top_left();
+	// let size = p.float_size();
 }
