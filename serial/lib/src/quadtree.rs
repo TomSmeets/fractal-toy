@@ -55,22 +55,28 @@ impl<T> QuadTree<T> {
     }
 
     pub fn values(&self) -> Vec<(QuadTreePosition, &T)> {
-        self.values_from(QuadTreePosition::root())
+        let mut vs = Vec::new();
+        let mut p = QuadTreePosition::root();
+        self.values_from(&mut vs, &mut p);
+        vs
     }
 
-    fn values_from(&self, p: QuadTreePosition) -> Vec<(QuadTreePosition, &T)> {
-        let mut vs = Vec::new();
+    fn values_from<'a>(
+        &'a self,
+        vs: &mut Vec<(QuadTreePosition, &'a T)>,
+        p: &mut QuadTreePosition,
+    ) {
         if let Some(v) = &self.value {
             vs.push((p.clone(), v));
         }
+
         if let Some(ns) = &self.nodes {
             for (i, n) in ns.as_ref().iter().enumerate() {
-                let mut p2 = p.clone();
-                p2.child(i as u8 % 2, i as u8 / 2);
-                vs.append(&mut n.values_from(p2));
+                p.child(i as u8 % 2, i as u8 / 2);
+                n.values_from(vs, p);
+                p.parent();
             }
         }
-        vs
     }
 
     pub fn insert_at(&mut self, p: &[u8], value: T) {
