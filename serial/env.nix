@@ -69,6 +69,8 @@
     export PATH="${lib.concatMapStringsSep ":" (x: x + "/bin/") (paths ++ [
       basepkgs
       pkgs.rustup
+      pkgs.perl
+      pkgs.socat
     ])}:$PATH"
 
     export RUSTFLAGS='${lib.concatMapStringsSep " " (x: "-L " + x + "/lib/") libs}'
