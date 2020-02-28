@@ -1,7 +1,3 @@
-use sdl2::event::*;
-use sdl2::keyboard::Keycode;
-use sdl2::pixels::*;
-use sdl2::rect::*;
 use sdl2::render::*;
 use sdl2::video::*;
 
@@ -33,4 +29,8 @@ impl Sdl {
             canvas,
         }
     }
+}
+
+impl Default for Sdl {
+    fn default() -> Self { Self::new() }
 }
