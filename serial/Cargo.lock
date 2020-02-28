@@ -463,7 +463,6 @@ name = "runner"
 version = "0.1.0"
 dependencies = [
  "libloading",
- "serial",
 ]
 
 [[package]]

@@ -1,8 +1,7 @@
 use std::env;
+use std::ffi::c_void;
 use std::fs;
 use std::path::*;
-
-use serial::game::*;
 
 extern crate libloading as lib;
 use libloading::os::unix::*;
@@ -10,6 +9,14 @@ use libloading::os::unix::*;
 fn main() {
     let exe = env::current_exe().unwrap();
     let dir = exe.parent().unwrap();
+
+    let tmp = {
+        let mut d = env::temp_dir();
+        let pid = std::process::id();
+        d.push(format!("dynamic-reload-at-{}", pid));
+        fs::create_dir_all(&d).unwrap();
+        d
+    };
 
     let lib_path = {
         let mut buf = PathBuf::new();
@@ -22,8 +29,12 @@ fn main() {
 
     let mut lib = Library::open(Some(&lib_path), 1).unwrap();
 
+    let s: *mut c_void = unsafe {
+        let l_init: Symbol<unsafe extern "C" fn() -> *mut c_void> = lib.get(b"prog_init").unwrap();
+        l_init()
+    };
+
     println!("init");
-    let mut s: State = State::new();
 
     let mut i = 0;
     let mut quit = false;
@@ -33,7 +44,7 @@ fn main() {
         let t_new = lib_path.metadata().unwrap().modified().unwrap();
         if t_new != t_old {
             println!("unload");
-            s.unload();
+            // s.unload();
 
             println!("reload! {:?}", t_new);
             t_old = t_new;
@@ -42,7 +53,7 @@ fn main() {
 
             let tmp_path = {
                 let mut buf = PathBuf::new();
-                buf.push(dir);
+                buf.push(&tmp);
                 buf.push(format!("tmp_{}.so", i));
                 buf
             };
@@ -53,13 +64,13 @@ fn main() {
             i += 1;
 
             println!("reload");
-            s.reload();
+            // s.reload();
         }
 
         unsafe {
-            let l_update: Symbol<unsafe extern "C" fn(*mut State) -> bool> =
+            let l_update: Symbol<unsafe extern "C" fn(*mut c_void) -> bool> =
                 lib.get(b"prog_update").unwrap();
-            quit = l_update(&mut s);
+            quit = l_update(s);
         }
     }
 }

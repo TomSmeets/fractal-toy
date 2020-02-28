@@ -9,11 +9,11 @@ pub mod state;
 use crate::game::*;
 
 #[no_mangle]
-pub extern "C" fn prog_update(state: &mut State) -> bool {
-    state.update()
+pub extern "C" fn prog_update(state: *mut State) -> bool {
+    unsafe { (*state).update() }
 }
 
 #[no_mangle]
 pub extern "C" fn prog_init() -> *mut State {
-    return Box::into_raw(Box::new(State::new()));
+    Box::into_raw(Box::new(State::new()))
 }
