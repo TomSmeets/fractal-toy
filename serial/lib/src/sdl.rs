@@ -1,5 +1,5 @@
-use sdl2::render::*;
-use sdl2::video::*;
+use sdl2::render::Canvas;
+use sdl2::video::Window;
 
 pub struct Sdl {
     pub ctx: sdl2::Sdl,
@@ -32,5 +32,7 @@ impl Sdl {
 }
 
 impl Default for Sdl {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

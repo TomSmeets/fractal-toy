@@ -1,4 +1,4 @@
-use serial::game::*;
+use serial::game::State;
 
 fn main() {
     let mut s = State::new();
