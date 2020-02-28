@@ -8,6 +8,7 @@ extern crate libloading as lib;
 use libloading::os::unix::*;
 
 struct ReloadLib {
+    #[allow(dead_code)]
     lib: Library,
     f_init: Symbol<unsafe extern "C" fn() -> *mut c_void>,
     f_update: Symbol<unsafe extern "C" fn(*mut c_void) -> bool>,
