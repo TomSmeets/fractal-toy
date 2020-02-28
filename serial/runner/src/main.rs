@@ -1,10 +1,41 @@
 use std::env;
 use std::ffi::c_void;
+use std::ffi::OsStr;
 use std::fs;
 use std::path::*;
 
 extern crate libloading as lib;
 use libloading::os::unix::*;
+
+struct ReloadLib {
+    lib: Library,
+    f_init: Symbol<unsafe extern "C" fn() -> *mut c_void>,
+    f_update: Symbol<unsafe extern "C" fn(*mut c_void) -> bool>,
+}
+
+impl ReloadLib {
+    fn new(path: &OsStr) -> Self {
+        unsafe {
+            let lib = Library::open(Some(path), 1).unwrap();
+            let f_init = lib.get(b"prog_init").unwrap();
+            let f_update = lib.get(b"prog_update").unwrap();
+
+            ReloadLib {
+                f_init,
+                f_update,
+                lib,
+            }
+        }
+    }
+
+    fn init(&mut self) -> *mut c_void {
+        unsafe { (self.f_init)() }
+    }
+
+    fn update(&mut self, s: *mut c_void) -> bool {
+        unsafe { (self.f_update)(s) }
+    }
+}
 
 fn main() {
     let exe = env::current_exe().unwrap();
@@ -27,14 +58,8 @@ fn main() {
 
     println!("self: {:?}", lib_path);
 
-    let mut lib = Library::open(Some(&lib_path), 1).unwrap();
-
-    let s: *mut c_void = unsafe {
-        let l_init: Symbol<unsafe extern "C" fn() -> *mut c_void> = lib.get(b"prog_init").unwrap();
-        l_init()
-    };
-
-    println!("init");
+    let mut lib = ReloadLib::new(lib_path.as_os_str());
+    let s = lib.init();
 
     let mut i = 0;
     let mut quit = false;
@@ -49,8 +74,6 @@ fn main() {
             println!("reload! {:?}", t_new);
             t_old = t_new;
 
-            drop(lib);
-
             let tmp_path = {
                 let mut buf = PathBuf::new();
                 buf.push(&tmp);
@@ -59,7 +82,7 @@ fn main() {
             };
 
             fs::copy(&lib_path, &tmp_path).unwrap();
-            lib = Library::open(Some(&tmp_path), 1).unwrap();
+            lib = ReloadLib::new(tmp_path.as_os_str());
             // fs::remove_file(tmp_path).unwrap();
             i += 1;
 
@@ -67,10 +90,6 @@ fn main() {
             // s.reload();
         }
 
-        unsafe {
-            let l_update: Symbol<unsafe extern "C" fn(*mut c_void) -> bool> =
-                lib.get(b"prog_update").unwrap();
-            quit = l_update(s);
-        }
+        quit = lib.update(s);
     }
 }
