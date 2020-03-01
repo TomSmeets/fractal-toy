@@ -216,7 +216,6 @@ impl State {
             self.sdl.canvas.draw_rect(r).unwrap();
         }
 
-
         {
             let w = 20;
 
@@ -290,7 +289,7 @@ fn mk_rect(a: V2i, b: V2i) -> Rect {
     let max_x = a.x.max(b.x);
     let max_y = a.y.max(b.y);
 
-    let width  = max_x - min_x;
+    let width = max_x - min_x;
     let height = max_y - min_y;
 
     let r = Rect::new(min_x, min_y, width as u32, height as u32);

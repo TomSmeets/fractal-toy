@@ -26,10 +26,7 @@ impl Viewport {
 
     pub fn view_to_world(&self, p: V2) -> V2 {
         let scale = self.scale();
-        V2::new(
-            (p.x) * scale + self.offset.x,
-            (p.y) * scale + self.offset.y,
-        )
+        V2::new((p.x) * scale + self.offset.x, (p.y) * scale + self.offset.y)
     }
 
     pub fn child(&mut self, i: u8, j: u8) {
@@ -46,7 +43,7 @@ impl Viewport {
 
     pub fn zoom_in(&mut self, amount: f32, view_pos: V2) {
         self.offset += self.scale() * view_pos;
-        self.zoom   += amount;
+        self.zoom += amount;
         self.offset -= self.scale() * view_pos;
     }
 
@@ -60,8 +57,8 @@ impl Viewport {
 
     pub fn get_pos(&self) -> QuadTreePosition {
         let mut z = self.zoom + 1.0;
-        let mut x = self.offset.x + 0.5*self.scale();
-        let mut y = self.offset.y + 0.5*self.scale();
+        let mut x = self.offset.x + 0.5 * self.scale();
+        let mut y = self.offset.y + 0.5 * self.scale();
         let mut node = QuadTreePosition::root();
 
         while z > 0. {
@@ -69,8 +66,8 @@ impl Viewport {
             let qy = if y > 0.5 { 1 } else { 0 };
             node.child(qx, qy);
             z -= 1.;
-            x = x*2.0 - qx as f32;
-            y = y*2.0 - qy as f32;
+            x = x * 2.0 - qx as f32;
+            y = y * 2.0 - qy as f32;
         }
 
         node
