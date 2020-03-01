@@ -13,6 +13,12 @@ pub struct Input {
     pub dir_look: V2,
 }
 
+impl Default for Input {
+    fn default() -> Self {
+        Input::new()
+    }
+}
+
 impl Input {
     pub fn new() -> Self {
         Input {

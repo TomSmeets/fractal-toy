@@ -21,6 +21,7 @@ fn draw_mandel(pixels: &mut [u8], w: u32, h: u32, zoom: f64, offset: Vector2<f64
             // screen coords 0 - 1
             c0.x /= w as f64;
             c0.y /= h as f64;
+            c0.y = 1.0 - c0.y;
 
             // -1 , 1
             c0 = zoom * c0 + offset;

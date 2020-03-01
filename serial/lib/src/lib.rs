@@ -5,6 +5,7 @@ pub mod math;
 pub mod quadtree;
 pub mod sdl;
 pub mod state;
+pub mod viewport;
 
 use crate::game::*;
 

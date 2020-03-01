@@ -11,6 +11,7 @@ use crate::math::*;
 use crate::quadtree::pos::*;
 use crate::quadtree::*;
 use crate::sdl::*;
+use crate::viewport::Viewport;
 
 enum DragState {
     None,
@@ -29,63 +30,6 @@ pub struct State {
     drag: DragState,
 
     window_size: Vector2<u32>,
-}
-
-struct Viewport {
-    node: QuadTreePosition,
-
-    scale: f32,
-    offset: Vector2<f32>,
-}
-
-impl Viewport {
-    fn new() -> Self {
-        Viewport {
-            node: QuadTreePosition::root(),
-            scale: 1.,
-            offset: V2::zero(),
-        }
-    }
-
-    fn world_to_view(&self, p: V2) -> V2 {
-        let (x, y, s) = self.node.float_top_left_with_size();
-        let x = x as f32;
-        let y = y as f32;
-        let s = s as f32;
-        V2::new(
-            (p.x - self.offset.x) / self.scale,
-            (p.y - self.offset.y) / self.scale,
-        )
-    }
-
-    fn view_to_world(&self, p: V2) -> V2 {
-        let (x, y, s) = self.node.float_top_left_with_size();
-        let x = x as f32;
-        let y = y as f32;
-        let s = s as f32;
-        V2::new(
-            (p.x) * self.scale + self.offset.x,
-            (p.y) * self.scale + self.offset.y,
-        )
-    }
-
-    fn child(&mut self, i: u8, j: u8) {
-        self.node.child(i, j);
-    }
-
-    fn parent(&mut self) {
-        self.node.parent();
-    }
-
-    fn translate(&mut self, offset: V2) {
-        self.offset += offset * self.scale;
-    }
-
-    fn zoom_in(&mut self, amount: f32, view_pos: V2) {
-        self.offset += self.scale * view_pos;
-        self.scale *= 1.0 + amount;
-        self.offset -= self.scale * view_pos;
-    }
 }
 
 fn mk_texture<T>(canvas: &TextureCreator<T>, p: QuadTreePosition) -> Texture {
@@ -212,7 +156,7 @@ impl State {
 
         let mouse_in_view = self.screen_to_view(self.input.mouse);
         self.pos
-            .zoom_in(-0.1 * self.input.scroll as f32, mouse_in_view);
+            .zoom_in(0.1 * self.input.scroll as f32, mouse_in_view);
 
         self.pos.translate(dt * self.input.dir_move);
         self.pos
@@ -256,40 +200,22 @@ impl State {
         // }
 
         if down {
-            for i in 0..=1 {
-                for j in 0..=1 {
-                    let mut p = self.pos.node.clone();
-                    p.child(i, j);
-                    let t = mk_texture(&self.sdl.canvas.texture_creator(), p.clone());
-                    self.textures.insert_at(&p.path, t);
-                }
-            }
+            let p = self.pos.get_pos();
+            let t = mk_texture(&self.sdl.canvas.texture_creator(), p.clone());
+            self.textures.insert_at(&p.path, t);
         }
-
-        let vs = self.textures.values();
 
         self.sdl.canvas.set_draw_color(Color::RGB(32, 32, 32));
         self.sdl.canvas.clear();
 
+        let vs = self.textures.values();
         for (p, v) in &vs {
-            let (x, y, z) = p.float_top_left_with_size();
-            let w = self.window_size.x as f32;
-
-            let x = x as f32;
-            let y = y as f32;
-            let z = z as f32;
-
-            let p = (V2::new(x, y));
-
-            let p = (w * p.x, w * p.y);
-            let s = (w * z, w * z);
-
-            let r = Rect::from((p.0 as i32, p.1 as i32, s.0 as u32, s.1 as u32));
+            let r = self.pos_to_rect(p);
             self.sdl.canvas.copy(v, None, Some(r)).unwrap();
-
             self.sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
             self.sdl.canvas.draw_rect(r).unwrap();
         }
+
 
         {
             let w = 20;
@@ -319,9 +245,27 @@ impl State {
             self.sdl.canvas.draw_rect(mk_rect(p_min, p_max)).unwrap();
         }
 
+        {
+            let r = self.pos_to_rect(&self.pos.get_pos());
+            self.sdl.canvas.set_draw_color(Color::RGB(0, 255, 0));
+            self.sdl.canvas.draw_rect(r).unwrap();
+        }
+
         self.sdl.canvas.present();
 
         quit
+    }
+
+    fn pos_to_rect(&self, p: &QuadTreePosition) -> Rect {
+        let (x, y, z) = p.float_top_left_with_size();
+        let p = V2::new(x as f32, y as f32);
+        let w = p + V2::new(z as f32, z as f32);
+        let p = self.pos.world_to_view(p);
+        let p = self.view_to_screen(p);
+        let w = self.pos.world_to_view(w);
+        let w = self.view_to_screen(w);
+        let r = mk_rect(p, w);
+        r
     }
 
     fn screen_to_view(&self, p: V2i) -> V2 {
@@ -346,7 +290,9 @@ fn mk_rect(a: V2i, b: V2i) -> Rect {
     let max_x = a.x.max(b.x);
     let max_y = a.y.max(b.y);
 
-    let width = max_x - min_x;
+    let width  = max_x - min_x;
     let height = max_y - min_y;
-    Rect::new(min_x, min_y, width as u32, height as u32)
+
+    let r = Rect::new(min_x, min_y, width as u32, height as u32);
+    r
 }
