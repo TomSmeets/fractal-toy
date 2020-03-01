@@ -27,15 +27,7 @@ pub fn list() -> Vec<String> {
 
     match dir {
         Ok(d) => d
-            .map(|d| {
-                d.unwrap()
-                    .path()
-                    .file_stem()
-                    .unwrap()
-                    .to_os_string()
-                    .into_string()
-                    .unwrap()
-            })
+            .map(|d| d.unwrap().path().file_stem().unwrap().to_os_string().into_string().unwrap())
             .collect(),
         Err(_) => Vec::new(),
     }

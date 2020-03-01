@@ -5,9 +5,7 @@ pub struct QuadTreePosition {
 
 impl QuadTreePosition {
     pub fn from(path: &[u8]) -> QuadTreePosition {
-        QuadTreePosition {
-            path: path.to_vec(),
-        }
+        QuadTreePosition { path: path.to_vec() }
     }
 
     pub fn depth(&self) -> u32 {

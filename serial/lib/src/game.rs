@@ -36,11 +36,7 @@ struct Viewport {
 
 impl Viewport {
     fn new() -> Self {
-        Viewport {
-            node: QuadTreePosition::root(),
-            scale: 1.,
-            offset: V2::zero(),
-        }
+        Viewport { node: QuadTreePosition::root(), scale: 1., offset: V2::zero() }
     }
 
     fn world_to_view(&self, p: V2) -> V2 {
@@ -48,10 +44,7 @@ impl Viewport {
         let x = x as f32;
         let y = y as f32;
         let s = s as f32;
-        V2::new(
-            (p.x - self.offset.x) / self.scale,
-            (p.y - self.offset.y) / self.scale,
-        )
+        V2::new((p.x - self.offset.x) / self.scale, (p.y - self.offset.y) / self.scale)
     }
 
     fn view_to_world(&self, p: V2) -> V2 {
@@ -59,10 +52,7 @@ impl Viewport {
         let x = x as f32;
         let y = y as f32;
         let s = s as f32;
-        V2::new(
-            (p.x) * self.scale + self.offset.x,
-            (p.y) * self.scale + self.offset.y,
-        )
+        V2::new((p.x) * self.scale + self.offset.x, (p.y) * self.scale + self.offset.y)
     }
 
     fn child(&mut self, i: u8, j: u8) {
@@ -76,9 +66,7 @@ impl Viewport {
 
 fn mk_texture<T>(canvas: &TextureCreator<T>, p: QuadTreePosition) -> Texture {
     let size = 256;
-    let mut texture = canvas
-        .create_texture_static(PixelFormatEnum::RGBA8888, size, size)
-        .unwrap();
+    let mut texture = canvas.create_texture_static(PixelFormatEnum::RGBA8888, size, size).unwrap();
     let mut pixels = vec![0; (size * size * 4) as usize];
     draw_tile(&mut pixels, p);
 
@@ -94,6 +82,7 @@ impl Default for State {
 
 impl State {
     pub fn unload(&mut self) {}
+
     pub fn reload(&mut self) {}
 
     pub fn new() -> State {
@@ -122,15 +111,13 @@ impl State {
             match event {
                 Event::Quit { .. } => {
                     quit = true;
-                }
-                Event::KeyDown {
-                    keycode: Some(key), ..
-                } => match key {
+                },
+                Event::KeyDown { keycode: Some(key), .. } => match key {
                     Keycode::Q => quit = true,
                     Keycode::C => down = true,
                     Keycode::R => {
                         self.textures.reduce_to(1);
-                    }
+                    },
                     Keycode::F => self.textures.clear(),
                     Keycode::Num0 => self.pos.parent(),
                     Keycode::Num1 => self.pos.child(0, 0),
@@ -140,19 +127,11 @@ impl State {
                     _ => (),
                 },
 
-                Event::MouseButtonDown {
-                    mouse_btn: MouseButton::Right,
-                    ..
-                } => {
+                Event::MouseButtonDown { mouse_btn: MouseButton::Right, .. } => {
                     self.pos.parent();
-                }
+                },
 
-                Event::MouseButtonDown {
-                    mouse_btn: MouseButton::Left,
-                    x,
-                    y,
-                    ..
-                } => {
+                Event::MouseButtonDown { mouse_btn: MouseButton::Left, x, y, .. } => {
                     /*
                     let sx = x as f32 / self.window_size.x as f32;
                     let sy = y as f32 / self.window_size.x as f32;
@@ -161,63 +140,57 @@ impl State {
                     let t = mk_texture(&self.sdl.canvas.texture_creator(), self.pos.node.clone());
                     self.textures.at(&self.pos.node.path).unwrap().value = Some(t);
                     */
-                }
+                },
 
                 Event::MouseWheel { y, .. } => {
                     self.zoom += 0.5 * (y as f32);
-                }
+                },
 
-                Event::Window {
-                    win_event: WindowEvent::Resized(x, y),
-                    ..
-                } => {
+                Event::Window { win_event: WindowEvent::Resized(x, y), .. } => {
                     self.window_size.x = (x as u32).max(1);
                     self.window_size.y = (y as u32).max(1);
-                }
+                },
 
-                _ => {}
+                _ => {},
             }
         }
 
         self.pos.offset += dt * self.input.dir_move * self.pos.scale;
 
         let p = self.screen_to_view(self.input.mouse);
-        self.pos.offset += self.pos.scale*p;
-        self.pos.scale  *= 1.0 + dt * self.input.dir_look.y * 1.0;
-        self.pos.offset -= self.pos.scale*p;
+        self.pos.offset += self.pos.scale * p;
+        self.pos.scale *= 1.0 + dt * self.input.dir_look.y * 1.0;
+        self.pos.offset -= self.pos.scale * p;
 
         println!("pos.scale:  {:?}", self.pos.scale);
         println!("pos.offset: {:?}", self.pos.offset);
 
-
-        /*
-        if down {
-            // TODO: make pretty
-            let z = self.zoom.floor() as i32 + 2;
-            let scale = 2.0_f32.powi(z as i32);
-
-            let m = Vector2::new(self.input.mouse.x as f32, self.input.mouse.y as f32);
-            let w = self.window_size.x as f32;
-            let zz = 2.0_f32.powf(self.zoom);
-
-            let px = ((m.x / w - 0.5) / zz + self.offset.x)*scale;
-            let py = ((m.y / w - 0.5) / zz + self.offset.y)*scale;
-
-            let p = QuadTreePosition {
-                x: px.floor() as u64,
-                y: py.floor() as u64,
-                z: z as u64,
-            };
-            if px >= 0.0 && py >= 0.0 && p.x <= p.dim() && p.y <= p.dim() {
-                println!("{:?}!", p);
-                if let None = self.textures.get_at(p) {
-                    let t = mk_texture(&self.sdl.canvas.texture_creator(), p);
-                    self.textures.insert_at(p, t);
-                    println!("does not exist!");
-                }
-            }
-        }
-        */
+        // if down {
+        // TODO: make pretty
+        // let z = self.zoom.floor() as i32 + 2;
+        // let scale = 2.0_f32.powi(z as i32);
+        //
+        // let m = Vector2::new(self.input.mouse.x as f32, self.input.mouse.y as f32);
+        // let w = self.window_size.x as f32;
+        // let zz = 2.0_f32.powf(self.zoom);
+        //
+        // let px = ((m.x / w - 0.5) / zz + self.offset.x)*scale;
+        // let py = ((m.y / w - 0.5) / zz + self.offset.y)*scale;
+        //
+        // let p = QuadTreePosition {
+        // x: px.floor() as u64,
+        // y: py.floor() as u64,
+        // z: z as u64,
+        // };
+        // if px >= 0.0 && py >= 0.0 && p.x <= p.dim() && p.y <= p.dim() {
+        // println!("{:?}!", p);
+        // if let None = self.textures.get_at(p) {
+        // let t = mk_texture(&self.sdl.canvas.texture_creator(), p);
+        // self.textures.insert_at(p, t);
+        // println!("does not exist!");
+        // }
+        // }
+        // }
 
         if down {
             for i in 0..=1 {
@@ -294,7 +267,7 @@ impl State {
         quit
     }
 
-   fn screen_to_view(&self, p: V2i) -> V2 {
+    fn screen_to_view(&self, p: V2i) -> V2 {
         V2::new(
             p.x as f32 / self.window_size.x as f32,
             1.0 - p.y as f32 / self.window_size.y as f32,

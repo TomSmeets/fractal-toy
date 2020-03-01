@@ -11,26 +11,18 @@ pub struct Input {
 
 impl Input {
     pub fn new() -> Self {
-        Input {
-            mouse: V2i::zero(),
-            dir_move: V2::zero(),
-            dir_look: V2::zero(),
-        }
+        Input { mouse: V2i::zero(), dir_move: V2::zero(), dir_look: V2::zero() }
     }
 
     pub fn handle_sdl(&mut self, e: &Event) {
         match e {
-            Event::KeyUp {
-                keycode: Some(key), ..
-            } => self.handle_sdl_key(*key, false),
-            Event::KeyDown {
-                keycode: Some(key), ..
-            } => self.handle_sdl_key(*key, true),
+            Event::KeyUp { keycode: Some(key), .. } => self.handle_sdl_key(*key, false),
+            Event::KeyDown { keycode: Some(key), .. } => self.handle_sdl_key(*key, true),
             Event::MouseMotion { x, y, .. } => {
                 self.mouse.x = *x as i32;
                 self.mouse.y = *y as i32;
-            }
-            _ => {}
+            },
+            _ => {},
         }
     }
 
@@ -48,7 +40,7 @@ impl Input {
             Keycode::K => self.dir_look.y = -v,
             Keycode::L => self.dir_look.x = v,
             Keycode::J => self.dir_look.x = -v,
-            _ => {}
+            _ => {},
         }
     }
 }
