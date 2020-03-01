@@ -5,9 +5,27 @@ fn main() {
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
     event_loop.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Wait;
+        *control_flow = ControlFlow::Poll;
 
         match event {
+            Event::DeviceEvent { device_id, event } => {
+                println!("Device[{:?}] = {:#?}", device_id, event);
+            }
+
+            Event::WindowEvent {
+                event:
+                    WindowEvent::KeyboardInput {
+                        input:
+                            KeyboardInput {
+                                virtual_keycode: Some(VirtualKeyCode::Q),
+                                state: ElementState::Pressed,
+                                ..
+                            },
+                        ..
+                    },
+                ..
+            } => *control_flow = ControlFlow::Exit,
+
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 window_id,
