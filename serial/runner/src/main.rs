@@ -21,7 +21,11 @@ impl ReloadLib {
             let f_init = lib.get(b"prog_init").unwrap();
             let f_update = lib.get(b"prog_update").unwrap();
 
-            ReloadLib { f_init, f_update, lib }
+            ReloadLib {
+                f_init,
+                f_update,
+                lib,
+            }
         }
     }
 

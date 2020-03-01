@@ -12,6 +12,11 @@ use crate::quadtree::pos::*;
 use crate::quadtree::*;
 use crate::sdl::*;
 
+enum DragState {
+    None,
+    From(V2),
+}
+
 // TODO: implemnt save and load, this will handle some types that dont work with reload.
 // For example the btreemap
 pub struct State {
@@ -21,8 +26,7 @@ pub struct State {
 
     pos: Viewport,
 
-    offset: Vector2<f32>,
-    zoom: f32,
+    drag: DragState,
 
     window_size: Vector2<u32>,
 }
@@ -36,7 +40,11 @@ struct Viewport {
 
 impl Viewport {
     fn new() -> Self {
-        Viewport { node: QuadTreePosition::root(), scale: 1., offset: V2::zero() }
+        Viewport {
+            node: QuadTreePosition::root(),
+            scale: 1.,
+            offset: V2::zero(),
+        }
     }
 
     fn world_to_view(&self, p: V2) -> V2 {
@@ -44,7 +52,10 @@ impl Viewport {
         let x = x as f32;
         let y = y as f32;
         let s = s as f32;
-        V2::new((p.x - self.offset.x) / self.scale, (p.y - self.offset.y) / self.scale)
+        V2::new(
+            (p.x - self.offset.x) / self.scale,
+            (p.y - self.offset.y) / self.scale,
+        )
     }
 
     fn view_to_world(&self, p: V2) -> V2 {
@@ -52,7 +63,10 @@ impl Viewport {
         let x = x as f32;
         let y = y as f32;
         let s = s as f32;
-        V2::new((p.x) * self.scale + self.offset.x, (p.y) * self.scale + self.offset.y)
+        V2::new(
+            (p.x) * self.scale + self.offset.x,
+            (p.y) * self.scale + self.offset.y,
+        )
     }
 
     fn child(&mut self, i: u8, j: u8) {
@@ -62,11 +76,23 @@ impl Viewport {
     fn parent(&mut self) {
         self.node.parent();
     }
+
+    fn translate(&mut self, offset: V2) {
+        self.offset += offset * self.scale;
+    }
+
+    fn zoom_in(&mut self, amount: f32, view_pos: V2) {
+        self.offset += self.scale * view_pos;
+        self.scale *= 1.0 + amount;
+        self.offset -= self.scale * view_pos;
+    }
 }
 
 fn mk_texture<T>(canvas: &TextureCreator<T>, p: QuadTreePosition) -> Texture {
     let size = 256;
-    let mut texture = canvas.create_texture_static(PixelFormatEnum::RGBA8888, size, size).unwrap();
+    let mut texture = canvas
+        .create_texture_static(PixelFormatEnum::RGBA8888, size, size)
+        .unwrap();
     let mut pixels = vec![0; (size * size * 4) as usize];
     draw_tile(&mut pixels, p);
 
@@ -94,10 +120,23 @@ impl State {
             pos: Viewport::new(),
             input: Input::new(),
             textures: QuadTree::new(),
-            offset: Vector2::zero(),
-            zoom: 1.0,
+            drag: DragState::None,
             window_size: Vector2::new(800, 600),
         }
+    }
+
+    fn info(&self) {
+        let mouse_view = self.screen_to_view(self.input.mouse);
+        let mouse_world = self.pos.view_to_world(mouse_view);
+        let mouse_view = self.pos.world_to_view(mouse_world);
+        let mouse_screen = self.view_to_screen(mouse_view);
+        println!(
+            "screen  {:6.2} {:6.2}",
+            self.input.mouse.x, self.input.mouse.y
+        );
+        println!("view    {:6.2} {:6.2}", mouse_view.x, mouse_view.y);
+        println!("world   {:6.2} {:6.2}", mouse_world.x, mouse_world.y);
+        println!("screen2 {:6.2} {:6.2}", mouse_screen.x, mouse_screen.y);
     }
 
     pub fn update(&mut self) -> bool {
@@ -106,15 +145,21 @@ impl State {
         let dt = 1.0 / 60.0;
 
         let mut down = false;
-        for event in self.sdl.event.poll_iter() {
+
+        self.input.begin();
+        let events: Vec<_> = self.sdl.event.poll_iter().collect();
+        for event in events {
             self.input.handle_sdl(&event);
             match event {
                 Event::Quit { .. } => {
                     quit = true;
                 },
-                Event::KeyDown { keycode: Some(key), .. } => match key {
+                Event::KeyDown {
+                    keycode: Some(key), ..
+                } => match key {
                     Keycode::Q => quit = true,
                     Keycode::C => down = true,
+                    Keycode::Tab => self.info(),
                     Keycode::R => {
                         self.textures.reduce_to(1);
                     },
@@ -127,11 +172,19 @@ impl State {
                     _ => (),
                 },
 
-                Event::MouseButtonDown { mouse_btn: MouseButton::Right, .. } => {
+                Event::MouseButtonDown {
+                    mouse_btn: MouseButton::Right,
+                    ..
+                } => {
                     self.pos.parent();
                 },
 
-                Event::MouseButtonDown { mouse_btn: MouseButton::Left, x, y, .. } => {
+                Event::MouseButtonDown {
+                    mouse_btn: MouseButton::Left,
+                    x,
+                    y,
+                    ..
+                } => {
                     /*
                     let sx = x as f32 / self.window_size.x as f32;
                     let sy = y as f32 / self.window_size.x as f32;
@@ -142,11 +195,10 @@ impl State {
                     */
                 },
 
-                Event::MouseWheel { y, .. } => {
-                    self.zoom += 0.5 * (y as f32);
-                },
-
-                Event::Window { win_event: WindowEvent::Resized(x, y), .. } => {
+                Event::Window {
+                    win_event: WindowEvent::Resized(x, y),
+                    ..
+                } => {
                     self.window_size.x = (x as u32).max(1);
                     self.window_size.y = (y as u32).max(1);
                 },
@@ -155,15 +207,26 @@ impl State {
             }
         }
 
-        self.pos.offset += dt * self.input.dir_move * self.pos.scale;
+        // println!("pos.scale:  {:?}", self.pos.scale);
+        // println!("pos.offset: {:?}", self.pos.offset);
 
-        let p = self.screen_to_view(self.input.mouse);
-        self.pos.offset += self.pos.scale * p;
-        self.pos.scale *= 1.0 + dt * self.input.dir_look.y * 1.0;
-        self.pos.offset -= self.pos.scale * p;
+        let mouse_in_view = self.screen_to_view(self.input.mouse);
+        self.pos
+            .zoom_in(-0.1 * self.input.scroll as f32, mouse_in_view);
 
-        println!("pos.scale:  {:?}", self.pos.scale);
-        println!("pos.offset: {:?}", self.pos.offset);
+        self.pos.translate(dt * self.input.dir_move);
+        self.pos
+            .zoom_in(dt * self.input.dir_look.y, V2::new(0.5, 0.5));
+
+        if let DragState::From(p1) = self.drag {
+            self.pos.translate(p1 - mouse_in_view);
+        }
+
+        self.drag = if self.input.mouse_down {
+            DragState::From(mouse_in_view)
+        } else {
+            DragState::None
+        };
 
         // if down {
         // TODO: make pretty
@@ -208,8 +271,6 @@ impl State {
         self.sdl.canvas.set_draw_color(Color::RGB(32, 32, 32));
         self.sdl.canvas.clear();
 
-        println!("6");
-
         for (p, v) in &vs {
             let (x, y, z) = p.float_top_left_with_size();
             let w = self.window_size.x as f32;
@@ -234,14 +295,10 @@ impl State {
             let w = 20;
 
             let mouse_view = self.screen_to_view(self.input.mouse);
-            println!("view   {:6.2} {:6.2}", mouse_view.x, mouse_view.y);
             let mouse_world = self.pos.view_to_world(mouse_view);
             let mouse_view = self.pos.world_to_view(mouse_world);
             let mouse_screen = self.view_to_screen(mouse_view);
 
-            println!("screen {:6.2} {:6.2}", mouse_screen.x, mouse_screen.y);
-            println!("view   {:6.2} {:6.2}", mouse_view.x, mouse_view.y);
-            println!("world  {:6.2} {:6.2}", mouse_world.x, mouse_world.y);
             self.sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
             self.sdl
                 .canvas

@@ -9,7 +9,10 @@ pub struct QuadTree<T> {
 
 impl<T> QuadTree<T> {
     pub fn new() -> Self {
-        QuadTree { value: None, nodes: None }
+        QuadTree {
+            value: None,
+            nodes: None,
+        }
     }
 
     pub fn reduce_to(&mut self, level: i32) {
@@ -44,7 +47,12 @@ impl<T> QuadTree<T> {
 
     pub fn children_or_make(&mut self) -> &mut [Self; 4] {
         self.nodes.get_or_insert_with(|| {
-            Box::new([QuadTree::new(), QuadTree::new(), QuadTree::new(), QuadTree::new()])
+            Box::new([
+                QuadTree::new(),
+                QuadTree::new(),
+                QuadTree::new(),
+                QuadTree::new(),
+            ])
         })
     }
 
