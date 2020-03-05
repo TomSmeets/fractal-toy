@@ -9,6 +9,9 @@
         stdenv.cc
         binutils-unwrapped
         rustup
+        pkgconfig
+        cmake
+        m4
     ];
 
     libs = with pkgs; [
@@ -17,6 +20,8 @@
         xorg.libXcursor
         xorg.libXrandr
         xorg.libXi
+        xorg.libxcb
+        xorg.xorgproto
     ];
 
     env = writeScript "env.sh" ''
@@ -25,6 +30,7 @@
         export LD_LIBRARY_PATH=${lib.makeLibraryPath libs}
         export RUSTFLAGS='${lib.concatMapStringsSep " " (x: "-L " + x + "/lib/") libs}'
         export PATH="${lib.makeBinPath path}:$PATH"
+        export PKG_CONFIG_PATH='${lib.concatMapStringsSep ":" (x: (x.dev or x) + "/share/pkgconfig:" + (x.dev or x) + "/lib/pkgconfig") libs}'
         exec ${pkgs.bashInteractive}/bin/bash
     '';
 }
