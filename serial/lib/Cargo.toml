@@ -17,6 +17,7 @@ num        = "0.2"
 cgmath     = "0.17"
 rand       = "0.7"
 palette    = "0.5.0"
+rug 	   = "1.7.0"
 
 
 
