@@ -1,9 +1,32 @@
-[workspace]
-members = [
-  "lib",
-  "linux",
-  "runner",
-]
+[package]
+name = "serial"
+version = "0.1.0"
+authors = ["TomSmeets <tom@tsmeets.nl>"]
+edition = "2018"
+default-run = "linux"
+
+[lib]
+path = "src/lib.rs"
+crate_type = [ "lib", "cdylib"]
+
+[features]
+default = [ "dynamic" ]
+dynamic = [ "libloading" ]
+
+[dependencies]
+serde      = { version =  "1.0", features = ["derive"] }
+serde_json = "1.0"
+bincode    = "1.0"
+sdl2       = { version = "0.33", features = [ "unsafe_textures" ] }
+num        = "0.2"
+cgmath     = "0.17"
+rand       = "0.7"
+palette    = "0.5.0"
+rug 	   = "1.7.0"
+libloading = { version = "0.5", optional = true }
+
+# winit      = "0.21"
+# glx-hal (or gfx?)
 
 [profile.release]
 lto = true
