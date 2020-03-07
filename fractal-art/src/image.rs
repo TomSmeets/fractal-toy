@@ -1,7 +1,3 @@
-use std::fs::File;
-use std::io::BufWriter;
-use std::path::Path;
-
 use image::bmp::BMPEncoder;
 use image::ColorType;
 use rand::prelude::*;
@@ -67,10 +63,11 @@ impl Image {
         }
     }
 
-    pub fn generate(&mut self, gen: &mut impl Rng) {
+    pub fn generate(&mut self, gen: &mut impl Rng, (cx, cy): (u32, u32)) -> Result<(), String> {
+        let cx = cx as i32;
+        let cy = cy as i32;
+
         // center
-        let cx = gen.gen_range(0, self.width as i32);
-        let cy = gen.gen_range(0, self.height as i32);
         let ring_count = *[cx, cy, self.width as i32 - cx, self.height as i32 - cy]
             .iter()
             .max()
@@ -83,7 +80,7 @@ impl Image {
 
             let l = (r * r + g * g + b * b).sqrt();
 
-            let p = self.at_mut(cx, cy).unwrap();
+            let p = self.at_mut(cx, cy).expect("Center point is out of range!");
             *p = Some(Color {
                 r: r / l,
                 g: g / l,
@@ -96,7 +93,7 @@ impl Image {
             {
                 let p = r * 100 / ring_count;
                 if p != p_old {
-                    println!("progress: {}%", p);
+                    eprintln!("progress: {}%", p);
                     p_old = p;
                 }
             }
@@ -123,12 +120,10 @@ impl Image {
                 *px = Some(c.mutate(gen));
             }
         }
+        Ok(())
     }
 
-    pub fn save(&self, path: &Path) {
-        let file = File::create(path).unwrap();
-        let mut w = BufWriter::new(file);
-
+    pub fn save(&self, writer: &mut impl std::io::Write) {
         let mut data = Vec::with_capacity(self.data.len() * 3);
         for c in self.data.iter() {
             fn to_u8(x: f32) -> u8 {
@@ -155,7 +150,7 @@ impl Image {
             data.push(to_u8(c.b));
         }
 
-        let mut enc = BMPEncoder::new(&mut w);
+        let mut enc = BMPEncoder::new(writer);
         enc.encode(&data, self.width, self.height, ColorType::Rgb8)
             .unwrap();
     }
