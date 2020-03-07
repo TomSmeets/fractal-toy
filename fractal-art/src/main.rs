@@ -17,7 +17,7 @@ struct Color {
 
 impl Color {
     fn mutate(&self) -> Self {
-        let l = 0.008;
+        let l = 0.0081;
         let mut c = self.clone();
         c.r += rand::random::<f32>() * 2.0 * l - l;
         c.g += rand::random::<f32>() * 2.0 * l - l;
@@ -92,7 +92,7 @@ impl Image {
         // center
         let cx = (self.width / 2) as i32;
         let cy = (self.height / 2) as i32;
-        let ring_count = (self.width / 2) as i32;
+        let ring_count = *[ cx, cy, self.width as i32 - cx, self.height as i32 - cy ].iter().max().unwrap_or(&0);
 
         {
             let p = self.at_mut(cx, cy).unwrap();
@@ -166,9 +166,15 @@ impl Image {
     }
 }
 
+#[test]
+fn test_bench() {
+    let mut img = Image::new(2048, 2048);
+    img.generate();
+}
+
 fn main() {
     println!("Creating image");
-    let mut img = Image::new(1920, 1080);
+    let mut img = Image::new(64, 64);
     println!("generating...");
     img.generate();
     println!("Saving...");
