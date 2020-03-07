@@ -5,6 +5,7 @@ use std::path::Path;
 use image::bmp::BMPEncoder;
 use image::ColorType;
 use rand::prelude::*;
+use rand::rngs::SmallRng;
 
 // TODO: use image crate instad of png, and save as bmp
 
@@ -16,12 +17,12 @@ struct Color {
 }
 
 impl Color {
-    fn mutate(&self) -> Self {
+    fn mutate(&self, gen: &mut impl Rng) -> Self {
         let l = 0.0081;
         let mut c = self.clone();
-        c.r += rand::random::<f32>() * 2.0 * l - l;
-        c.g += rand::random::<f32>() * 2.0 * l - l;
-        c.b += rand::random::<f32>() * 2.0 * l - l;
+        c.r += gen.gen::<f32>() * 2.0 * l - l;
+        c.g += gen.gen::<f32>() * 2.0 * l - l;
+        c.b += gen.gen::<f32>() * 2.0 * l - l;
 
         fn clamp(x: &mut f32) {
             if *x > 1.0 {
@@ -44,7 +45,7 @@ struct Image {
     data: Vec<Option<Color>>,
 }
 
-fn around(i: i32, j: i32, r: i32) -> Vec<(i32, i32)> {
+fn around(i: i32, j: i32, r: i32, gen: &mut impl Rng) -> Vec<(i32, i32)> {
     let mut xs = Vec::new();
 
     for o in -r..=r {
@@ -56,8 +57,7 @@ fn around(i: i32, j: i32, r: i32) -> Vec<(i32, i32)> {
 
     // TODO: Shuffle
 
-    let mut rng = rand::thread_rng();
-    xs.shuffle(&mut rng);
+    xs.shuffle(gen);
     xs
 }
 
@@ -89,10 +89,15 @@ impl Image {
     }
 
     fn generate(&mut self) {
+        let mut gen = SmallRng::from_rng(thread_rng()).unwrap();
+
         // center
         let cx = (self.width / 2) as i32;
         let cy = (self.height / 2) as i32;
-        let ring_count = *[ cx, cy, self.width as i32 - cx, self.height as i32 - cy ].iter().max().unwrap_or(&0);
+        let ring_count = *[cx, cy, self.width as i32 - cx, self.height as i32 - cy]
+            .iter()
+            .max()
+            .unwrap_or(&0);
 
         {
             let p = self.at_mut(cx, cy).unwrap();
@@ -105,10 +110,10 @@ impl Image {
 
         for r in 1..ring_count {
             println!("i = {}", r);
-            let vs = around(cx, cy, r);
+            let vs = around(cx, cy, r, &mut gen);
             for (x, y) in vs {
                 let mut c: Option<Color> = None;
-                for (x, y) in around(x, y, 1) {
+                for (x, y) in around(x, y, 1, &mut gen) {
                     if let Some(Some(px)) = self.at(x, y) {
                         c = Some(px);
                         break;
@@ -125,7 +130,7 @@ impl Image {
                     None => continue,
                 };
 
-                *px = Some(c.mutate());
+                *px = Some(c.mutate(&mut gen));
             }
         }
     }
@@ -168,13 +173,13 @@ impl Image {
 
 #[test]
 fn test_bench() {
-    let mut img = Image::new(2048, 2048);
+    let mut img = Image::new(512, 512);
     img.generate();
 }
 
 fn main() {
     println!("Creating image");
-    let mut img = Image::new(64, 64);
+    let mut img = Image::new(2048, 2048);
     println!("generating...");
     img.generate();
     println!("Saving...");
