@@ -18,7 +18,7 @@ struct Color {
 
 impl Color {
     fn mutate(&self, gen: &mut impl Rng) -> Self {
-        let l = 0.0081;
+        let l = 0.0082;
         let mut c = self.clone();
         c.r += gen.gen::<f32>() * 2.0 * l - l;
         c.g += gen.gen::<f32>() * 2.0 * l - l;
@@ -92,24 +92,38 @@ impl Image {
         let mut gen = SmallRng::from_rng(thread_rng()).unwrap();
 
         // center
-        let cx = (self.width / 2) as i32;
-        let cy = (self.height / 2) as i32;
+        let cx = gen.gen_range(0, self.width as i32);
+        let cy = gen.gen_range(0, self.height as i32);
         let ring_count = *[cx, cy, self.width as i32 - cx, self.height as i32 - cy]
             .iter()
             .max()
             .unwrap_or(&0);
 
         {
+            let r = gen.gen::<f32>();
+            let g = gen.gen::<f32>();
+            let b = gen.gen::<f32>();
+
+            let l = (r*r + g*g + b*b).sqrt();
+
             let p = self.at_mut(cx, cy).unwrap();
             *p = Some(Color {
-                r: 1.0,
-                g: 0.0,
-                b: 0.0,
+                r: r / l,
+                g: g / l,
+                b: b / l,
             });
+
         }
 
+		let mut p_old = 0;
         for r in 1..ring_count {
-            println!("i = {}", r);
+            {
+                let p = r * 100 / ring_count;
+                if p != p_old {
+                    println!("progress: {}%", p);
+                    p_old = p;
+                }
+            }
             let vs = around(cx, cy, r, &mut gen);
             for (x, y) in vs {
                 let mut c: Option<Color> = None;
@@ -137,7 +151,7 @@ impl Image {
 
     fn save(&self, path: &Path) {
         let file = File::create(path).unwrap();
-        let ref mut w = BufWriter::new(file);
+        let mut w = BufWriter::new(file);
 
         let mut data = Vec::with_capacity(self.data.len() * 3);
         for c in self.data.iter() {
@@ -165,21 +179,24 @@ impl Image {
             data.push(to_u8(c.b));
         }
 
-        let mut enc = BMPEncoder::new(w);
+        let mut enc = BMPEncoder::new(&mut w);
         enc.encode(&data, self.width, self.height, ColorType::Rgb8)
             .unwrap();
     }
 }
 
-#[test]
-fn test_bench() {
-    let mut img = Image::new(512, 512);
-    img.generate();
+fn x11_resolution() -> (u32, u32) {
+    let (conn, screen_num) = xcb::Connection::connect(None).unwrap();
+    let setup = conn.get_setup();
+    let screen = setup.roots().nth(screen_num as usize).unwrap();
+    (screen.width_in_pixels() as u32, screen.height_in_pixels() as u32)
 }
 
 fn main() {
+    let res = x11_resolution();
+    println!("resolution: {} x {}", res.0, res.1);
     println!("Creating image");
-    let mut img = Image::new(2048, 2048);
+    let mut img = Image::new(res.0, res.1);
     println!("generating...");
     img.generate();
     println!("Saving...");

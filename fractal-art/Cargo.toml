@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 image = "0.23"
 rand  = { version = "0.7", features = [ "small_rng" ] }
+xcb   = "0.9.0"
 
 
 [profile.release]
