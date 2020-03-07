@@ -7,8 +7,6 @@ use image::ColorType;
 use rand::prelude::*;
 use rand::rngs::SmallRng;
 
-// TODO: use image crate instad of png, and save as bmp
-
 #[derive(Clone)]
 struct Color {
     pub r: f32,
@@ -225,5 +223,5 @@ fn main() {
     println!("generating...");
     img.generate(&mut gen);
     println!("Saving...");
-    img.save(Path::new("target/out.png"));
+    img.save(Path::new("target/out.bmp"));
 }
