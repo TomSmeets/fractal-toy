@@ -45,22 +45,6 @@ struct Image {
     data: Vec<Option<Color>>,
 }
 
-fn around(i: i32, j: i32, r: i32, gen: &mut impl Rng) -> Vec<(i32, i32)> {
-    let mut xs = Vec::new();
-
-    for o in -r..=r {
-        xs.push((i + o, j + r));
-        xs.push((i + o, j - r));
-        xs.push((i + r, j + o));
-        xs.push((i - r, j + o));
-    }
-
-    // TODO: Shuffle
-
-    xs.shuffle(gen);
-    xs
-}
-
 impl Image {
     fn new(width: u32, height: u32) -> Self {
         Image {
@@ -70,8 +54,34 @@ impl Image {
         }
     }
 
+    fn check(&self, x: i32, y: i32) -> bool {
+        x >= 0 && y >= 0 && x < self.width as i32 && y < self.height as i32
+    }
+
+    fn around(&self, i: i32, j: i32, r: i32, gen: &mut impl Rng) -> Vec<(i32, i32)> {
+        let mut xs = Vec::new();
+
+        let put = |xs: &mut Vec<(i32, i32)>, x, y| {
+            if self.check(x, y) {
+                xs.push((x, y));
+            }
+        };
+
+        for o in -r..=r {
+            put(&mut xs, i + o, j + r);
+            put(&mut xs, i + o, j - r);
+            put(&mut xs, i + r, j + o);
+            put(&mut xs, i - r, j + o);
+        }
+
+        // TODO: Shuffle
+
+        xs.shuffle(gen);
+        xs
+    }
+
     fn at_mut(&mut self, x: i32, y: i32) -> Option<&mut Option<Color>> {
-        if x < 0 || y < 0 || x >= self.width as i32 || y >= self.height as i32 {
+        if !self.check(x, y) {
             None
         } else {
             let i = (y as u32 * self.width + x as u32) as usize;
@@ -80,7 +90,7 @@ impl Image {
     }
 
     fn at(&self, x: i32, y: i32) -> Option<Option<Color>> {
-        if x < 0 || y < 0 || x >= self.width as i32 || y >= self.height as i32 {
+        if !self.check(x, y) {
             None
         } else {
             let i = (y as u32 * self.width + x as u32) as usize;
@@ -88,9 +98,7 @@ impl Image {
         }
     }
 
-    fn generate(&mut self) {
-        let mut gen = SmallRng::from_rng(thread_rng()).unwrap();
-
+    fn generate(&mut self, gen: &mut impl Rng) {
         // center
         let cx = gen.gen_range(0, self.width as i32);
         let cy = gen.gen_range(0, self.height as i32);
@@ -104,7 +112,7 @@ impl Image {
             let g = gen.gen::<f32>();
             let b = gen.gen::<f32>();
 
-            let l = (r*r + g*g + b*b).sqrt();
+            let l = (r * r + g * g + b * b).sqrt();
 
             let p = self.at_mut(cx, cy).unwrap();
             *p = Some(Color {
@@ -112,10 +120,9 @@ impl Image {
                 g: g / l,
                 b: b / l,
             });
-
         }
 
-		let mut p_old = 0;
+        let mut p_old = 0;
         for r in 1..ring_count {
             {
                 let p = r * 100 / ring_count;
@@ -124,10 +131,10 @@ impl Image {
                     p_old = p;
                 }
             }
-            let vs = around(cx, cy, r, &mut gen);
+            let vs = self.around(cx, cy, r, gen);
             for (x, y) in vs {
                 let mut c: Option<Color> = None;
-                for (x, y) in around(x, y, 1, &mut gen) {
+                for (x, y) in self.around(x, y, 1, gen) {
                     if let Some(Some(px)) = self.at(x, y) {
                         c = Some(px);
                         break;
@@ -144,7 +151,7 @@ impl Image {
                     None => continue,
                 };
 
-                *px = Some(c.mutate(&mut gen));
+                *px = Some(c.mutate(gen));
             }
         }
     }
@@ -189,16 +196,34 @@ fn x11_resolution() -> (u32, u32) {
     let (conn, screen_num) = xcb::Connection::connect(None).unwrap();
     let setup = conn.get_setup();
     let screen = setup.roots().nth(screen_num as usize).unwrap();
-    (screen.width_in_pixels() as u32, screen.height_in_pixels() as u32)
+    (
+        screen.width_in_pixels() as u32,
+        screen.height_in_pixels() as u32,
+    )
+}
+
+#[test]
+fn test_small_image() {
+    let mut gen = SmallRng::seed_from_u64(0);
+    let mut img = Image::new(64, 64);
+    img.generate(&mut gen);
+}
+
+#[test]
+fn test_1x1() {
+    let mut gen = SmallRng::seed_from_u64(0);
+    let mut img = Image::new(1, 1);
+    img.generate(&mut gen);
 }
 
 fn main() {
+    let mut gen = SmallRng::seed_from_u64(1);
     let res = x11_resolution();
     println!("resolution: {} x {}", res.0, res.1);
     println!("Creating image");
     let mut img = Image::new(res.0, res.1);
     println!("generating...");
-    img.generate();
+    img.generate(&mut gen);
     println!("Saving...");
-    img.save(Path::new("out.png"));
+    img.save(Path::new("target/out.png"));
 }
