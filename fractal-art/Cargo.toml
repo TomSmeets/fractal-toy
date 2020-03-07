@@ -1,5 +1,5 @@
 [package]
-name = "fractal-art"
+name = "fractal_art"
 version = "0.1.0"
 authors = ["TomSmeets <tom@tsmeets.nl>"]
 edition = "2018"
@@ -10,6 +10,7 @@ edition = "2018"
 image = "0.23"
 rand  = { version = "0.7", features = [ "small_rng" ] }
 xcb   = "0.9.0"
+clap  = "2.33.0"
 
 
 [profile.release]
