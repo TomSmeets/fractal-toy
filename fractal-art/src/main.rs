@@ -1,45 +1,48 @@
 use std::fs::File;
 use std::io::BufWriter;
-use std::mem;
 use std::path::Path;
 
+use image::bmp::BMPEncoder;
+use image::ColorType;
 use rand::prelude::*;
 
 // TODO: use image crate instad of png, and save as bmp
 
 #[derive(Clone)]
-#[repr(packed)]
 struct Color {
-    pub data: [u8; 3],
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
 }
 
 impl Color {
-    fn mutate(&self, l: i32) -> Self {
-        let mut r = self.data[0] as i32;
-        let mut g = self.data[1] as i32;
-        let mut b = self.data[2] as i32;
+    fn mutate(&self) -> Self {
+        let l = 0.008;
+        let mut c = self.clone();
+        c.r += rand::random::<f32>() * 2.0 * l - l;
+        c.g += rand::random::<f32>() * 2.0 * l - l;
+        c.b += rand::random::<f32>() * 2.0 * l - l;
 
-		let l = 2.5 as f32;
-        r += (rand::random::<f32>() * 2.0 * l - l) as i32;
-        g += (rand::random::<f32>() * 2.0 * l - l) as i32;
-        b += (rand::random::<f32>() * 2.0 * l - l) as i32;
+        fn clamp(x: &mut f32) {
+            if *x > 1.0 {
+                *x = 1.0;
+            } else if *x < 0.0 {
+                *x = 0.0;
+            };
+        }
 
-        if r > 255 { r = 255; }
-        if r < 0   { r = 0;   }
-        if g > 255 { g = 255; }
-        if g < 0   { g = 0;   }
-        if b > 255 { b = 255; }
-        if b < 0   { b = 0;   }
-        Color { data : [r as u8, g as u8, b as u8] }
+        clamp(&mut c.r);
+        clamp(&mut c.g);
+        clamp(&mut c.b);
+        c
     }
 }
 
 struct Image {
     width: u32,
     height: u32,
-    data: Vec<u8>,
+    data: Vec<Option<Color>>,
 }
-
 
 fn around(i: i32, j: i32, r: i32) -> Vec<(i32, i32)> {
     let mut xs = Vec::new();
@@ -63,30 +66,25 @@ impl Image {
         Image {
             width,
             height,
-            data: vec![0; (width * height * 3) as usize],
+            data: vec![None; (width * height) as usize],
         }
     }
 
-    fn at_mut(&mut self, x: i32, y: i32) -> Option<&mut Color> {
+    fn at_mut(&mut self, x: i32, y: i32) -> Option<&mut Option<Color>> {
         if x < 0 || y < 0 || x >= self.width as i32 || y >= self.height as i32 {
             None
         } else {
             let i = (y as u32 * self.width + x as u32) as usize;
-            let cs = (&mut self.data[i * 3..(i + 1) * 3]).as_ptr() as *mut [u8; 3];
-            unsafe { Some(mem::transmute(cs)) }
+            Some(&mut self.data[i])
         }
     }
 
-    fn at(&self, x: i32, y: i32) -> Option<Color> {
+    fn at(&self, x: i32, y: i32) -> Option<Option<Color>> {
         if x < 0 || y < 0 || x >= self.width as i32 || y >= self.height as i32 {
             None
         } else {
             let i = (y as u32 * self.width + x as u32) as usize;
-            let cs = (&self.data[i * 3..(i + 1) * 3]).as_ptr() as *mut [u8; 3];
-            unsafe {
-                let c: &Color = mem::transmute(cs);
-                Some(c.clone())
-            }
+            Some(self.data[i].clone())
         }
     }
 
@@ -98,24 +96,22 @@ impl Image {
 
         {
             let p = self.at_mut(cx, cy).unwrap();
-            p.data[0] = 255;
-            p.data[1] = 0;
-            p.data[2] = 0;
+            *p = Some(Color {
+                r: 1.0,
+                g: 0.0,
+                b: 0.0,
+            });
         }
-
 
         for r in 1..ring_count {
             println!("i = {}", r);
             let vs = around(cx, cy, r);
             for (x, y) in vs {
                 let mut c: Option<Color> = None;
-                let vs = around(x, y, 1);
-                for (x, y) in vs {
-                    if let Some(px) = self.at(x, y) {
-                        if px.data[0] != 0 {
-                            c = Some(px);
-                            break;
-                        }
+                for (x, y) in around(x, y, 1) {
+                    if let Some(Some(px)) = self.at(x, y) {
+                        c = Some(px);
+                        break;
                     }
                 }
 
@@ -129,7 +125,7 @@ impl Image {
                     None => continue,
                 };
 
-                *px = c.mutate(r*4);
+                *px = Some(c.mutate());
             }
         }
     }
@@ -138,12 +134,35 @@ impl Image {
         let file = File::create(path).unwrap();
         let ref mut w = BufWriter::new(file);
 
-        let mut encoder = png::Encoder::new(w, self.width, self.height); // Width is 2 pixels and height is 1.
-        encoder.set_compression(png::Compression::Fast);
-        encoder.set_color(png::ColorType::RGB);
-        encoder.set_depth(png::BitDepth::Eight);
-        let mut writer = encoder.write_header().unwrap();
-        writer.write_image_data(&self.data).unwrap(); // Save
+        let mut data = Vec::with_capacity(self.data.len() * 3);
+        for c in self.data.iter() {
+            fn to_u8(x: f32) -> u8 {
+                if x < 0.0 {
+                    return 0;
+                }
+                if x > 1.0 {
+                    return 255;
+                }
+                (x * 255.0) as u8
+            }
+
+            let c_default = Color {
+                r: 0.0,
+                g: 0.0,
+                b: 0.0,
+            };
+            let c = match c {
+                Some(x) => &x,
+                None => &c_default,
+            };
+            data.push(to_u8(c.r));
+            data.push(to_u8(c.g));
+            data.push(to_u8(c.b));
+        }
+
+        let mut enc = BMPEncoder::new(w);
+        enc.encode(&data, self.width, self.height, ColorType::Rgb8)
+            .unwrap();
     }
 }
 
