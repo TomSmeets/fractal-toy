@@ -5,7 +5,7 @@ use std::path::PathBuf;
 fn test_small_image() {
     let mut cfg = Config::new();
     cfg.seed = Some(0);
-    cfg.resolution = Some((64, 64));
+    cfg.size = Some((64, 64));
     run(&cfg);
 }
 
@@ -13,7 +13,7 @@ fn test_small_image() {
 fn test_1x1() {
     let mut cfg = Config::new();
     cfg.seed = Some(0);
-    cfg.resolution = Some((1, 1));
+    cfg.size = Some((1, 1));
     run(&cfg);
 }
 
