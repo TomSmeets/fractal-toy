@@ -1,8 +1,10 @@
 [package]
-name = "fractal_art"
+name = "fractal-art"
 version = "0.1.0"
 authors = ["TomSmeets <tom@tsmeets.nl>"]
 edition = "2018"
+description = "This program generates colorful Wallpapers."
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -12,8 +14,5 @@ rand  = { version = "0.7", features = [ "small_rng" ] }
 xcb   = "0.9.0"
 structopt = "0.3.11"
 
-
 [profile.release]
-lto = true
-codegen-units = 1
 panic = 'abort'
