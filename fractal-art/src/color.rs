@@ -9,7 +9,7 @@ pub struct Color {
 
 impl Color {
     pub fn mutate(&self, gen: &mut impl Rng) -> Self {
-        let l = 0.0082;
+        let l = 0.0060;
         let mut c = self.clone();
         c.r += gen.gen::<f32>() * 2.0 * l - l;
         c.g += gen.gen::<f32>() * 2.0 * l - l;
