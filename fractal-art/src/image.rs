@@ -78,7 +78,7 @@ impl Image {
             let g = gen.gen::<f32>();
             let b = gen.gen::<f32>();
 
-            let l = (r * r + g * g + b * b).sqrt();
+            let l = (0.299 * r * r + 0.587 * g * g + 0.114 * b * b).sqrt();
 
             let p = self.at_mut(cx, cy).expect("Center point is out of range!");
             *p = Some(Color {
