@@ -19,7 +19,7 @@ pub fn load<T: DeserializeOwned>(name: &str) -> Result<T, Error> {
     let file = File::open(format!("{}/{}.json", DIR, name))?;
     let mut reader = BufReader::new(file);
     let d1: T = serde_json::from_reader(&mut reader)?;
-    return Ok(d1);
+    Ok(d1)
 }
 
 pub fn list() -> Vec<String> {
