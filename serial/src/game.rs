@@ -42,20 +42,16 @@ impl State {
     pub fn update(&mut self) -> bool {
         let dt = 1.0 / 60.0;
 
-        let events: Vec<_> = self.sdl.event.poll_iter().collect();
+        self.input.update(&self.sdl);
 
-        self.input.begin();
-        self.input.handle_sdl(&events);
-        self.input.end();
-
-        for event in events {
+        for event in &self.sdl.events {
             match event {
                 Event::Window {
                     win_event: WindowEvent::Resized(x, y),
                     ..
                 } => {
-                    self.window_size.x = (x as u32).max(1);
-                    self.window_size.y = (y as u32).max(1);
+                    self.window_size.x = (*x as u32).max(1);
+                    self.window_size.y = (*y as u32).max(1);
                 },
                 _ => {},
             }

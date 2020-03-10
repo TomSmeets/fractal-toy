@@ -3,6 +3,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
 
 use crate::math::*;
+use crate::sdl::Sdl;
 
 #[derive(Debug, Clone, Copy)]
 pub enum InputAction {
@@ -80,13 +81,13 @@ impl Input {
         }
     }
 
-    pub fn begin(&mut self) {
+    pub fn update(&mut self, sdl: &Sdl) {
         self.scroll = 0;
         self.dir_look = V2::zero();
         self.dir_move = V2::zero();
-    }
 
-    pub fn end(&mut self) {
+        self.handle_sdl(&sdl.events);
+
         self.dir_look = limit(self.dir_look);
         self.dir_move = limit(self.dir_move);
     }

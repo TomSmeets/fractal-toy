@@ -6,6 +6,7 @@ pub struct Sdl {
     pub video: sdl2::VideoSubsystem,
     pub event: sdl2::EventPump,
     pub canvas: Canvas<Window>,
+    pub events: Vec<sdl2::event::Event>,
 }
 
 impl Sdl {
@@ -27,7 +28,12 @@ impl Sdl {
             video,
             event,
             canvas,
+            events: Vec::new(),
         }
+    }
+
+    pub fn update(&mut self) {
+        self.events = self.event.poll_iter().collect();
     }
 }
 
