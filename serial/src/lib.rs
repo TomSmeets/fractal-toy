@@ -9,6 +9,7 @@ pub mod quadtree;
 pub mod sdl;
 pub mod state;
 pub mod viewport;
+pub mod window;
 
 use crate::game::*;
 

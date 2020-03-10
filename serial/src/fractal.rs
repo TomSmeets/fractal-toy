@@ -10,6 +10,7 @@ use crate::input::*;
 use crate::quadtree::*;
 use crate::sdl::*;
 use crate::viewport::Viewport;
+use crate::window::Window;
 use crate::*;
 
 pub enum DragState {
@@ -32,18 +33,11 @@ impl Fractal {
         }
     }
 
-    pub fn update(
-        &mut self,
-        dt: f32,
-        down: bool,
-        sdl: &mut Sdl,
-        window_size: WindowSize,
-        input: &Input,
-    ) {
+    pub fn update(&mut self, dt: f32, down: bool, sdl: &mut Sdl, window: &Window, input: &Input) {
         // println!("pos.scale:  {:?}", self.pos.scale);
         // println!("pos.offset: {:?}", self.pos.offset);
 
-        let mouse_in_view = screen_to_view(window_size, input.mouse);
+        let mouse_in_view = screen_to_view(window, input.mouse);
         self.pos.zoom_in(0.1 * input.scroll as f32, mouse_in_view);
 
         self.pos.translate(dt * input.dir_move);
@@ -104,7 +98,7 @@ impl Fractal {
 
         let vs = self.textures.values();
         for (p, v) in &vs {
-            let r = self.pos_to_rect(window_size, p);
+            let r = self.pos_to_rect(window, p);
             sdl.canvas.copy(v, None, Some(r)).unwrap();
             sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
             sdl.canvas.draw_rect(r).unwrap();
@@ -113,10 +107,10 @@ impl Fractal {
         {
             let w = 20;
 
-            let mouse_view = screen_to_view(window_size, input.mouse);
+            let mouse_view = screen_to_view(window, input.mouse);
             let mouse_world = self.pos.view_to_world(mouse_view);
             let mouse_view = self.pos.world_to_view(mouse_world);
-            let mouse_screen = view_to_screen(window_size, mouse_view);
+            let mouse_screen = view_to_screen(window, mouse_view);
 
             sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
             sdl.canvas
@@ -128,17 +122,17 @@ impl Fractal {
             let p_max = V2::new(1., 1.);
 
             let p_min = self.pos.world_to_view(p_min);
-            let p_min = view_to_screen(window_size, p_min);
+            let p_min = view_to_screen(window, p_min);
 
             let p_max = self.pos.world_to_view(p_max);
-            let p_max = view_to_screen(window_size, p_max);
+            let p_max = view_to_screen(window, p_max);
 
             sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
             sdl.canvas.draw_rect(mk_rect(p_min, p_max)).unwrap();
         }
 
         {
-            let r = self.pos_to_rect(window_size, &self.pos.get_pos());
+            let r = self.pos_to_rect(window, &self.pos.get_pos());
             sdl.canvas.set_draw_color(Color::RGB(0, 255, 0));
             sdl.canvas.draw_rect(r).unwrap();
         }
@@ -146,23 +140,23 @@ impl Fractal {
         sdl.canvas.present();
     }
 
-    fn pos_to_rect(&self, window_size: WindowSize, p: &QuadTreePosition) -> Rect {
+    fn pos_to_rect(&self, window: &Window, p: &QuadTreePosition) -> Rect {
         let (x, y, z) = p.float_top_left_with_size();
         let p = V2::new(x as f32, y as f32);
         let w = p + V2::new(z as f32, z as f32);
         let p = self.pos.world_to_view(p);
-        let p = view_to_screen(window_size, p);
+        let p = view_to_screen(window, p);
         let w = self.pos.world_to_view(w);
-        let w = view_to_screen(window_size, w);
+        let w = view_to_screen(window, w);
         let r = mk_rect(p, w);
         r
     }
 
-    pub fn info(&self, input: &Input, window_size: WindowSize) {
-        let mouse_view = screen_to_view(window_size, input.mouse);
+    pub fn info(&self, input: &Input, window: &Window) {
+        let mouse_view = screen_to_view(window, input.mouse);
         let mouse_world = self.pos.view_to_world(mouse_view);
         let mouse_view = self.pos.world_to_view(mouse_world);
-        let mouse_screen = view_to_screen(window_size, mouse_view);
+        let mouse_screen = view_to_screen(window, mouse_view);
         println!("screen  {:6.2} {:6.2}", input.mouse.x, input.mouse.y);
         println!("view    {:6.2} {:6.2}", mouse_view.x, mouse_view.y);
         println!("world   {:6.2} {:6.2}", mouse_world.x, mouse_world.y);
@@ -170,17 +164,17 @@ impl Fractal {
     }
 }
 
-fn screen_to_view(window_size: WindowSize, p: V2i) -> V2 {
+fn screen_to_view(window: &Window, p: V2i) -> V2 {
     V2::new(
-        p.x as f32 / window_size.x as f32,
-        1.0 - p.y as f32 / window_size.y as f32,
+        p.x as f32 / window.size.x as f32,
+        1.0 - p.y as f32 / window.size.y as f32,
     )
 }
 
-fn view_to_screen(window_size: WindowSize, p: V2) -> V2i {
+fn view_to_screen(window: &Window, p: V2) -> V2i {
     V2i::new(
-        (p.x * window_size.x as f32) as i32,
-        ((1.0 - p.y) * window_size.y as f32) as i32,
+        (p.x * window.size.x as f32) as i32,
+        ((1.0 - p.y) * window.size.y as f32) as i32,
     )
 }
 

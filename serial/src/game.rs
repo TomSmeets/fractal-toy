@@ -4,8 +4,7 @@ use crate::fractal::*;
 use crate::input::*;
 use crate::math::*;
 use crate::sdl::*;
-
-pub type WindowSize = Vector2<u32>;
+use crate::window::Window;
 
 // TODO: implemnt save and load, this will handle some types that dont work with reload.
 // For example the btreemap
@@ -13,7 +12,7 @@ pub struct State {
     sdl: Sdl,
     input: Input,
     fractal: Fractal,
-    window_size: WindowSize,
+    window: Window,
 }
 
 impl Default for State {
@@ -29,12 +28,13 @@ impl State {
 
     pub fn new() -> State {
         let sdl = Sdl::new();
+        let window = Window::new(&sdl);
 
         // TODO: get window size
         State {
             sdl,
             input: Input::new(),
-            window_size: Vector2::new(800, 600),
+            window,
             fractal: Fractal::new(),
         }
     }
@@ -42,28 +42,17 @@ impl State {
     pub fn update(&mut self) -> bool {
         let dt = 1.0 / 60.0;
 
+        self.sdl.update();
+        self.window.update(&self.sdl);
         self.input.update(&self.sdl);
-
-        for event in &self.sdl.events {
-            match event {
-                Event::Window {
-                    win_event: WindowEvent::Resized(x, y),
-                    ..
-                } => {
-                    self.window_size.x = (*x as u32).max(1);
-                    self.window_size.y = (*y as u32).max(1);
-                },
-                _ => {},
-            }
-        }
 
         let down = self.input.is_down(InputAction::A);
         self.fractal
-            .update(dt, down, &mut self.sdl, self.window_size, &self.input);
+            .update(dt, down, &mut self.sdl, &self.window, &self.input);
 
         if self.input.is_down(InputAction::F1) {
             println!("---- INFO ----");
-            self.fractal.info(&self.input, self.window_size);
+            self.fractal.info(&self.input, &self.window);
         }
 
         self.input.is_down(InputAction::Quit)
