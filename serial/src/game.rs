@@ -108,35 +108,7 @@ impl State {
                         self.textures.reduce_to(1);
                     },
                     Keycode::F => self.textures.clear(),
-                    Keycode::Num0 => self.pos.parent(),
-                    Keycode::Num1 => self.pos.child(0, 0),
-                    Keycode::Num2 => self.pos.child(1, 0),
-                    Keycode::Num3 => self.pos.child(0, 1),
-                    Keycode::Num4 => self.pos.child(1, 1),
                     _ => (),
-                },
-
-                Event::MouseButtonDown {
-                    mouse_btn: MouseButton::Right,
-                    ..
-                } => {
-                    self.pos.parent();
-                },
-
-                Event::MouseButtonDown {
-                    mouse_btn: MouseButton::Left,
-                    x,
-                    y,
-                    ..
-                } => {
-                    /*
-                    let sx = x as f32 / self.window_size.x as f32;
-                    let sy = y as f32 / self.window_size.x as f32;
-                    let p = 2.0*self.pos.screen_to_world(V2::new(sx, sy));
-                    self.pos.child(p.x as u8 % 2, p.y as u8 % 2);
-                    let t = mk_texture(&self.sdl.canvas.texture_creator(), self.pos.node.clone());
-                    self.textures.at(&self.pos.node.path).unwrap().value = Some(t);
-                    */
                 },
 
                 Event::Window {

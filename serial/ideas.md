@@ -1,5 +1,5 @@
 * show relative scale to (universe -> ... -> plank length)
-* infinite depth use increasing presision when zooming (f32 -> f64 -> i64 -> i128 -> [u8])
+* infinite depth use increasing presision when zooming (f32 -> f64 -> i64 -> i128 -> [u8]) (or use rug?)
 * NOTE: we cannot change parents, because what if we are zooming exactly at the center? there is no common parant but the root node.
 * other fractal types
 * custom fractal formulas?

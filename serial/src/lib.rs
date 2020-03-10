@@ -1,3 +1,6 @@
+// TODO: Arbirtrary precision
+// TODO: compute tiles in background
+
 pub mod fractal;
 pub mod game;
 pub mod input;

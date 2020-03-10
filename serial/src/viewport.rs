@@ -2,7 +2,6 @@ use crate::math::*;
 use crate::quadtree::pos::QuadTreePosition;
 
 pub struct Viewport {
-    pub node: QuadTreePosition,
     zoom: f32,
     offset: Vector2<f32>,
 }
@@ -10,7 +9,6 @@ pub struct Viewport {
 impl Viewport {
     pub fn new() -> Self {
         Viewport {
-            node: QuadTreePosition::root(),
             zoom: 0.,
             offset: V2::zero(),
         }
@@ -27,14 +25,6 @@ impl Viewport {
     pub fn view_to_world(&self, p: V2) -> V2 {
         let scale = self.scale();
         V2::new((p.x) * scale + self.offset.x, (p.y) * scale + self.offset.y)
-    }
-
-    pub fn child(&mut self, i: u8, j: u8) {
-        self.node.child(i, j);
-    }
-
-    pub fn parent(&mut self) {
-        self.node.parent();
     }
 
     pub fn translate(&mut self, offset: V2) {
