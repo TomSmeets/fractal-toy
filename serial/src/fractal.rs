@@ -59,6 +59,13 @@ impl Fractal {
             DragState::None
         };
 
+        if input.action(InputAction::X) {
+            self.textures.reduce_to(1);
+        }
+        if input.action(InputAction::Y) {
+            self.textures.clear();
+        }
+
         // if down {
         // TODO: make pretty
         // let z = self.zoom.floor() as i32 + 2;
