@@ -59,10 +59,10 @@ impl Fractal {
             DragState::None
         };
 
-        if input.action(InputAction::X) {
+        if input.is_down(InputAction::X) {
             self.textures.reduce_to(1);
         }
-        if input.action(InputAction::Y) {
+        if input.is_down(InputAction::Y) {
             self.textures.clear();
         }
 

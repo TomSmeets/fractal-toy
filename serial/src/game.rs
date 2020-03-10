@@ -1,5 +1,4 @@
 use sdl2::event::{Event, WindowEvent};
-use sdl2::keyboard::Keycode;
 
 use crate::fractal::*;
 use crate::input::*;
@@ -62,15 +61,15 @@ impl State {
             }
         }
 
-        let down = self.input.action(InputAction::A);
+        let down = self.input.is_down(InputAction::A);
         self.fractal
             .update(dt, down, &mut self.sdl, self.window_size, &self.input);
 
-        if self.input.action(InputAction::F1) {
+        if self.input.is_down(InputAction::F1) {
             println!("---- INFO ----");
             self.fractal.info(&self.input, self.window_size);
         }
 
-        self.input.action(InputAction::Quit)
+        self.input.is_down(InputAction::Quit)
     }
 }

@@ -91,7 +91,7 @@ impl Input {
         self.dir_move = limit(self.dir_move);
     }
 
-    pub fn action(&self, act: InputAction) -> bool {
+    pub fn is_down(&self, act: InputAction) -> bool {
         self.action[act as usize]
     }
 
@@ -125,29 +125,29 @@ impl Input {
             }
         }
 
-        if self.action(InputAction::MoveUp) {
+        if self.is_down(InputAction::MoveUp) {
             self.dir_move.y += 1.;
         }
-        if self.action(InputAction::MoveDown) {
+        if self.is_down(InputAction::MoveDown) {
             self.dir_move.y -= 1.;
         }
-        if self.action(InputAction::MoveRight) {
+        if self.is_down(InputAction::MoveRight) {
             self.dir_move.x += 1.;
         }
-        if self.action(InputAction::MoveLeft) {
+        if self.is_down(InputAction::MoveLeft) {
             self.dir_move.x -= 1.;
         }
 
-        if self.action(InputAction::LookUp) {
+        if self.is_down(InputAction::LookUp) {
             self.dir_look.y += 1.;
         }
-        if self.action(InputAction::LookDown) {
+        if self.is_down(InputAction::LookDown) {
             self.dir_look.y -= 1.;
         }
-        if self.action(InputAction::LookRight) {
+        if self.is_down(InputAction::LookRight) {
             self.dir_look.x += 1.;
         }
-        if self.action(InputAction::LookLeft) {
+        if self.is_down(InputAction::LookLeft) {
             self.dir_look.x -= 1.;
         }
     }
@@ -189,7 +189,7 @@ impl Input {
     fn handle_sdl_key(&mut self, key: Keycode, down: bool) {
         // println!("key {:?} {}", key, if down { "down" } else { "up" });
         let act = self.sdl_key_to_action(key);
-        let was_down = self.action(act);
+        let was_down = self.is_down(act);
         if !was_down && down {
             eprintln!("action: {:?} = {}", act, if down { "down" } else { "up" });
         }
