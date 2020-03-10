@@ -32,9 +32,9 @@ impl Time {
 pub struct State {
     time: Time,
     sdl: Sdl,
+    window: Window,
     input: Input,
     fractal: Fractal,
-    window: Window,
 }
 
 impl Default for State {
@@ -63,6 +63,7 @@ impl State {
     }
 
     pub fn update(&mut self) -> bool {
+        self.time.update();
         self.sdl.update();
         self.window.update(&self.sdl);
         self.input.update(&self.sdl);
