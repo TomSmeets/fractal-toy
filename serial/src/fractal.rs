@@ -33,15 +33,17 @@ impl Fractal {
         }
     }
 
-    pub fn update(&mut self, dt: f32, down: bool, sdl: &mut Sdl, window: &Window, input: &Input) {
+    pub fn update(&mut self, time: &Time, sdl: &mut Sdl, window: &Window, input: &Input) {
+        let down = input.is_down(InputAction::A);
         // println!("pos.scale:  {:?}", self.pos.scale);
         // println!("pos.offset: {:?}", self.pos.offset);
 
         let mouse_in_view = screen_to_view(window, input.mouse);
         self.pos.zoom_in(0.1 * input.scroll as f32, mouse_in_view);
 
-        self.pos.translate(dt * input.dir_move);
-        self.pos.zoom_in(dt * input.dir_look.y, V2::new(0.5, 0.5));
+        self.pos.translate(time.dt * input.dir_move);
+        self.pos
+            .zoom_in(time.dt * input.dir_look.y, V2::new(0.5, 0.5));
 
         if let DragState::From(p1) = self.drag {
             self.pos.translate(p1 - mouse_in_view);
