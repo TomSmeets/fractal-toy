@@ -1,3 +1,4 @@
+use sdl2::pixels::Color;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 
@@ -33,7 +34,10 @@ impl Sdl {
     }
 
     pub fn update(&mut self) {
+        self.canvas.present();
         self.events = self.event.poll_iter().collect();
+        self.canvas.set_draw_color(Color::RGB(32, 32, 32));
+        self.canvas.clear();
     }
 }
 

@@ -71,11 +71,6 @@ impl State {
         self.fractal
             .update(&self.time, &mut self.sdl, &self.window, &self.input);
 
-        if self.input.is_down(InputAction::F1) {
-            println!("---- INFO ----");
-            self.fractal.info(&self.input, &self.window);
-        }
-
         self.input.is_down(InputAction::Quit)
     }
 }

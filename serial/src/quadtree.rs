@@ -82,7 +82,7 @@ impl<T> QuadTree<T> {
     }
 
     pub fn insert_at(&mut self, p: &[u8], value: T) {
-        if p.len() == 0 {
+        if p.is_empty() {
             self.value = Some(value);
             return;
         }
@@ -92,7 +92,7 @@ impl<T> QuadTree<T> {
     }
 
     pub fn at(&mut self, p: &[u8]) -> Option<&mut Self> {
-        if p.len() == 0 {
+        if p.is_empty() {
             return Some(self);
         }
 

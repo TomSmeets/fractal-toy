@@ -34,10 +34,6 @@ impl Fractal {
     }
 
     pub fn update(&mut self, time: &Time, sdl: &mut Sdl, window: &Window, input: &Input) {
-        let down = input.is_down(InputAction::A);
-        // println!("pos.scale:  {:?}", self.pos.scale);
-        // println!("pos.offset: {:?}", self.pos.offset);
-
         let mouse_in_view = screen_to_view(window, input.mouse);
         self.pos.zoom_in(0.1 * input.scroll as f32, mouse_in_view);
 
@@ -62,41 +58,11 @@ impl Fractal {
             self.textures.clear();
         }
 
-        // if down {
-        // TODO: make pretty
-        // let z = self.zoom.floor() as i32 + 2;
-        // let scale = 2.0_f32.powi(z as i32);
-        //
-        // let m = Vector2::new(self.input.mouse.x as f32, self.input.mouse.y as f32);
-        // let w = self.window_size.x as f32;
-        // let zz = 2.0_f32.powf(self.zoom);
-        //
-        // let px = ((m.x / w - 0.5) / zz + self.offset.x)*scale;
-        // let py = ((m.y / w - 0.5) / zz + self.offset.y)*scale;
-        //
-        // let p = QuadTreePosition {
-        // x: px.floor() as u64,
-        // y: py.floor() as u64,
-        // z: z as u64,
-        // };
-        // if px >= 0.0 && py >= 0.0 && p.x <= p.dim() && p.y <= p.dim() {
-        // println!("{:?}!", p);
-        // if let None = self.textures.get_at(p) {
-        // let t = mk_texture(&self.sdl.canvas.texture_creator(), p);
-        // self.textures.insert_at(p, t);
-        // println!("does not exist!");
-        // }
-        // }
-        // }
-
-        if down {
+        if input.is_down(InputAction::A) {
             let p = self.pos.get_pos();
             let t = mk_texture(&sdl.canvas.texture_creator(), p.clone());
             self.textures.insert_at(&p.path, t);
         }
-
-        sdl.canvas.set_draw_color(Color::RGB(32, 32, 32));
-        sdl.canvas.clear();
 
         let vs = self.textures.values();
         for (p, v) in &vs {
@@ -139,7 +105,10 @@ impl Fractal {
             sdl.canvas.draw_rect(r).unwrap();
         }
 
-        sdl.canvas.present();
+        if input.is_down(InputAction::F1) {
+            println!("---- INFO ----");
+            self.info(input, window);
+        }
     }
 
     fn pos_to_rect(&self, window: &Window, p: &QuadTreePosition) -> Rect {
@@ -150,8 +119,7 @@ impl Fractal {
         let p = view_to_screen(window, p);
         let w = self.pos.world_to_view(w);
         let w = view_to_screen(window, w);
-        let r = mk_rect(p, w);
-        r
+        mk_rect(p, w)
     }
 
     pub fn info(&self, input: &Input, window: &Window) {
@@ -213,8 +181,7 @@ fn mk_rect(a: V2i, b: V2i) -> Rect {
     let width = max_x - min_x;
     let height = max_y - min_y;
 
-    let r = Rect::new(min_x, min_y, width as u32, height as u32);
-    r
+    Rect::new(min_x, min_y, width as u32, height as u32)
 }
 
 fn draw_mandel(pixels: &mut [u8], w: u32, h: u32, zoom: f64, offset: Vector2<f64>) {
