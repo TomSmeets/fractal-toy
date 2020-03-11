@@ -12,16 +12,50 @@
         pkgconfig
         cmake
         m4
+        python3
     ];
 
     libs = with pkgs; [
-        SDL2
-        xorg.libX11
-        xorg.libXcursor
-        xorg.libXrandr
-        xorg.libXi
+        # probably want to statically link SDL2
+        # SDL2
+
+        (SDL2.overrideAttrs (pkg: {
+          src = fetchurl {
+            url = "https://hg.libsdl.org/SDL/archive/08db6a6f6c23.tar.bz2";
+            sha256 = "10y0y5qskm1v68d9jmmxh7hw7cydn6n9rdyh2zgpn326a8354z0l";
+          };
+
+          configureFlags = [ "--enable-static" ]
+            # ++ ["--enable-hidapi" ]
+            ++ (pkg.configureFlags or []);
+
+          NIX_CFLAGS_COMPILE = [ "-ffunction-sections"  "-fdata-sections" "-O2" "-fPIC" ];
+          hardeningDisable = [ "all" ];
+          postInstall = "";
+      	}))
+      	sndio
+
+      	openssl
+
+      	# xorg.libX11
+        # xorg.libXcursor
+        # xorg.libXrandr
+        # xorg.libXi
         xorg.libxcb
         xorg.xorgproto
+
+		libGL
+		alsaLib
+		udev
+
+        pkgs.xorg.libXext
+        pkgs.xorg.libXinerama
+        pkgs.xorg.libXrandr
+        pkgs.xorg.libXcursor
+        pkgs.xorg.libX11
+        pkgs.xorg.libXi
+        pkgs.xorg.libXxf86vm
+        pkgs.xorg.libXScrnSaver
     ];
 
     env = writeScript "env.sh" ''
