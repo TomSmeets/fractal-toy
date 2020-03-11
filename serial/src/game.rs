@@ -1,7 +1,7 @@
-use crate::fractal::*;
-use crate::input::*;
-use crate::math::*;
-use crate::sdl::*;
+use crate::fractal::Fractal;
+use crate::input::{Input, InputAction};
+use crate::sdl::Sdl;
+use crate::ui::UI;
 use crate::window::Window;
 
 pub struct Time {
@@ -34,6 +34,7 @@ pub struct State {
     sdl: Sdl,
     window: Window,
     input: Input,
+    ui: UI,
     fractal: Fractal,
 }
 
@@ -56,8 +57,9 @@ impl State {
         State {
             time: Time::new(1.0 / 60.0),
             sdl,
-            input: Input::new(),
             window,
+            input: Input::new(),
+            ui: UI::new(),
             fractal: Fractal::new(),
         }
     }
@@ -67,6 +69,7 @@ impl State {
         self.sdl.update();
         self.window.update(&self.sdl);
         self.input.update(&self.sdl);
+        self.ui.update();
 
         self.fractal
             .update(&self.time, &mut self.sdl, &self.window, &self.input);
