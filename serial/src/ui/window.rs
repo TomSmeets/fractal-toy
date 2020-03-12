@@ -67,7 +67,13 @@ impl Window {
         draw_rect(sdl, self.header_rect(), [64, 64, 128]);
 
         sdl.canvas.set_clip_rect(self.header_rect().into_sdl());
-        sdl.draw_text(title, self.body_rect().pos + V2i::new(2, -2));
+        {
+            let (mut rect, texture) = sdl.make_text(title, 20.0);
+            let hdr = self.header_rect();
+            rect.x = hdr.pos.x + hdr.size.x / 2 - rect.w / 2;
+            rect.y = hdr.pos.y + hdr.size.y / 2 - rect.h / 2;
+            sdl.draw_rgba(rect, &texture);
+        }
 
         let mut body = self.body_rect();
         sdl.canvas.set_clip_rect(body.into_sdl());
