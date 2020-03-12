@@ -52,28 +52,40 @@ impl State {
     pub fn new() -> State {
         let sdl = Sdl::new();
         let window = Window::new(&sdl);
+        let time = Time::new(1.0 / 60.0);
+        let input = Input::new();
+        let ui = UI::new();
+        let fractal = Fractal::new();
 
         // TODO: get window size
         State {
-            time: Time::new(1.0 / 60.0),
+            time,
             sdl,
             window,
-            input: Input::new(),
-            ui: UI::new(),
-            fractal: Fractal::new(),
+            input,
+            ui,
+            fractal,
         }
     }
 
     pub fn update(&mut self) -> bool {
-        self.time.update();
-        self.sdl.update();
-        self.window.update(&self.sdl);
-        self.input.update(&self.sdl);
-        self.ui.update();
+        let State {
+            time,
+            sdl,
+            window,
+            input,
+            ui,
+            fractal,
+        } = self;
 
-        self.fractal
-            .update(&self.time, &mut self.sdl, &self.window, &self.input);
+        time.update();
+        sdl.update();
+        window.update(sdl);
+        input.update(sdl);
+        ui.update();
 
-        self.input.is_down(InputAction::Quit)
+        fractal.update(time, sdl, window, input);
+
+        input.is_down(InputAction::Quit)
     }
 }
