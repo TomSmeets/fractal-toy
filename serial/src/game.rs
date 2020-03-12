@@ -90,21 +90,14 @@ impl State {
             {
                 let w = ui.window("Hello");
                 w.color = [255, 0, 0];
-
-                if w.rect.pos.x > 100 {
-                    let _w3 = ui.window("A");
-                }
+                let i = w.item_or_default("button");
+                let i = w.item_or_default("hi");
             }
 
             {
                 let w = ui.window("World");
                 w.color = [0, 255, 0];
-                w.rect.size.x = 160;
             }
-
-            let _w4 = ui.window("B");
-            let _w5 = ui.window("C");
-            let _w6 = ui.window("D");
         }
 
         input.is_down(InputAction::Quit)
