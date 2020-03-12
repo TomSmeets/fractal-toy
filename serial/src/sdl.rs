@@ -14,7 +14,7 @@ pub struct Sdl {
     pub font: Font<'static>,
 }
 
-static FONT_DATA: &[u8] = include_bytes!("../DejaVuSansMono.ttf");
+static FONT_DATA: &[u8] = include_bytes!(concat!(env!("FONT_DEJAVU"), "/share/fonts/truetype/DejaVuSansMono.ttf"));
 
 impl Sdl {
     pub fn new() -> Self {
