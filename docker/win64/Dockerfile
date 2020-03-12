@@ -1,4 +1,4 @@
-FROM common
+FROM rust-build-common
 RUN rustup target add x86_64-pc-windows-gnu
 
 RUN apt-get install -y \

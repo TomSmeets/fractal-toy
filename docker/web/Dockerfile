@@ -1,4 +1,4 @@
-FROM common
+FROM rust-build-common
 
 WORKDIR /opt
 
