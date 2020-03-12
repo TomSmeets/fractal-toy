@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Default)]
 pub struct Window {
     pub z_index: i32,
+    // TODO: restrict acess, this filed will always read as false to the user
     pub visible: bool,
     pub rect: Rect,
     pub color: [u8; 3],
