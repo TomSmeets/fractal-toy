@@ -84,7 +84,7 @@ impl State {
         input.update(sdl);
         ui.update(sdl, input);
 
-        fractal.update(time, sdl, window, input);
+        // fractal.update(time, sdl, window, input);
 
         ui.window_begin("Hello");
         ui.window_end();
