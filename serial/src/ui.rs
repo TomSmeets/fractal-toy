@@ -11,7 +11,6 @@ mod window;
 pub use self::rect::Rect;
 pub use self::window::Window;
 
-
 enum DragActionType {
     Drag,
     Resize,
@@ -60,8 +59,12 @@ impl UI {
                         DragActionType::Drag => window.rect.pos = input.mouse + d.offset,
                         DragActionType::Resize => {
                             window.rect.size = input.mouse - window.rect.pos;
-                            if window.rect.size.x < 0 { window.rect.size.x = 0; }
-                            if window.rect.size.y < 20 { window.rect.size.y = 20; }
+                            if window.rect.size.x < 0 {
+                                window.rect.size.x = 0;
+                            }
+                            if window.rect.size.y < 20 {
+                                window.rect.size.y = 20;
+                            }
                         },
                     }
                 }
