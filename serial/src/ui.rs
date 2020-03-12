@@ -5,10 +5,14 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 use crate::input::Input;
+use crate::math::*;
 use crate::sdl::Sdl;
 
 use std::cmp::Eq;
 use std::hash::Hash;
+
+mod rect;
+use rect::Rect;
 
 type SdlRect = sdl2::rect::Rect;
 
@@ -16,25 +20,27 @@ type SdlRect = sdl2::rect::Rect;
 pub struct Window {
     pub z_index: i32,
     pub visible: bool,
-    pub pos: (i32, i32),
-    pub size: (i32, i32),
+    pub rect: Rect,
     pub color: [u8; 3],
 }
 
 impl Window {
     pub fn new() -> Self {
         Window {
-            size: (80, 80),
+            rect: Rect {
+                pos: V2i::new(0, 0),
+                size: V2i::new(80, 80),
+            },
             color: [255, 255, 255],
             ..Self::default()
         }
     }
 
     pub fn draw(&self, sdl: &mut Sdl) {
-        let (x, y) = self.pos;
-        let (w, h) = self.size;
+        let p = self.rect.pos;
+        let s = self.rect.size;
 
-        let mut r = SdlRect::new(x, y, w as u32, h as u32);
+        let mut r = self.rect.into_sdl();
         sdl.canvas.set_draw_color(Color::RGB(0, 0, 0));
         sdl.canvas.fill_rect(r).unwrap();
 
@@ -48,17 +54,14 @@ impl Window {
         sdl.canvas.fill_rect(r).unwrap();
     }
 
-    pub fn is_inside(&self, x: i32, y: i32) -> bool {
-        x >= self.pos.0
-            && y >= self.pos.1
-            && x < self.pos.0 + self.size.0
-            && y < self.pos.1 + self.size.1
+    pub fn is_inside(&self, p: V2i) -> bool {
+        self.rect.is_inside(p)
     }
 }
 
 pub struct DragAction {
     id: String,
-    offset: (i32, i32),
+    offset: V2i,
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -98,17 +101,14 @@ impl UI {
                 continue;
             }
 
-            let (x, y) = window.pos;
-
             if let Some(d) = &self.drag {
                 if &&d.id == id {
-                    window.pos.0 = input.mouse.x + d.offset.0;
-                    window.pos.1 = input.mouse.y + d.offset.1;
+                    window.rect.pos = input.mouse + d.offset;
                 }
             }
 
             if hot.is_none() {
-                let hover = window.is_inside(input.mouse.x, input.mouse.y);
+                let hover = window.is_inside(input.mouse);
 
                 if hover {
                     hot = Some(id);
@@ -122,7 +122,7 @@ impl UI {
                         println!("Drag {}", id);
                         self.drag = Some(DragAction {
                             id: id.to_string(),
-                            offset: (x - input.mouse.x, y - input.mouse.y),
+                            offset: window.rect.pos - input.mouse,
                         });
                     }
                 }
