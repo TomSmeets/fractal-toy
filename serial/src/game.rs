@@ -87,12 +87,21 @@ impl State {
         // fractal.update(time, sdl, window, input);
 
         {
-            let w1 = ui.window("Hello");
-            w1.color = [255, 0, 0];
-            let w2 = ui.window("World");
-            w2.color = [0, 255, 0];
-            w2.rect.size.x = 160;
-            let _w3 = ui.window("A");
+            {
+                let w = ui.window("Hello");
+                w.color = [255, 0, 0];
+
+                if w.rect.pos.x > 100 {
+                    let _w3 = ui.window("A");
+                }
+            }
+
+            {
+                let w = ui.window("World");
+                w.color = [0, 255, 0];
+                w.rect.size.x = 160;
+            }
+
             let _w4 = ui.window("B");
             let _w5 = ui.window("C");
             let _w6 = ui.window("D");

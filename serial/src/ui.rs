@@ -1,5 +1,3 @@
-use sdl2::pixels::*;
-
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
@@ -8,56 +6,10 @@ use crate::input::Input;
 use crate::math::*;
 use crate::sdl::Sdl;
 
-use std::cmp::Eq;
-use std::hash::Hash;
-
 mod rect;
-use rect::Rect;
-
-type SdlRect = sdl2::rect::Rect;
-
-#[derive(Serialize, Deserialize, Default)]
-pub struct Window {
-    pub z_index: i32,
-    pub visible: bool,
-    pub rect: Rect,
-    pub color: [u8; 3],
-}
-
-impl Window {
-    pub fn new() -> Self {
-        Window {
-            rect: Rect {
-                pos: V2i::new(0, 0),
-                size: V2i::new(80, 80),
-            },
-            color: [255, 255, 255],
-            ..Self::default()
-        }
-    }
-
-    pub fn draw(&self, sdl: &mut Sdl) {
-        let p = self.rect.pos;
-        let s = self.rect.size;
-
-        let mut r = self.rect.into_sdl();
-        sdl.canvas.set_draw_color(Color::RGB(0, 0, 0));
-        sdl.canvas.fill_rect(r).unwrap();
-
-        r.x += 4;
-        r.y += 4;
-        r.w -= 8;
-        r.h -= 8;
-
-        sdl.canvas
-            .set_draw_color(Color::RGB(self.color[0], self.color[1], self.color[2]));
-        sdl.canvas.fill_rect(r).unwrap();
-    }
-
-    pub fn is_inside(&self, p: V2i) -> bool {
-        self.rect.is_inside(p)
-    }
-}
+mod window;
+pub use self::rect::Rect;
+pub use self::window::Window;
 
 pub struct DragAction {
     id: String,
@@ -81,26 +33,23 @@ impl UI {
     }
 
     pub fn update(&mut self, sdl: &mut Sdl, input: &Input) {
+        let mouse_went_down = !self.was_down && input.mouse_down;
+        let mouse_went_up = self.was_down && !input.mouse_down;
+
+        self.was_down = input.mouse_down;
+
         if self.drag.is_some() && !input.mouse_down {
             self.drag = None;
         }
 
-        let mut windows: Vec<(&String, &mut Window)> = self.windows.iter_mut().collect();
-        windows.sort_by_key(|(_, w)| w.z_index);
-
         // this is the top most window under the cursor
         let mut hot: Option<&String> = None;
-
-        let mouse_went_down = !self.was_down && input.mouse_down;
-        let mouse_went_up = self.was_down && !input.mouse_down;
-        self.was_down = input.mouse_down;
-
         let mut active_changed = false;
-        for (id, window) in windows.iter_mut() {
-            if !window.visible {
-                continue;
-            }
 
+        let mut windows: Vec<(&String, &mut Window)> =
+            self.windows.iter_mut().filter(|(_, w)| w.visible).collect();
+        windows.sort_by_key(|(_, w)| w.z_index);
+        for (id, window) in windows.iter_mut() {
             if let Some(d) = &self.drag {
                 if &&d.id == id {
                     window.rect.pos = input.mouse + d.offset;
@@ -118,6 +67,7 @@ impl UI {
 
                         // move window to top
                         window.z_index = -1;
+
                         // strat dragging
                         println!("Drag {}", id);
                         self.drag = Some(DragAction {
