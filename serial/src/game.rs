@@ -90,8 +90,8 @@ impl State {
             {
                 let w = ui.window("Hello");
                 w.color = [255, 0, 0];
-                let i = w.item_or_default("button");
-                let i = w.item_or_default("hi");
+                let _i = w.item("button");
+                let _j = w.item("hi");
             }
 
             {

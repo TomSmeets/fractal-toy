@@ -6,8 +6,11 @@ use crate::input::Input;
 use crate::math::*;
 use crate::sdl::Sdl;
 
+mod collection;
 mod rect;
 mod window;
+
+pub use self::collection::Collection;
 pub use self::rect::Rect;
 pub use self::window::Window;
 
@@ -28,7 +31,7 @@ pub struct UI {
     drag: Option<DragAction>,
     // This is the selected window
     active: Option<String>,
-    windows: HashMap<String, Window>,
+    windows: Collection<Window>,
 
     was_down: bool,
 }
@@ -47,7 +50,13 @@ impl UI {
         let mut hot: Option<&str> = None;
         let mut active_changed = false;
 
-        let mut windows: Vec<_> = self.windows.iter_mut().filter(|(_, w)| w.visible).collect();
+        let mut windows: Vec<_> = self
+            .windows
+            .content
+            .iter_mut()
+            .map(|i| (&i.id, &mut i.value))
+            .filter(|(_, w)| w.visible)
+            .collect();
         windows.sort_by_key(|(_, w)| w.z_index);
         for (id, window) in windows.iter_mut() {
             let id: &str = id;
@@ -125,10 +134,8 @@ impl UI {
         // NOTE: the hashmap could be improved by the fact that the windows will be called in the
         // NOTE: same order almost every time so a plain vector with linear search starting
         // NOTE: from the current position could be just as effective
-        let w = self
-            .windows
-            .entry(title.to_string())
-            .or_insert_with(|| Window::new());
+        let w = self.windows.item(title, Window::new);
+        // move into Collection
         w.visible = true;
         w
     }

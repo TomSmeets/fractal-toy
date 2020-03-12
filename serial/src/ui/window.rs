@@ -4,9 +4,10 @@ use crate::sdl::Sdl;
 use sdl2::pixels::Color;
 use serde::{Deserialize, Serialize};
 
+use super::Collection;
+
 #[derive(Serialize, Deserialize)]
 pub struct Element {
-    id: String,
     size: V2i,
 }
 
@@ -28,7 +29,7 @@ pub struct Window {
     pub rect: Rect,
     pub color: [u8; 3],
 
-    pub items: Vec<Element>,
+    pub items: Collection<Element>,
 }
 
 fn draw_rect(sdl: &mut Sdl, r: Rect, color: [u8; 3]) {
@@ -69,7 +70,7 @@ impl Window {
         for e in self.items.iter() {
             e.draw(sdl, body.pos);
             let s = e.size.y + 10;
-            body.pos.y  += s;
+            body.pos.y += s;
             body.size.y -= s;
         }
         sdl.canvas.set_clip_rect(None);
@@ -100,17 +101,9 @@ impl Window {
         self.rect.is_inside(p)
     }
 
-    pub fn item_or_default(&mut self, id: &str) -> &mut Element {
-        let result = self.items.iter_mut().position(|e| e.id == id);
-        match result {
-            Some(x) => &mut self.items[x],
-            None => {
-                self.items.push(Element {
-                    id: id.to_string(),
-                    size: V2i::new(20, 20),
-                });
-                self.items.last_mut().unwrap()
-            },
-        }
+    pub fn item(&mut self, id: &str) -> &mut Element {
+        self.items.item(id, || Element {
+            size: V2i::new(20, 20),
+        })
     }
 }
