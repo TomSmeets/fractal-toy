@@ -11,9 +11,16 @@ mod window;
 pub use self::rect::Rect;
 pub use self::window::Window;
 
+
+enum DragActionType {
+    Drag,
+    Resize,
+}
+
 pub struct DragAction {
     id: String,
     offset: V2i,
+    mode: DragActionType,
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -49,7 +56,14 @@ impl UI {
 
             if let Some(d) = &self.drag {
                 if d.id == id {
-                    window.rect.pos = input.mouse + d.offset;
+                    match d.mode {
+                        DragActionType::Drag => window.rect.pos = input.mouse + d.offset,
+                        DragActionType::Resize => {
+                            window.rect.size = input.mouse - window.rect.pos;
+                            if window.rect.size.x < 0 { window.rect.size.x = 0; }
+                            if window.rect.size.y < 20 { window.rect.size.y = 20; }
+                        },
+                    }
                 }
             }
 
@@ -71,6 +85,15 @@ impl UI {
                         self.drag = Some(DragAction {
                             id: id.to_string(),
                             offset: window.rect.pos - input.mouse,
+                            mode: DragActionType::Drag,
+                        });
+                    }
+
+                    if window.resize_handle_rect().is_inside(input.mouse) {
+                        self.drag = Some(DragAction {
+                            id: id.to_string(),
+                            offset: window.rect.pos - input.mouse,
+                            mode: DragActionType::Resize,
                         });
                     }
                 }

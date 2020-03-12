@@ -43,6 +43,7 @@ impl Window {
     pub fn draw(&self, sdl: &mut Sdl) {
         draw_rect(sdl, self.body_rect(), self.color);
         draw_rect(sdl, self.header_rect(), [64, 64, 128]);
+        draw_rect(sdl, self.resize_handle_rect(), [64, 64, 128]);
     }
 
     pub fn header_rect(&self) -> Rect {
@@ -55,6 +56,14 @@ impl Window {
         let mut r = self.rect;
         r.pos.y += 20;
         r.size.y -= 20;
+        r
+    }
+
+    pub fn resize_handle_rect(&self) -> Rect {
+        let mut r = Rect::default();
+        r.size.x = 20;
+        r.size.y = 20;
+        r.pos = self.rect.pos + self.rect.size - r.size;
         r
     }
 
