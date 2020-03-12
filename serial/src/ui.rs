@@ -116,8 +116,8 @@ impl UI {
 
         // TODO: make graphics implementation independet
         // all windows are drawn from bottom to top, so we have to iterate in reverse
-        for (_, window) in windows.iter().rev() {
-            window.draw(sdl);
+        for (id, window) in windows.iter().rev() {
+            window.draw(id, sdl);
         }
 
         for (_, window) in windows.iter_mut() {

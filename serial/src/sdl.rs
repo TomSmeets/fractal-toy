@@ -1,4 +1,5 @@
-use sdl2::pixels::Color;
+use crate::math::*;
+use sdl2::pixels::{Color, PixelFormatEnum};
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 
@@ -14,7 +15,10 @@ pub struct Sdl {
     pub font: Font<'static>,
 }
 
-static FONT_DATA: &[u8] = include_bytes!(concat!(env!("FONT_DEJAVU"), "/share/fonts/truetype/DejaVuSansMono.ttf"));
+static FONT_DATA: &[u8] = include_bytes!(concat!(
+    env!("FONT_DEJAVU"),
+    "/share/fonts/truetype/DejaVuSans.ttf"
+));
 
 impl Sdl {
     pub fn new() -> Self {
@@ -42,33 +46,47 @@ impl Sdl {
         }
     }
 
-    pub fn update(&mut self) {
+    pub fn draw_text(&mut self, text: &str, pos: V2i) {
         let l = self.font.layout(
-            "Hello World",
-            rusttype::Scale::uniform(100.0),
-            rusttype::point(20.0, 20.0),
+            text,
+            rusttype::Scale::uniform(20.0),
+            rusttype::point(0.0, 0.0),
         );
-
         self.canvas.set_draw_color(Color::RGB(255, 255, 255));
-        let mut img: Vec<(i32, i32, f32)> = Vec::new();
-        for i in l {
+        self.canvas.set_blend_mode(sdl2::render::BlendMode::Blend);
+        let glyphs: Vec<_> = l.collect();
+        for i in glyphs {
             if let Some(p) = i.pixel_bounding_box() {
+                let w = (p.max.x - p.min.x) as usize;
+                let h = (p.max.y - p.min.y) as usize;
+                let mut pixels = vec![0; w * h * 4];
+
                 i.draw(|x, y, c| {
-                    img.push((p.min.x as i32 + x as i32, p.min.y as i32 + y as i32, c))
+                    let x = x as usize;
+                    let y = y as usize;
+                    let c = (c * 255.0) as u8;
+                    pixels[y * w * 4 + x * 4 + 0] = c;
+                    pixels[y * w * 4 + x * 4 + 1] = c;
+                    pixels[y * w * 4 + x * 4 + 2] = c;
+                    pixels[y * w * 4 + x * 4 + 3] = c;
                 });
-            }
-        }
 
-        for (x, y, c) in img {
-            let c = (c * 255.) as u8;
-            if c > 0 {
-                self.canvas.set_draw_color(Color::RGBA(c, c, c, c));
-                self.canvas
-                    .fill_rect(sdl2::rect::Rect::new(x, y + 100, 1, 1))
+                let mut texture = self
+                    .canvas
+                    .create_texture_static(PixelFormatEnum::RGBA8888, w as u32, h as u32)
                     .unwrap();
+                texture.set_blend_mode(sdl2::render::BlendMode::Blend);
+
+                texture.update(None, &pixels, 4 * w).unwrap();
+
+                let r = sdl2::rect::Rect::new(p.min.x + pos.x, p.min.y + pos.y, w as u32, h as u32);
+                self.canvas.copy(&texture, None, Some(r)).unwrap();
             }
         }
+    }
 
+    pub fn update(&mut self) {
+        self.draw_text("Hello World", V2i::new(0, 100));
         self.canvas.present();
         self.events = self.event.poll_iter().collect();
         self.canvas.set_draw_color(Color::RGB(32, 32, 32));

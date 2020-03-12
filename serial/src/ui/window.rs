@@ -62,17 +62,17 @@ impl Window {
         self.items.begin();
     }
 
-    pub fn draw(&self, sdl: &mut Sdl) {
+    pub fn draw(&self, title: &str, sdl: &mut Sdl) {
         draw_rect(sdl, self.body_rect(), self.color);
         draw_rect(sdl, self.header_rect(), [64, 64, 128]);
-        draw_rect(sdl, self.resize_handle_rect(), [64, 64, 128]);
 
-        {
-            // TODO: draw text
-        }
+        sdl.canvas.set_clip_rect(self.header_rect().into_sdl());
+        sdl.draw_text(title, self.body_rect().pos + V2i::new(2, -2));
 
         let mut body = self.body_rect();
         sdl.canvas.set_clip_rect(body.into_sdl());
+        draw_rect(sdl, self.resize_handle_rect(), [64, 64, 128]);
+
         for (_id, e) in self.items.iter() {
             e.draw(sdl, body.pos);
             let s = e.size.y + 10;
