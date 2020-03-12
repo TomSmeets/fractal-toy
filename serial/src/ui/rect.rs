@@ -1,7 +1,7 @@
 use crate::math::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Copy, Clone)]
 pub struct Rect {
     pub pos: V2i,
     pub size: V2i,

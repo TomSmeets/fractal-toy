@@ -46,8 +46,7 @@ impl UI {
         let mut hot: Option<&String> = None;
         let mut active_changed = false;
 
-        let mut windows: Vec<(&String, &mut Window)> =
-            self.windows.iter_mut().filter(|(_, w)| w.visible).collect();
+        let mut windows: Vec<_> = self.windows.iter_mut().filter(|(_, w)| w.visible).collect();
         windows.sort_by_key(|(_, w)| w.z_index);
         for (id, window) in windows.iter_mut() {
             if let Some(d) = &self.drag {
@@ -70,10 +69,13 @@ impl UI {
 
                         // strat dragging
                         println!("Drag {}", id);
-                        self.drag = Some(DragAction {
-                            id: id.to_string(),
-                            offset: window.rect.pos - input.mouse,
-                        });
+
+                        if window.header_rect().is_inside(input.mouse) {
+                            self.drag = Some(DragAction {
+                                id: id.to_string(),
+                                offset: window.rect.pos - input.mouse,
+                            });
+                        }
                     }
                 }
             }
@@ -96,7 +98,9 @@ impl UI {
     }
 
     pub fn window(&mut self, title: &str) -> &mut Window {
-        // probably want to create a gneeric data structure for this operation
+        // NOTE: probably want to create a gneeric data structure for this operation
+        // NOTE: the hashmap could be improved by the fact that the windows will be called in the same order almost every time
+        // NOTE: so a plain vector with linear search starting from the current position could be just as effective
         let w = self
             .windows
             .entry(title.to_string())
