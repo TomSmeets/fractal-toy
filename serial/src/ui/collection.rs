@@ -7,6 +7,7 @@ pub struct Item<T> {
     pub value: T,
 }
 
+// TODO: clean up items that have been inactive for a whole frame
 #[derive(Serialize, Deserialize)]
 pub struct Collection<T> {
     pub index: usize,

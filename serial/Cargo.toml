@@ -24,6 +24,7 @@ rand       = "0.7"
 palette    = "0.5.0"
 rug 	   = "1.7.0"
 libloading = { version = "0.5", optional = true }
+rusttype  = "0.8.2"
 
 # winit    	        = "0.21" does not support gamepads yet :(
 # glx-hal (or gfx?) = we are doing fine with simple sdl rednerer by now

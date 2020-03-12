@@ -67,6 +67,10 @@ impl Window {
         draw_rect(sdl, self.header_rect(), [64, 64, 128]);
         draw_rect(sdl, self.resize_handle_rect(), [64, 64, 128]);
 
+        {
+            // TODO: draw text
+        }
+
         let mut body = self.body_rect();
         sdl.canvas.set_clip_rect(body.into_sdl());
         for (_id, e) in self.items.iter() {
