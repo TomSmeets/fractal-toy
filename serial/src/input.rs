@@ -42,9 +42,35 @@ pub enum InputAction {
     Count,
 }
 
+pub struct Button {
+    pub is_down: bool,
+    pub was_down: bool,
+}
+
+impl Button {
+    pub fn new() -> Button {
+        Button {
+            is_down: false,
+            was_down: false,
+        }
+    }
+
+    pub fn went_down(&self) -> bool {
+        self.is_down && !self.was_down
+    }
+
+    pub fn went_up(&self) -> bool {
+        !self.is_down && self.was_down
+    }
+
+    pub fn update(&mut self) {
+        self.was_down = self.is_down;
+    }
+}
+
 pub struct Input {
     pub mouse: V2i,
-    pub mouse_down: bool,
+    pub mouse_down: Button,
 
     pub scroll: i32,
     pub dir_move: V2,
@@ -73,7 +99,7 @@ impl Input {
     pub fn new() -> Self {
         Input {
             mouse: V2i::zero(),
-            mouse_down: false,
+            mouse_down: Button::new(),
             scroll: 0,
             dir_move: V2::zero(),
             dir_look: V2::zero(),
@@ -97,6 +123,7 @@ impl Input {
     }
 
     pub fn handle_sdl(&mut self, events: &[Event]) {
+        self.mouse_down.update();
         for e in events {
             match e {
                 Event::Quit { .. } => self.action[InputAction::Quit as usize] = true,
@@ -111,11 +138,11 @@ impl Input {
                 Event::MouseButtonDown {
                     mouse_btn: MouseButton::Left,
                     ..
-                } => self.mouse_down = true,
+                } => self.mouse_down.is_down = true,
                 Event::MouseButtonUp {
                     mouse_btn: MouseButton::Left,
                     ..
-                } => self.mouse_down = false,
+                } => self.mouse_down.is_down = false,
 
                 Event::MouseWheel { y, .. } => self.scroll += y,
                 Event::MouseMotion { x, y, .. } => {

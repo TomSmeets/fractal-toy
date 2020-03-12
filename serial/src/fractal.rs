@@ -45,7 +45,7 @@ impl Fractal {
             self.pos.translate(p1 - mouse_in_view);
         }
 
-        self.drag = if input.mouse_down {
+        self.drag = if input.mouse_down.is_down {
             DragState::From(mouse_in_view)
         } else {
             DragState::None

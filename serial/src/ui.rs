@@ -33,59 +33,50 @@ impl UI {
     }
 
     pub fn update(&mut self, sdl: &mut Sdl, input: &Input) {
-        let mouse_went_down = !self.was_down && input.mouse_down;
-        let mouse_went_up = self.was_down && !input.mouse_down;
-
-        self.was_down = input.mouse_down;
-
-        if self.drag.is_some() && !input.mouse_down {
+        if self.drag.is_some() && input.mouse_down.went_up() {
             self.drag = None;
         }
 
         // this is the top most window under the cursor
-        let mut hot: Option<&String> = None;
+        let mut hot: Option<&str> = None;
         let mut active_changed = false;
 
         let mut windows: Vec<_> = self.windows.iter_mut().filter(|(_, w)| w.visible).collect();
         windows.sort_by_key(|(_, w)| w.z_index);
         for (id, window) in windows.iter_mut() {
+            let id: &str = id;
+            let window: &mut Window = window;
+
             if let Some(d) = &self.drag {
-                if &&d.id == id {
+                if d.id == id {
                     window.rect.pos = input.mouse + d.offset;
                 }
             }
 
-            if hot.is_none() {
-                let hover = window.is_inside(input.mouse);
+            if hot.is_none() && window.is_inside(input.mouse) {
+                // this window is the first under the cursor
+                hot = Some(id);
+                if input.mouse_down.went_down() {
+                    // we clicked somewhere inside the window
+                    active_changed = true;
+                    self.active = Some(id.to_string());
 
-                if hover {
-                    hot = Some(id);
-                    if mouse_went_down {
-                        active_changed = true;
-                        self.active = Some(id.clone());
+                    // move window to top
+                    window.z_index = -1;
 
-                        // move window to top
-                        window.z_index = -1;
+                    // strat dragging
+                    println!("Drag {}", id);
 
-                        // strat dragging
-                        println!("Drag {}", id);
-
-                        if window.header_rect().is_inside(input.mouse) {
-                            self.drag = Some(DragAction {
-                                id: id.to_string(),
-                                offset: window.rect.pos - input.mouse,
-                            });
-                        }
+                    if window.header_rect().is_inside(input.mouse) {
+                        self.drag = Some(DragAction {
+                            id: id.to_string(),
+                            offset: window.rect.pos - input.mouse,
+                        });
                     }
                 }
             }
 
             window.visible = false;
-        }
-
-        // TODO: make graphics implementation independet
-        for (_, window) in windows.iter().rev() {
-            window.draw(sdl);
         }
 
         // If we moved some window to front, move all other windows back
@@ -95,12 +86,19 @@ impl UI {
                 println!("{}: z = {}", i, w.z_index);
             }
         }
+
+        // TODO: make graphics implementation independet
+        // all windows are drawn from bottom to top, so we have to iterate in reverse
+        for (_, window) in windows.iter().rev() {
+            window.draw(sdl);
+        }
     }
 
     pub fn window(&mut self, title: &str) -> &mut Window {
         // NOTE: probably want to create a gneeric data structure for this operation
-        // NOTE: the hashmap could be improved by the fact that the windows will be called in the same order almost every time
-        // NOTE: so a plain vector with linear search starting from the current position could be just as effective
+        // NOTE: the hashmap could be improved by the fact that the windows will be called in the
+        // NOTE: same order almost every time so a plain vector with linear search starting
+        // NOTE: from the current position could be just as effective
         let w = self
             .windows
             .entry(title.to_string())
