@@ -87,12 +87,15 @@ impl State {
         // fractal.update(time, sdl, window, input);
 
         {
-            {
-                let w1 = ui.window("Hello");
-            }
-            {
-                let w2 = ui.window("World");
-            }
+            let w1 = ui.window("Hello");
+            w1.color = [255, 0, 0];
+            let w2 = ui.window("World");
+            w2.color = [0, 255, 0];
+            w2.size.0 = 160;
+            let _w3 = ui.window("A");
+            let _w4 = ui.window("B");
+            let _w5 = ui.window("C");
+            let _w6 = ui.window("D");
         }
 
         input.is_down(InputAction::Quit)
