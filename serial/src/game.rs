@@ -86,11 +86,14 @@ impl State {
 
         // fractal.update(time, sdl, window, input);
 
-        ui.window_begin("Hello");
-        ui.window_end();
-
-        ui.window_begin("World");
-        ui.window_end();
+        {
+            {
+                let w1 = ui.window("Hello");
+            }
+            {
+                let w2 = ui.window("World");
+            }
+        }
 
         input.is_down(InputAction::Quit)
     }
