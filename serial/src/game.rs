@@ -82,9 +82,15 @@ impl State {
         sdl.update();
         window.update(sdl);
         input.update(sdl);
-        ui.update();
+        ui.update(sdl, input);
 
         fractal.update(time, sdl, window, input);
+
+        ui.window_begin("Hello");
+        ui.window_end();
+
+        ui.window_begin("World");
+        ui.window_end();
 
         input.is_down(InputAction::Quit)
     }
