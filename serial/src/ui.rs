@@ -50,13 +50,7 @@ impl UI {
         let mut hot: Option<&str> = None;
         let mut active_changed = false;
 
-        let mut windows: Vec<_> = self
-            .windows
-            .content
-            .iter_mut()
-            .map(|i| (&i.id, &mut i.value))
-            .filter(|(_, w)| w.visible)
-            .collect();
+        let mut windows: Vec<_> = self.windows.iter_mut().collect();
         windows.sort_by_key(|(_, w)| w.z_index);
         for (id, window) in windows.iter_mut() {
             let id: &str = id;
@@ -110,8 +104,6 @@ impl UI {
                     }
                 }
             }
-
-            window.visible = false;
         }
 
         // If we moved some window to front, move all other windows back
@@ -127,6 +119,12 @@ impl UI {
         for (_, window) in windows.iter().rev() {
             window.draw(sdl);
         }
+
+        for (_, window) in windows.iter_mut() {
+            window.begin();
+        }
+
+        self.windows.begin();
     }
 
     pub fn window(&mut self, title: &str) -> &mut Window {
@@ -136,7 +134,6 @@ impl UI {
         // NOTE: from the current position could be just as effective
         let w = self.windows.item(title, Window::new);
         // move into Collection
-        w.visible = true;
         w
     }
 }

@@ -87,7 +87,7 @@ impl State {
         // fractal.update(time, sdl, window, input);
 
         {
-            {
+            if true {
                 let w = ui.window("Hello");
                 w.color = [255, 0, 0];
                 let _i = w.item("button");

@@ -45,6 +45,12 @@ impl<T> Collection<T> {
         return None;
     }
 
+    pub fn begin(&mut self) {
+        for i in self.content.iter_mut() {
+            i.active = false;
+        }
+    }
+
     pub fn item<F: FnOnce() -> T>(&mut self, id: &str, def: F) -> &mut T {
         let idx = self.item_index(id);
         let idx = match idx {
@@ -62,17 +68,22 @@ impl<T> Collection<T> {
 
         self.index = idx;
 
-        &mut self.content[idx].value
+        let item = &mut self.content[idx];
+        item.active = true;
+        &mut item.value
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &T> {
-        self.content.iter().filter(|i| i.active).map(|i| &i.value)
+    pub fn iter(&self) -> impl Iterator<Item = (&str, &T)> {
+        self.content
+            .iter()
+            .filter(|i| i.active)
+            .map(|i| (i.id.as_ref(), &i.value))
     }
 
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (&str, &mut T)> {
         self.content
             .iter_mut()
             .filter(|i| i.active)
-            .map(|i| &mut i.value)
+            .map(|i| (i.id.as_ref(), &mut i.value))
     }
 }

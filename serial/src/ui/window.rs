@@ -24,8 +24,6 @@ impl Element {
 #[derive(Serialize, Deserialize, Default)]
 pub struct Window {
     pub z_index: i32,
-    // TODO: restrict acess, this filed will always read as false to the user
-    pub visible: bool,
     pub rect: Rect,
     pub color: [u8; 3],
 
@@ -60,6 +58,10 @@ impl Window {
         }
     }
 
+    pub fn begin(&mut self) {
+        self.items.begin();
+    }
+
     pub fn draw(&self, sdl: &mut Sdl) {
         draw_rect(sdl, self.body_rect(), self.color);
         draw_rect(sdl, self.header_rect(), [64, 64, 128]);
@@ -67,7 +69,7 @@ impl Window {
 
         let mut body = self.body_rect();
         sdl.canvas.set_clip_rect(body.into_sdl());
-        for e in self.items.iter() {
+        for (_id, e) in self.items.iter() {
             e.draw(sdl, body.pos);
             let s = e.size.y + 10;
             body.pos.y += s;
