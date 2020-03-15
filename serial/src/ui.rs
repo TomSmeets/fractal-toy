@@ -1,10 +1,8 @@
-use std::collections::HashMap;
-
-use serde::{Deserialize, Serialize};
-
+use crate::input::Button;
 use crate::input::Input;
 use crate::math::*;
 use crate::sdl::Sdl;
+use sdl2::pixels::Color;
 
 mod collection;
 mod rect;
@@ -12,7 +10,6 @@ mod window;
 
 pub use self::collection::Collection;
 pub use self::rect::Rect;
-pub use self::window::Window;
 
 enum DragActionType {
     Drag,
@@ -25,115 +22,185 @@ pub struct DragAction {
     mode: DragActionType,
 }
 
-#[derive(Serialize, Deserialize, Default)]
-pub struct UI {
-    #[serde(skip)]
-    drag: Option<DragAction>,
-    // This is the selected window
-    active: Option<String>,
-    windows: Collection<Window>,
+pub struct UIRect {
+    rect: Rect,
+    color: [u8; 3],
+    text: String,
+}
 
-    was_down: bool,
+#[derive(Clone)]
+pub struct UIState {
+    pub rect: Rect,
+}
+
+impl UIState {
+    pub fn new() -> UIState {
+        UIState {
+            rect: Rect {
+                pos: V2i::new(0, 0),
+                size: V2i::new(800, 800),
+            },
+        }
+    }
+}
+
+pub struct UI {
+    pub mouse_pos: V2i,
+    pub mouse_down: Button,
+
+    pub rects: Vec<UIRect>,
+
+    pub state: UIState,
+    pub stack: Vec<UIState>,
+
+    pub current: Vec<String>,
+
+    // TODO
+    pub data: Collection<V2i>,
+    pub drag: Option<DragAction>,
+}
+
+fn draw_rect(sdl: &mut Sdl, r: Rect, color: [u8; 3]) {
+    let r = r.into_sdl();
+    let mut r2 = r;
+    r2.x -= 2;
+    r2.y -= 2;
+    r2.w += 4;
+    r2.h += 4;
+
+    sdl.canvas.set_draw_color(Color::RGB(0, 0, 0));
+    sdl.canvas.fill_rect(r2).unwrap();
+
+    sdl.canvas
+        .set_draw_color(Color::RGB(color[0], color[1], color[2]));
+    sdl.canvas.fill_rect(r).unwrap();
 }
 
 impl UI {
-    pub fn new() -> Self {
-        UI::default()
+    pub fn new() -> UI {
+        UI {
+            mouse_pos: V2i::new(0, 0),
+            mouse_down: Button::new(),
+            rects: Vec::new(),
+            state: UIState::new(),
+            stack: Vec::new(),
+            data: Collection::new(),
+            current: Vec::new(),
+            drag: None,
+        }
     }
 
     pub fn update(&mut self, sdl: &mut Sdl, input: &Input) {
-        if self.drag.is_some() && input.mouse_down.went_up() {
+        self.mouse_pos = input.mouse;
+        self.mouse_down = input.mouse_down;
+        self.state.rect.pos = V2i::new(0, 0);
+
+        if self.drag.is_some() && !self.mouse_down.is_down {
             self.drag = None;
         }
 
-        // this is the top most window under the cursor
-        let mut hot: Option<&str> = None;
-        let mut active_changed = false;
+        for r in self.rects.iter_mut() {
+            draw_rect(sdl, r.rect, r.color);
 
-        let mut windows: Vec<_> = self.windows.iter_mut().collect();
-        windows.sort_by_key(|(_, w)| w.z_index);
-        for (id, window) in windows.iter_mut() {
-            let id: &str = id;
-            let window: &mut Window = window;
-
-            if let Some(d) = &self.drag {
-                if d.id == id {
-                    match d.mode {
-                        DragActionType::Drag => window.rect.pos = input.mouse + d.offset,
-                        DragActionType::Resize => {
-                            window.rect.size = input.mouse - window.rect.pos;
-                            if window.rect.size.x < 0 {
-                                window.rect.size.x = 0;
-                            }
-                            if window.rect.size.y < 20 {
-                                window.rect.size.y = 20;
-                            }
-                        },
-                    }
-                }
-            }
-
-            if hot.is_none() && window.is_inside(input.mouse) {
-                // this window is the first under the cursor
-                hot = Some(id);
-                if input.mouse_down.went_down() {
-                    // we clicked somewhere inside the window
-                    active_changed = true;
-                    self.active = Some(id.to_string());
-
-                    // move window to top
-                    window.z_index = -1;
-
-                    // strat dragging
-                    println!("Drag {}", id);
-
-                    if window.header_rect().is_inside(input.mouse) {
-                        self.drag = Some(DragAction {
-                            id: id.to_string(),
-                            offset: window.rect.pos - input.mouse,
-                            mode: DragActionType::Drag,
-                        });
-                    }
-
-                    if window.resize_handle_rect().is_inside(input.mouse) {
-                        self.drag = Some(DragAction {
-                            id: id.to_string(),
-                            offset: window.rect.pos - input.mouse,
-                            mode: DragActionType::Resize,
-                        });
-                    }
-                }
+            {
+                let (mut rect, texture) = sdl.make_text(&r.text, 20.0);
+                rect.x = r.rect.pos.x + r.rect.size.x / 2 - rect.w / 2;
+                rect.y = r.rect.pos.y + r.rect.size.y / 2 - rect.h / 2;
+                sdl.draw_rgba(rect, &texture);
             }
         }
-
-        // If we moved some window to front, move all other windows back
-        if active_changed {
-            for (i, w) in windows.iter_mut() {
-                w.z_index += 1;
-                println!("{}: z = {}", i, w.z_index);
-            }
-        }
-
-        // TODO: make graphics implementation independet
-        // all windows are drawn from bottom to top, so we have to iterate in reverse
-        for (id, window) in windows.iter().rev() {
-            window.draw(id, sdl);
-        }
-
-        for (_, window) in windows.iter_mut() {
-            window.begin();
-        }
-
-        self.windows.begin();
+        self.rects.clear();
     }
 
-    pub fn window(&mut self, title: &str) -> &mut Window {
-        // NOTE: probably want to create a gneeric data structure for this operation
-        // NOTE: the hashmap could be improved by the fact that the windows will be called in the
-        // NOTE: same order almost every time so a plain vector with linear search starting
-        // NOTE: from the current position could be just as effective
-        let w = self.windows.item(title, Window::new);
-        // move into Collection
-        w
+    pub fn region(&mut self, title: &str) -> bool {
+        let size = V2i::new(self.state.rect.size.x, 40);
+        let pos = self.state.rect.pos;
+
+        self.state.rect.pos.y += size.y + 5;
+
+        let r = Rect { pos, size };
+
+        let hot = r.is_inside(self.mouse_pos);
+
+        let color = if hot { [128, 0, 0] } else { [128, 128, 128] };
+
+        self.rects.push(UIRect {
+            rect: r,
+            text: title.to_string(),
+            color,
+        });
+
+        hot
     }
+
+    pub fn button(&mut self, title: &str) -> bool {
+        self.region(title) && self.mouse_down.went_down()
+    }
+
+    pub fn vsplit<F: FnOnce(&mut UI), G: FnOnce(&mut UI)>(&mut self, f: F, g: G) {
+        let y_old = self.state.rect.pos.y;
+        let s_old = self.state.rect.size.x;
+        let x_old = self.state.rect.pos.x;
+        let mut y_new = y_old;
+        self.state.rect.size.x /= 2;
+
+        f(self);
+        y_new = y_new.max(self.state.rect.pos.y);
+        self.state.rect.pos.y = y_old;
+        self.state.rect.pos.x += self.state.rect.size.x;
+        g(self);
+        y_new = y_new.max(self.state.rect.pos.y);
+
+        self.state.rect.size.x = s_old;
+        self.state.rect.pos.x = x_old;
+        self.state.rect.pos.y = y_new;
+    }
+
+    pub fn window_start<F: FnOnce(&mut UI)>(&mut self, title: &str, f: F) {
+        let o = self.state.rect.pos;
+        self.state.rect.pos += V2i::new(20, 20);
+
+        self.current.push(title.to_string());
+
+        if let Some(act) = &self.drag {
+            if act.id == title {
+                let pos = self.data.item(title, || o);
+                *pos = self.mouse_pos + act.offset;
+            }
+        }
+
+        let pos = *self.data.item(title, || o);
+        let size = V2i::new(200, 200);
+        let rect = Rect { pos, size };
+
+        let hot = rect.is_inside(self.mouse_pos);
+
+        self.rects.push(UIRect {
+            rect,
+            text: title.to_string(),
+            color: [0, 0, 128],
+        });
+
+        let state = self.state.clone();
+        self.state.rect.size = size - V2i::new(8, 8);
+        self.state.rect.pos = pos + V2i::new(4, 4);
+
+        let header = self.region(title);
+
+        if header && self.mouse_down.is_down {
+            if self.drag.is_none() {
+                self.drag = Some(DragAction {
+                    id: title.to_string(),
+                    offset: pos - self.mouse_pos,
+                    mode: DragActionType::Drag,
+                })
+            }
+        }
+
+        f(self);
+
+        self.state = state;
+    }
+
+    pub fn window_stop(&mut self) {}
 }

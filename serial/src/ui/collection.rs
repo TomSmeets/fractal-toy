@@ -29,6 +29,10 @@ impl<T> Collection<T> {
     }
 
     pub fn item_index(&mut self, id: &str) -> Option<usize> {
+        // we always start at the current index with searching
+        // the item we are searching is almost always the next one
+        // TODO: figure out if this matters for performance
+        // TODO: if we do index+1 we have to mod it with the content length
         let (pre, post) = self.content.split_at(self.index);
 
         for (offset, e) in post.iter().enumerate() {
@@ -42,7 +46,6 @@ impl<T> Collection<T> {
                 return Some(offset);
             }
         }
-
         return None;
     }
 

@@ -21,13 +21,15 @@ impl Element {
     }
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize)]
 pub struct Window {
     pub z_index: i32,
     pub rect: Rect,
-    pub color: [u8; 3],
 
-    pub items: Collection<Element>,
+    pub mouse_pos: V2i,
+    pub mouse_click: bool,
+
+    pub rects: Vec<(Rect, [u8; 3])>,
 }
 
 fn draw_rect(sdl: &mut Sdl, r: Rect, color: [u8; 3]) {
@@ -49,21 +51,19 @@ fn draw_rect(sdl: &mut Sdl, r: Rect, color: [u8; 3]) {
 impl Window {
     pub fn new() -> Self {
         Window {
+            z_index: 0,
             rect: Rect {
                 pos: V2i::new(0, 0),
                 size: V2i::new(80, 80),
             },
-            color: [128, 128, 128],
-            ..Self::default()
+            mouse_pos: V2i::new(0, 0),
+            mouse_click: false,
+            rects: Vec::new(),
         }
     }
 
-    pub fn begin(&mut self) {
-        self.items.begin();
-    }
-
     pub fn draw(&self, title: &str, sdl: &mut Sdl) {
-        draw_rect(sdl, self.body_rect(), self.color);
+        draw_rect(sdl, self.body_rect(), [64, 64, 64]);
         draw_rect(sdl, self.header_rect(), [64, 64, 128]);
 
         sdl.canvas.set_clip_rect(self.header_rect().into_sdl());
@@ -77,14 +77,9 @@ impl Window {
 
         let mut body = self.body_rect();
         sdl.canvas.set_clip_rect(body.into_sdl());
-        draw_rect(sdl, self.resize_handle_rect(), [64, 64, 128]);
 
-        for (_id, e) in self.items.iter() {
-            e.draw(sdl, body.pos);
-            let s = e.size.y + 10;
-            body.pos.y += s;
-            body.size.y -= s;
-        }
+        // TODO: draw items
+        draw_rect(sdl, self.resize_handle_rect(), [64, 64, 128]);
         sdl.canvas.set_clip_rect(None);
     }
 
@@ -113,9 +108,13 @@ impl Window {
         self.rect.is_inside(p)
     }
 
-    pub fn item(&mut self, id: &str) -> &mut Element {
-        self.items.item(id, || Element {
-            size: V2i::new(20, 20),
-        })
+    pub fn button(&mut self) -> bool {
+        let r = Rect {
+            pos: V2i::new(0, 0),
+            size: V2i::new(80, 80),
+        };
+
+        self.rects.push((r, [255, 0, 0]));
+        false
     }
 }

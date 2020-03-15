@@ -86,19 +86,32 @@ impl State {
 
         // fractal.update(time, sdl, window, input);
 
-        {
-            if true {
-                let w = ui.window("Hello");
-                w.color = [255, 0, 0];
-                let _i = w.item("button");
-                let _j = w.item("hi");
+        ui.window_start("win", |ui| {
+            if ui.button("Hello?") {
+                println!("Hello world!");
             }
 
-            {
-                let w = ui.window("World");
-                w.color = [0, 255, 0];
+            if ui.button("World?") {
+                println!("world!");
             }
-        }
+
+            let _ = ui.button("a");
+            let _ = ui.button("b");
+            let _ = ui.button("c");
+            let _ = ui.button("d");
+        });
+
+        ui.window_start("hi", |ui| {
+            if ui.button("Foo") {
+                println!("Foooooooo!");
+            }
+
+            if ui.button("Bar") {
+                println!("Bar");
+            }
+        });
+
+        let _ = ui.button("hi");
 
         input.is_down(InputAction::Quit)
     }

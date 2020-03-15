@@ -42,6 +42,7 @@ pub enum InputAction {
     Count,
 }
 
+#[derive(Clone, Copy)]
 pub struct Button {
     pub is_down: bool,
     pub was_down: bool,
