@@ -83,39 +83,42 @@ impl State {
         sdl.update();
         window.update(sdl);
         input.update(sdl);
-        ui.update(
-            sdl,
-            input,
-            V2i::new(window.size.x as i32, window.size.y as i32),
-        );
 
-        // fractal.update(time, sdl, window, input);
+        fractal.update(time, sdl, window, input);
 
-        let _ = ui.button("hi");
-        ui.window_start("win", |ui| {
-            if ui.button("Hello?") {
-                println!("Hello world!");
-            }
+        if false {
+            ui.update(
+                sdl,
+                input,
+                V2i::new(window.size.x as i32, window.size.y as i32),
+            );
 
-            if ui.button("World?") {
-                println!("world!");
-            }
+            let _ = ui.button("hi");
+            ui.window_start("win", |ui| {
+                if ui.button("Hello?") {
+                    println!("Hello world!");
+                }
 
-            let _ = ui.button("a");
-            let _ = ui.button("b");
-            let _ = ui.button("c");
-            let _ = ui.button("d");
-        });
+                if ui.button("World?") {
+                    println!("world!");
+                }
 
-        ui.window_start("hi", |ui| {
-            if ui.button("Foo") {
-                println!("Foooooooo!");
-            }
+                let _ = ui.button("a");
+                let _ = ui.button("b");
+                let _ = ui.button("c");
+                let _ = ui.button("d");
+            });
 
-            if ui.button("Bar") {
-                println!("Bar");
-            }
-        });
+            ui.window_start("hi", |ui| {
+                if ui.button("Foo") {
+                    println!("Foooooooo!");
+                }
+
+                if ui.button("Bar") {
+                    println!("Bar");
+                }
+            });
+        }
 
         input.is_down(InputAction::Quit)
     }

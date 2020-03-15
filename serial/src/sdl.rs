@@ -117,7 +117,6 @@ impl Sdl {
     }
 
     pub fn update(&mut self) {
-        self.draw_text("Hello World", V2i::new(0, 100));
         self.canvas.present();
         self.events = self.event.poll_iter().collect();
         self.canvas.set_draw_color(Color::RGB(32, 32, 32));
