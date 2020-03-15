@@ -6,28 +6,84 @@ use sdl2::pixels::*;
 use sdl2::rect::*;
 use sdl2::render::*;
 
-use crate::input::*;
-use crate::quadtree::*;
-use crate::sdl::*;
+use std::collections::hash_map::{Entry, HashMap};
+
+use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::{Arc, Mutex};
+use std::thread;
+
+use crate::input::{Input, InputAction};
+use crate::sdl::Sdl;
 use crate::viewport::Viewport;
 use crate::window::Window;
 use crate::*;
+
+pub mod tile;
+use self::tile::*;
+
+static TEXTURE_SIZE: usize = 64;
 
 pub enum DragState {
     None,
     From(V2),
 }
 
+pub struct TileContent {
+    pixels: Vec<u8>,
+}
+
+impl TileContent {
+    pub fn new(p: TilePos) -> TileContent {
+        let mut pixels = vec![0; (TEXTURE_SIZE * TEXTURE_SIZE * 4) as usize];
+        draw_tile(pixels.as_mut_slice(), p);
+        TileContent { pixels }
+    }
+
+    pub fn to_sdl(&self, texture: &mut Texture) {
+        texture
+            .update(None, &self.pixels, (4 * TEXTURE_SIZE) as usize)
+            .unwrap();
+    }
+}
+
 pub struct Fractal {
-    pub textures: QuadTree<Texture>,
+    pub textures: Arc<Mutex<HashMap<TilePos, Option<TileContent>>>>,
     pub pos: Viewport,
     pub drag: DragState,
 }
 
 impl Fractal {
     pub fn new() -> Self {
+        let h: HashMap<TilePos, Option<TileContent>> = HashMap::new();
+        let q = Arc::new(Mutex::new(h));
+
+        for i in 0..6 {
+            let q = q.clone();
+            thread::spawn(move || loop {
+                let next: Option<TilePos> = {
+                    let l = q.lock().unwrap();
+                    l.iter()
+                        .filter(|(_, x)| x.is_none())
+                        .map(|(p, _)| *p)
+                        .max_by_key(|p| p.z)
+                };
+
+                match next {
+                    Some(p) => {
+                        let t = TileContent::new(p);
+
+                        let mut map = q.lock().unwrap();
+                        map.insert(p, Some(t));
+                    },
+                    None => {
+                        thread::sleep_ms(100);
+                    },
+                }
+            });
+        }
+
         Fractal {
-            textures: QuadTree::new(),
+            textures: q,
             pos: Viewport::new(),
             drag: DragState::None,
         }
@@ -51,58 +107,68 @@ impl Fractal {
             DragState::None
         };
 
-        if input.is_down(InputAction::X) {
-            self.textures.reduce_to(1);
-        }
         if input.is_down(InputAction::Y) {
-            self.textures.clear();
+            let t = self.textures.lock();
+            t.unwrap().clear();
         }
 
-        if input.is_down(InputAction::A) {
-            let p = self.pos.get_pos();
-            let t = mk_texture(&sdl.canvas.texture_creator(), p.clone());
-            self.textures.insert_at(&p.path, t);
-        }
-
-        let vs = self.textures.values();
-        for (p, v) in &vs {
-            let r = self.pos_to_rect(window, p);
-            sdl.canvas.copy(v, None, Some(r)).unwrap();
-            sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
-            sdl.canvas.draw_rect(r).unwrap();
+        // if input.is_down(InputAction::A) {
+        {
+            let ps = self.pos.get_pos_all();
+            let mut t = self.textures.lock().unwrap();
+            for p in ps {
+                let e = t.entry(p);
+                match e {
+                    Entry::Occupied(e) => {},
+                    Entry::Vacant(e) => {
+                        e.insert(None);
+                    },
+                }
+            }
         }
 
         {
-            let w = 20;
-
-            let mouse_view = screen_to_view(window, input.mouse);
-            let mouse_world = self.pos.view_to_world(mouse_view);
-            let mouse_view = self.pos.world_to_view(mouse_world);
-            let mouse_screen = view_to_screen(window, mouse_view);
-
-            sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
-            sdl.canvas
-                .fill_rect(Rect::from_center((mouse_screen.x, mouse_screen.y), w, w))
+            let t = self.textures.lock().unwrap();
+            let mut vs: Vec<_> = t.iter().collect();
+            vs.sort_unstable_by_key(|(p, _)| p.z);
+            let mut texture = sdl
+                .canvas
+                .texture_creator()
+                .create_texture_static(
+                    PixelFormatEnum::RGBA8888,
+                    TEXTURE_SIZE as u32,
+                    TEXTURE_SIZE as u32,
+                )
                 .unwrap();
 
-            // word space
-            let p_min = V2::new(0., 0.);
-            let p_max = V2::new(1., 1.);
+            let mut count_empty = 0;
+            let mut count_full = 0;
+            for (p, v) in &vs {
+                if let Some(v) = v {
+                    v.to_sdl(&mut texture);
+                    let r = self.pos_to_rect(window, p);
+                    sdl.canvas.copy(&texture, None, Some(r)).unwrap();
+                    count_full += 1;
+                } else {
+                    count_empty += 1;
+                }
+            }
 
-            let p_min = self.pos.world_to_view(p_min);
-            let p_min = view_to_screen(window, p_min);
+            println!("{} / {}", count_empty, count_empty + count_full);
 
-            let p_max = self.pos.world_to_view(p_max);
-            let p_max = view_to_screen(window, p_max);
-
-            sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
-            sdl.canvas.draw_rect(mk_rect(p_min, p_max)).unwrap();
+            unsafe {
+                texture.destroy();
+            }
         }
 
-        {
-            let r = self.pos_to_rect(window, &self.pos.get_pos());
-            sdl.canvas.set_draw_color(Color::RGB(0, 255, 0));
-            sdl.canvas.draw_rect(r).unwrap();
+        if true {
+            let self_zoom = self.pos.zoom;
+            self.textures.lock().unwrap().retain(|p, t| {
+                let z_min = self_zoom - 1.0;
+                let z_max = self_zoom + 5.0;
+                let keep = (p.z as f32) > z_min && (p.z as f32) < z_max;
+                keep
+            });
         }
 
         if input.is_down(InputAction::F1) {
@@ -111,8 +177,8 @@ impl Fractal {
         }
     }
 
-    fn pos_to_rect(&self, window: &Window, p: &QuadTreePosition) -> Rect {
-        let (x, y, z) = p.float_top_left_with_size();
+    fn pos_to_rect(&self, window: &Window, p: &TilePos) -> Rect {
+        let [x, y, z, _] = p.to_f32();
         let p = V2::new(x as f32, y as f32);
         let w = p + V2::new(z as f32, z as f32);
         let p = self.pos.world_to_view(p);
@@ -148,7 +214,7 @@ fn view_to_screen(window: &Window, p: V2) -> V2i {
     )
 }
 
-fn mk_texture<T>(canvas: &TextureCreator<T>, p: QuadTreePosition) -> Texture {
+fn mk_texture<T>(canvas: &TextureCreator<T>, p: TilePos) -> Texture {
     let size = 256;
     let mut texture = canvas
         .create_texture_static(PixelFormatEnum::RGBA8888, size, size)
@@ -160,15 +226,16 @@ fn mk_texture<T>(canvas: &TextureCreator<T>, p: QuadTreePosition) -> Texture {
     texture
 }
 
-pub fn draw_tile(pixels: &mut [u8], p: QuadTreePosition) {
-    let resolution: u32 = 256;
-    // TODO: improve
-    assert!(pixels.len() as u32 == resolution * resolution * 4);
-
-    // gets center of this qpos square
-    let (x, y, size) = p.float_top_left_with_size();
+pub fn draw_tile(pixels: &mut [u8], p: TilePos) {
+    let [x, y, size] = p.to_f64();
     let center = Vector2::new(x, y) * 4.0 - Vector2::new(2.0, 2.0);
-    draw_mandel(pixels, resolution, resolution, size * 4.0, center);
+    draw_mandel(
+        pixels,
+        TEXTURE_SIZE as u32,
+        TEXTURE_SIZE as u32,
+        size * 4.0,
+        center,
+    );
 }
 
 fn mk_rect(a: V2i, b: V2i) -> Rect {
@@ -184,6 +251,7 @@ fn mk_rect(a: V2i, b: V2i) -> Rect {
     Rect::new(min_x, min_y, width as u32, height as u32)
 }
 
+// TODO: profile!!
 fn draw_mandel(pixels: &mut [u8], w: u32, h: u32, zoom: f64, offset: Vector2<f64>) {
     for y in 0..h {
         for x in 0..w {

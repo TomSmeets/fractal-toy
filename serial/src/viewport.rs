@@ -1,9 +1,9 @@
+use crate::fractal::tile::TilePos;
 use crate::math::*;
-use crate::quadtree::pos::QuadTreePosition;
 
 pub struct Viewport {
-    zoom: f32,
-    offset: Vector2<f32>,
+    pub zoom: f32,
+    pub offset: Vector2<f32>,
 }
 
 impl Viewport {
@@ -45,21 +45,25 @@ impl Viewport {
         2.0_f32.powf(self.zoom)
     }
 
-    pub fn get_pos(&self) -> QuadTreePosition {
-        let mut z = self.zoom + 1.0;
-        let mut x = self.offset.x + 0.5 * self.scale();
-        let mut y = self.offset.y + 0.5 * self.scale();
-        let mut node = QuadTreePosition::root();
+    pub fn get_pos(&self) -> TilePos {
+        let s = self.scale() / 2.0;
+        TilePos::from_f32(self.offset + Vector2::new(s, s), (self.zoom + 2.0) as i8)
+    }
 
-        while z > 0. {
-            let qx = if x > 0.5 { 1 } else { 0 };
-            let qy = if y > 0.5 { 1 } else { 0 };
-            node.child(qx, qy);
-            z -= 1.;
-            x = x * 2.0 - qx as f32;
-            y = y * 2.0 - qy as f32;
+    pub fn get_pos_all(&self) -> Vec<TilePos> {
+        let z = (self.zoom + 4.0) as i8;
+        let s = self.scale();
+
+        let min = TilePos::from_f32(self.offset, z);
+        let max = TilePos::from_f32(self.offset + Vector2::new(s, s), z);
+
+        let mut v = Vec::new();
+        for x in min.x..=max.x {
+            for y in min.y..=max.y {
+                v.push(TilePos { x, y, z });
+            }
         }
 
-        node
+        v
     }
 }

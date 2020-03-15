@@ -30,12 +30,20 @@ impl Sdl {
 
         let window = video
             .window("rust-sdl2 demo", 800, 600)
+            .opengl()
             .position_centered()
             .build()
             .unwrap();
 
         let event = ctx.event_pump().unwrap();
         let canvas = window.into_canvas().present_vsync().build().unwrap();
+
+        unsafe {
+            sdl2::sys::SDL_SetHint(
+                sdl2::sys::SDL_HINT_RENDER_SCALE_QUALITY.as_ptr() as *const i8,
+                (b"1").as_ptr() as *const i8,
+            );
+        }
 
         let font: Font<'static> = Font::from_bytes(FONT_DATA).unwrap();
 
