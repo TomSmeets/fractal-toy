@@ -1,5 +1,6 @@
 use crate::fractal::Fractal;
 use crate::input::{Input, InputAction};
+use crate::math::*;
 use crate::sdl::Sdl;
 use crate::ui::UI;
 use crate::window::Window;
@@ -82,10 +83,15 @@ impl State {
         sdl.update();
         window.update(sdl);
         input.update(sdl);
-        ui.update(sdl, input);
+        ui.update(
+            sdl,
+            input,
+            V2i::new(window.size.x as i32, window.size.y as i32),
+        );
 
         // fractal.update(time, sdl, window, input);
 
+        let _ = ui.button("hi");
         ui.window_start("win", |ui| {
             if ui.button("Hello?") {
                 println!("Hello world!");
@@ -110,8 +116,6 @@ impl State {
                 println!("Bar");
             }
         });
-
-        let _ = ui.button("hi");
 
         input.is_down(InputAction::Quit)
     }

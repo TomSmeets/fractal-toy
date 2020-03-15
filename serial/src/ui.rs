@@ -22,6 +22,12 @@ pub struct DragAction {
     mode: DragActionType,
 }
 
+pub enum DrawCommand {
+    Text { rect: Rect, text: String },
+    Rect { rect: Rect, color: [u8; 3] },
+    Clip { rect: Option<Rect> },
+}
+
 pub struct UIRect {
     rect: Rect,
     color: [u8; 3],
@@ -48,7 +54,7 @@ pub struct UI {
     pub mouse_pos: V2i,
     pub mouse_down: Button,
 
-    pub rects: Vec<UIRect>,
+    pub rects: Vec<DrawCommand>,
 
     pub state: UIState,
     pub stack: Vec<UIState>,
@@ -58,6 +64,7 @@ pub struct UI {
     // TODO
     pub data: Collection<V2i>,
     pub drag: Option<DragAction>,
+    pub clip: Option<Rect>,
 }
 
 fn draw_rect(sdl: &mut Sdl, r: Rect, color: [u8; 3]) {
@@ -87,12 +94,14 @@ impl UI {
             data: Collection::new(),
             current: Vec::new(),
             drag: None,
+            clip: None,
         }
     }
 
-    pub fn update(&mut self, sdl: &mut Sdl, input: &Input) {
+    pub fn update(&mut self, sdl: &mut Sdl, input: &Input, window_size: V2i) {
         self.mouse_pos = input.mouse;
         self.mouse_down = input.mouse_down;
+        self.state.rect.size = window_size;
         self.state.rect.pos = V2i::new(0, 0);
 
         if self.drag.is_some() && !self.mouse_down.is_down {
@@ -100,13 +109,21 @@ impl UI {
         }
 
         for r in self.rects.iter_mut() {
-            draw_rect(sdl, r.rect, r.color);
+            match r {
+                DrawCommand::Rect { rect, color } => {
+                    draw_rect(sdl, *rect, *color);
+                },
 
-            {
-                let (mut rect, texture) = sdl.make_text(&r.text, 20.0);
-                rect.x = r.rect.pos.x + r.rect.size.x / 2 - rect.w / 2;
-                rect.y = r.rect.pos.y + r.rect.size.y / 2 - rect.h / 2;
-                sdl.draw_rgba(rect, &texture);
+                DrawCommand::Text { rect, text } => {
+                    let (mut t_rect, texture) = sdl.make_text(&text, 20.0);
+                    t_rect.x = rect.pos.x + rect.size.x / 2 - t_rect.w / 2;
+                    t_rect.y = rect.pos.y + rect.size.y / 2 - t_rect.h / 2;
+                    sdl.draw_rgba(t_rect, &texture);
+                },
+
+                DrawCommand::Clip { rect } => {
+                    sdl.canvas.set_clip_rect(rect.map(|x| x.into_sdl()));
+                },
             }
         }
         self.rects.clear();
@@ -124,10 +141,11 @@ impl UI {
 
         let color = if hot { [128, 0, 0] } else { [128, 128, 128] };
 
-        self.rects.push(UIRect {
+        self.rects.push(DrawCommand::Rect { rect: r, color });
+
+        self.rects.push(DrawCommand::Text {
             rect: r,
             text: title.to_string(),
-            color,
         });
 
         hot
@@ -156,6 +174,11 @@ impl UI {
         self.state.rect.pos.y = y_new;
     }
 
+    pub fn set_clip(&mut self, r: Option<Rect>) {
+        self.clip = r;
+        self.rects.push(DrawCommand::Clip { rect: r });
+    }
+
     pub fn window_start<F: FnOnce(&mut UI)>(&mut self, title: &str, f: F) {
         let o = self.state.rect.pos;
         self.state.rect.pos += V2i::new(20, 20);
@@ -175,11 +198,18 @@ impl UI {
 
         let hot = rect.is_inside(self.mouse_pos);
 
-        self.rects.push(UIRect {
+        self.rects.push(DrawCommand::Rect {
             rect,
-            text: title.to_string(),
             color: [0, 0, 128],
         });
+
+        self.rects.push(DrawCommand::Text {
+            rect,
+            text: title.to_string(),
+        });
+
+        let clip = self.clip;
+        self.set_clip(Some(rect));
 
         let state = self.state.clone();
         self.state.rect.size = size - V2i::new(8, 8);
@@ -200,7 +230,6 @@ impl UI {
         f(self);
 
         self.state = state;
+        self.set_clip(clip);
     }
-
-    pub fn window_stop(&mut self) {}
 }
