@@ -12,8 +12,8 @@ impl TilePos {
         TilePos { x: 0, y: 0, z: 0 }
     }
 
-    pub fn from_f32(p: Vector2<f32>, z: i8) -> TilePos {
-        let s = (1_u64 << z) as f32;
+    pub fn from_f64(p: Vector2<f64>, z: i8) -> TilePos {
+        let s = (1_u64 << z) as f64;
         TilePos {
             x: (p.x * s) as u64,
             y: (p.y * s) as u64,

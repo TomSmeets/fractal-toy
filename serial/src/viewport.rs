@@ -2,8 +2,8 @@ use crate::fractal::tile::TilePos;
 use crate::math::*;
 
 pub struct Viewport {
-    pub zoom: f32,
-    pub offset: Vector2<f32>,
+    pub zoom: f64,
+    pub offset: Vector2<f64>,
 }
 
 impl Viewport {
@@ -31,31 +31,31 @@ impl Viewport {
         self.offset += offset * self.scale();
     }
 
-    pub fn zoom_in(&mut self, amount: f32, view_pos: V2) {
+    pub fn zoom_in(&mut self, amount: f64, view_pos: V2) {
         self.offset += self.scale() * view_pos;
         self.zoom += amount;
         self.offset -= self.scale() * view_pos;
     }
 
-    pub fn scale(&self) -> f32 {
-        0.5_f32.powf(self.zoom)
+    pub fn scale(&self) -> f64 {
+        0.5_f64.powf(self.zoom)
     }
 
-    pub fn inv_scale(&self) -> f32 {
-        2.0_f32.powf(self.zoom)
+    pub fn inv_scale(&self) -> f64 {
+        2.0_f64.powf(self.zoom)
     }
 
     pub fn get_pos(&self) -> TilePos {
         let s = self.scale() / 2.0;
-        TilePos::from_f32(self.offset + Vector2::new(s, s), (self.zoom + 2.0) as i8)
+        TilePos::from_f64(self.offset + Vector2::new(s, s), (self.zoom + 2.0) as i8)
     }
 
     pub fn get_pos_all(&self) -> Vec<TilePos> {
         let z = (self.zoom + 2.5) as i8;
         let s = self.scale();
 
-        let min = TilePos::from_f32(self.offset, z);
-        let max = TilePos::from_f32(self.offset + Vector2::new(s, s), z);
+        let min = TilePos::from_f64(self.offset, z);
+        let max = TilePos::from_f64(self.offset + Vector2::new(s, s), z);
 
         let mut v = Vec::new();
         for x in min.x..=max.x {

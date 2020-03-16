@@ -63,7 +63,7 @@ impl Fractal {
         let h: HashMap<TilePos, TileState> = HashMap::new();
         let q = Arc::new(Mutex::new(h));
 
-        for i in 0..4 {
+        for i in 0..7 {
             let q = q.clone();
             thread::spawn(move || loop {
                 let next: Option<TilePos> = {
@@ -90,7 +90,7 @@ impl Fractal {
                         let mut map = q.lock().unwrap();
                         map.insert(p, TileState::Done(t));
                     },
-                    None => thread::yield_now(),
+                    None => thread::sleep_ms(50),
                 }
             });
         }
@@ -104,11 +104,11 @@ impl Fractal {
 
     pub fn update(&mut self, time: &Time, sdl: &mut Sdl, window: &Window, input: &Input) {
         let mouse_in_view = screen_to_view(window, input.mouse);
-        self.pos.zoom_in(0.1 * input.scroll as f32, mouse_in_view);
+        self.pos.zoom_in(0.1 * input.scroll as f64, mouse_in_view);
 
-        self.pos.translate(time.dt * input.dir_move);
+        self.pos.translate(time.dt as f64 * input.dir_move * 2.0);
         self.pos
-            .zoom_in(time.dt * input.dir_look.y, V2::new(0.5, 0.5));
+            .zoom_in(time.dt as f64 * input.dir_look.y * 4.0, V2::new(0.5, 0.5));
 
         if let DragState::From(p1) = self.drag {
             self.pos.translate(p1 - mouse_in_view);
@@ -125,7 +125,6 @@ impl Fractal {
             t.unwrap().clear();
         }
 
-        // if input.is_down(InputAction::A) {
         {
             let ps = self.pos.get_pos_all();
             let mut t = self.textures.lock().unwrap();
@@ -157,7 +156,7 @@ impl Fractal {
             let mut count_empty = 0;
             let mut count_working = 0;
             let mut count_full = 0;
-            sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
+            sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
 
             for (p, v) in &vs {
                 let r = self.pos_to_rect(window, p);
@@ -177,7 +176,12 @@ impl Fractal {
                 };
             }
 
-            println!("{} / {}", count_empty, count_empty + count_full);
+            println!(
+                "{}+{} / {}",
+                count_working,
+                count_empty,
+                count_empty + count_full + count_working
+            );
 
             unsafe {
                 texture.destroy();
@@ -187,9 +191,19 @@ impl Fractal {
         if true {
             let self_zoom = self.pos.zoom;
             self.textures.lock().unwrap().retain(|p, t| {
-                let z_min = self_zoom - 1.0;
-                let z_max = self_zoom + 5.0;
-                let keep = (p.z as f32) > z_min && (p.z as f32) < z_max;
+                let z_min = self_zoom - 4.0;
+                let z_max = self_zoom + 4.0;
+
+                let s = self.pos.scale();
+                let s0 = s * 0.5;
+                let p_min = self.pos.offset - Vector2::new(s0, s0);
+                let p_max = self.pos.offset + Vector2::new(s + s0, s + s0);
+
+                let mut keep = (p.z as f64) > z_min && (p.z as f64) < z_max;
+                if keep {
+                    let [x, y, z] = p.to_f64();
+                    keep = x < p_max.x && y < p_max.y && x > p_min.x && y > p_min.y;
+                }
                 keep
             });
         }
@@ -201,9 +215,9 @@ impl Fractal {
     }
 
     fn pos_to_rect(&self, window: &Window, p: &TilePos) -> Rect {
-        let [x, y, z, _] = p.to_f32();
-        let p = V2::new(x as f32, y as f32);
-        let w = p + V2::new(z as f32, z as f32);
+        let [x, y, z] = p.to_f64();
+        let p = V2::new(x as f64, y as f64);
+        let w = p + V2::new(z as f64, z as f64);
         let p = self.pos.world_to_view(p);
         let p = view_to_screen(window, p);
         let w = self.pos.world_to_view(w);
@@ -225,15 +239,15 @@ impl Fractal {
 
 fn screen_to_view(window: &Window, p: V2i) -> V2 {
     V2::new(
-        p.x as f32 / window.size.x as f32,
-        1.0 - p.y as f32 / window.size.y as f32,
+        p.x as f64 / window.size.x as f64,
+        1.0 - p.y as f64 / window.size.y as f64,
     )
 }
 
 fn view_to_screen(window: &Window, p: V2) -> V2i {
     V2i::new(
-        (p.x * window.size.x as f32) as i32,
-        ((1.0 - p.y) * window.size.y as f32) as i32,
+        (p.x * window.size.x as f64) as i32,
+        ((1.0 - p.y) * window.size.y as f64) as i32,
     )
 }
 
@@ -290,11 +304,11 @@ fn draw_mandel(pixels: &mut [u8], w: u32, h: u32, zoom: f64, offset: Vector2<f64
 
             let itr = mandel(256, c0);
 
-            let mut v = itr as f32 / 256.0;
+            let mut v = itr as f64 / 256.0;
             v *= v;
             v = 1. - v;
 
-            let hsv = Hsv::new(itr as f32 / 32.0 * 360., v, v);
+            let hsv = Hsv::new(itr as f64 / 32.0 * 360., v, v);
             let rgb = Srgb::from(hsv).into_linear();
 
             pixels[(0 + (x + y * w) * 4) as usize] = 255;
