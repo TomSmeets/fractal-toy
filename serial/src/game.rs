@@ -94,7 +94,7 @@ impl State {
             );
 
             let _ = ui.button("hi");
-            ui.window_start("win", |ui| {
+            ui.window("win", |ui| {
                 if ui.button("Hello?") {
                     println!("Hello world!");
                 }
@@ -109,7 +109,7 @@ impl State {
                 let _ = ui.button("d");
             });
 
-            ui.window_start("hi", |ui| {
+            ui.window("hi", |ui| {
                 if ui.button("Foo") {
                     println!("Foooooooo!");
                 }

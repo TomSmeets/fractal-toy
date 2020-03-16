@@ -188,7 +188,7 @@ impl Fractal {
             let self_zoom = self.pos.zoom;
             self.textures.lock().unwrap().retain(|p, _| {
                 let z_min = self_zoom - 8.0;
-                let z_max = self_zoom + 4.0;
+                let z_max = self_zoom + 3.0;
 
                 let s = self.pos.scale();
                 let p_min = self.pos.offset;
@@ -316,20 +316,31 @@ mod tests {
     }
 }
 
+fn cpx_mul(a: V2, b: V2) -> V2 {
+    V2 {
+        x: a.x * b.x - a.y * b.y,
+        y: a.x * b.y + a.y * b.x,
+    }
+}
+
+fn cpx_sqr(a: V2) -> V2 {
+    V2 {
+        x: a.x * a.x - a.y * a.y,
+        y: 2.0 * a.x * a.y,
+    }
+}
+
 fn mandel(max: i32, c: Vector2<f64>) -> i32 {
     let mut z = c;
     let mut n = 0;
     loop {
-        let r = z.x;
-        let i = z.y;
-        z.x = r * r - i * i + c.x;
-        z.y = 2.0 * r * i + c.y;
+        z = cpx_sqr(z) + c;
 
         if n == max {
             return max;
         }
 
-        if r * r + i * i > 4.0 {
+        if z.x * z.x + z.y * z.y > 4.0 {
             return n;
         }
 

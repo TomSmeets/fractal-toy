@@ -28,12 +28,6 @@ pub enum DrawCommand {
     Clip { rect: Option<Rect> },
 }
 
-pub struct UIRect {
-    rect: Rect,
-    color: [u8; 3],
-    text: String,
-}
-
 #[derive(Clone)]
 pub struct UIState {
     pub rect: Rect,
@@ -179,7 +173,7 @@ impl UI {
         self.rects.push(DrawCommand::Clip { rect: r });
     }
 
-    pub fn window_start<F: FnOnce(&mut UI)>(&mut self, title: &str, f: F) {
+    pub fn window<F: FnOnce(&mut UI)>(&mut self, title: &str, f: F) {
         let o = self.state.rect.pos;
         self.state.rect.pos += V2i::new(20, 20);
 
