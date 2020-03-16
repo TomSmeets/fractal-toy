@@ -146,7 +146,7 @@ impl Fractal {
             let mut texture = sdl
                 .canvas
                 .texture_creator()
-                .create_texture_static(
+                .create_texture_streaming(
                     PixelFormatEnum::RGBA8888,
                     TEXTURE_SIZE as u32,
                     TEXTURE_SIZE as u32,
@@ -156,7 +156,7 @@ impl Fractal {
             let mut count_empty = 0;
             let mut count_working = 0;
             let mut count_full = 0;
-            sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
+            sdl.canvas.set_draw_color(Color::RGB(0, 0, 0));
 
             for (p, v) in &vs {
                 let r = self.pos_to_rect(window, p);
@@ -249,18 +249,6 @@ fn view_to_screen(window: &Window, p: V2) -> V2i {
         (p.x * window.size.x as f64) as i32,
         ((1.0 - p.y) * window.size.y as f64) as i32,
     )
-}
-
-fn mk_texture<T>(canvas: &TextureCreator<T>, p: TilePos) -> Texture {
-    let size = 256;
-    let mut texture = canvas
-        .create_texture_static(PixelFormatEnum::RGBA8888, size, size)
-        .unwrap();
-    let mut pixels = vec![0; (size * size * 4) as usize];
-    draw_tile(&mut pixels, p);
-
-    texture.update(None, &pixels, (4 * size) as usize).unwrap();
-    texture
 }
 
 pub fn draw_tile(pixels: &mut [u8], p: TilePos) {

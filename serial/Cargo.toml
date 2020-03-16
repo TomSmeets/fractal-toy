@@ -30,5 +30,4 @@ rusttype  = "0.8.2"
 # glx-hal (or gfx?) = we are doing fine with simple sdl rednerer by now
 
 [profile.release]
-debug = true
 panic = 'abort'
