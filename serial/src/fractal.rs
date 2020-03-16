@@ -21,7 +21,7 @@ use crate::*;
 pub mod tile;
 use self::tile::*;
 
-static TEXTURE_SIZE: usize = 64*4;
+static TEXTURE_SIZE: usize = 64 * 4;
 
 pub enum DragState {
     None,
@@ -69,25 +69,26 @@ impl Fractal {
                 let next: Option<TilePos> = {
                     let mut l = q.lock().unwrap();
                     let p = l
-                        .iter()
+                        .iter_mut()
                         .filter(|(_, x)| matches!(x, TileState::Queued))
-                        .map(|(p, _)| *p)
-                        .min_by_key(|p| p.z);
+                        .map(|(p, t)| (*p, t))
+                        .min_by_key(|(p, t)| p.z);
 
-                    if let Some(p) = p {
-                        l.insert(p, TileState::Working);
+                    match p {
+                        Some((p, t)) => {
+                            *t = TileState::Working;
+                            Some(p)
+                        },
+
+                        None => None,
                     }
-                    p
                 };
 
                 match next {
                     Some(p) => {
                         let t = TileContent::new(p);
                         let mut map = q.lock().unwrap();
-                        let old = map.insert(p, TileState::Done(t));
-                        if let Some(TileState::Done(_)) = old {
-                            println!("Duplicate work!");
-                        }
+                        map.insert(p, TileState::Done(t));
                     },
                     None => thread::yield_now(),
                 }
