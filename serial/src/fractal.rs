@@ -28,6 +28,12 @@ pub enum DragState {
     From(V2),
 }
 
+pub enum TileState {
+    Queued,
+    Working,
+    Done(TileContent),
+}
+
 pub struct TileContent {
     pixels: Vec<u8>,
 }
@@ -47,33 +53,41 @@ impl TileContent {
 }
 
 pub struct Fractal {
-    pub textures: Arc<Mutex<HashMap<TilePos, Option<TileContent>>>>,
+    pub textures: Arc<Mutex<HashMap<TilePos, TileState>>>,
     pub pos: Viewport,
     pub drag: DragState,
 }
 
 impl Fractal {
     pub fn new() -> Self {
-        let h: HashMap<TilePos, Option<TileContent>> = HashMap::new();
+        let h: HashMap<TilePos, TileState> = HashMap::new();
         let q = Arc::new(Mutex::new(h));
 
         for i in 0..6 {
             let q = q.clone();
             thread::spawn(move || loop {
                 let next: Option<TilePos> = {
-                    let l = q.lock().unwrap();
-                    l.iter()
-                        .filter(|(_, x)| x.is_none())
+                    let mut l = q.lock().unwrap();
+                    let p = l
+                        .iter()
+                        .filter(|(_, x)| matches!(x, TileState::Queued))
                         .map(|(p, _)| *p)
-                        .max_by_key(|p| p.z)
+                        .max_by_key(|p| p.z);
+
+                    if let Some(p) = p {
+                        l.insert(p, TileState::Working);
+                    }
+                    p
                 };
 
                 match next {
                     Some(p) => {
                         let t = TileContent::new(p);
-
                         let mut map = q.lock().unwrap();
-                        map.insert(p, Some(t));
+                        let old = map.insert(p, TileState::Done(t));
+                        if let Some(TileState::Done(_)) = old {
+                            println!("Duplicate work!");
+                        }
                     },
                     None => {
                         thread::sleep_ms(100);
@@ -121,7 +135,7 @@ impl Fractal {
                 match e {
                     Entry::Occupied(e) => {},
                     Entry::Vacant(e) => {
-                        e.insert(None);
+                        e.insert(TileState::Queued);
                     },
                 }
             }
@@ -144,7 +158,7 @@ impl Fractal {
             let mut count_empty = 0;
             let mut count_full = 0;
             for (p, v) in &vs {
-                if let Some(v) = v {
+                if let TileState::Done(v) = v {
                     v.to_sdl(&mut texture);
                     let r = self.pos_to_rect(window, p);
                     sdl.canvas.copy(&texture, None, Some(r)).unwrap();
