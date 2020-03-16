@@ -1,5 +1,4 @@
 use crate::math::*;
-use crate::quadtree::pos::*;
 use ::palette::*;
 
 use sdl2::pixels::*;
@@ -8,7 +7,6 @@ use sdl2::render::*;
 
 use std::collections::hash_map::{Entry, HashMap};
 
-use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -63,7 +61,7 @@ impl Fractal {
         let h: HashMap<TilePos, TileState> = HashMap::new();
         let q = Arc::new(Mutex::new(h));
 
-        for i in 0..7 {
+        for _ in 0..4 {
             let q = q.clone();
             thread::spawn(move || loop {
                 let next: Option<TilePos> = {
@@ -72,7 +70,7 @@ impl Fractal {
                         .iter_mut()
                         .filter(|(_, x)| matches!(x, TileState::Queued))
                         .map(|(p, t)| (*p, t))
-                        .min_by_key(|(p, t)| p.z);
+                        .min_by_key(|(p, _)| p.z);
 
                     match p {
                         Some((p, t)) => {
@@ -90,7 +88,7 @@ impl Fractal {
                         let mut map = q.lock().unwrap();
                         map.insert(p, TileState::Done(t));
                     },
-                    None => thread::sleep_ms(50),
+                    None => thread::sleep(std::time::Duration::from_millis(50)),
                 }
             });
         }
@@ -131,11 +129,11 @@ impl Fractal {
             for p in ps {
                 let e = t.entry(p);
                 match e {
-                    Entry::Occupied(e) => {},
+                    Entry::Occupied(_) => (),
                     Entry::Vacant(e) => {
                         e.insert(TileState::Queued);
                     },
-                }
+                };
             }
         }
 
@@ -156,7 +154,6 @@ impl Fractal {
             let mut count_empty = 0;
             let mut count_working = 0;
             let mut count_full = 0;
-            sdl.canvas.set_draw_color(Color::RGB(0, 0, 0));
 
             for (p, v) in &vs {
                 let r = self.pos_to_rect(window, p);
@@ -170,7 +167,6 @@ impl Fractal {
                         count_empty += 1;
                     },
                     TileState::Working => {
-                        sdl.canvas.draw_rect(r);
                         count_working += 1;
                     },
                 };
@@ -190,8 +186,8 @@ impl Fractal {
 
         if true {
             let self_zoom = self.pos.zoom;
-            self.textures.lock().unwrap().retain(|p, t| {
-                let z_min = self_zoom - 4.0;
+            self.textures.lock().unwrap().retain(|p, _| {
+                let z_min = self_zoom - 8.0;
                 let z_max = self_zoom + 4.0;
 
                 let s = self.pos.scale();
@@ -310,9 +306,18 @@ fn draw_mandel(pixels: &mut [u8], w: u32, h: u32, zoom: f64, offset: Vector2<f64
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn fractal() {
+        TileContent::new(TilePos { x: 0, y: 0, z: 0 });
+    }
+}
+
 fn mandel(max: i32, c: Vector2<f64>) -> i32 {
     let mut z = c;
-
     let mut n = 0;
     loop {
         let r = z.x;
@@ -320,13 +325,14 @@ fn mandel(max: i32, c: Vector2<f64>) -> i32 {
         z.x = r * r - i * i + c.x;
         z.y = 2.0 * r * i + c.y;
 
+        if n == max {
+            return max;
+        }
+
         if r * r + i * i > 4.0 {
             return n;
         }
 
-        if n == max {
-            return max;
-        }
         n += 1;
     }
 }

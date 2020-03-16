@@ -15,11 +15,11 @@ pub mod window;
 use crate::game::*;
 
 #[no_mangle]
-pub extern "C" fn prog_update(state: *mut State) -> bool {
-    unsafe { (*state).update() }
+pub unsafe extern "C" fn prog_update(state: *mut State) -> bool {
+    (*state).update()
 }
 
 #[no_mangle]
-pub extern "C" fn prog_init() -> *mut State {
+pub unsafe extern "C" fn prog_init() -> *mut State {
     Box::into_raw(Box::new(State::new()))
 }
