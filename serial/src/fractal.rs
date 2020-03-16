@@ -90,7 +90,7 @@ impl Fractal {
                         }
                     },
                     None => {
-                        thread::sleep_ms(100);
+                        thread::yield_now();
                     },
                 }
             });
