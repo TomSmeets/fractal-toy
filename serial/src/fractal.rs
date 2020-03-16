@@ -21,7 +21,7 @@ use crate::*;
 pub mod tile;
 use self::tile::*;
 
-static TEXTURE_SIZE: usize = 64;
+static TEXTURE_SIZE: usize = 64*4;
 
 pub enum DragState {
     None,
@@ -63,7 +63,7 @@ impl Fractal {
         let h: HashMap<TilePos, TileState> = HashMap::new();
         let q = Arc::new(Mutex::new(h));
 
-        for i in 0..6 {
+        for i in 0..4 {
             let q = q.clone();
             thread::spawn(move || loop {
                 let next: Option<TilePos> = {
@@ -72,7 +72,7 @@ impl Fractal {
                         .iter()
                         .filter(|(_, x)| matches!(x, TileState::Queued))
                         .map(|(p, _)| *p)
-                        .max_by_key(|p| p.z);
+                        .min_by_key(|p| p.z);
 
                     if let Some(p) = p {
                         l.insert(p, TileState::Working);
@@ -89,9 +89,7 @@ impl Fractal {
                             println!("Duplicate work!");
                         }
                     },
-                    None => {
-                        thread::yield_now();
-                    },
+                    None => thread::yield_now(),
                 }
             });
         }
@@ -156,16 +154,26 @@ impl Fractal {
                 .unwrap();
 
             let mut count_empty = 0;
+            let mut count_working = 0;
             let mut count_full = 0;
+            sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
+
             for (p, v) in &vs {
-                if let TileState::Done(v) = v {
-                    v.to_sdl(&mut texture);
-                    let r = self.pos_to_rect(window, p);
-                    sdl.canvas.copy(&texture, None, Some(r)).unwrap();
-                    count_full += 1;
-                } else {
-                    count_empty += 1;
-                }
+                let r = self.pos_to_rect(window, p);
+                match v {
+                    TileState::Done(v) => {
+                        v.to_sdl(&mut texture);
+                        sdl.canvas.copy(&texture, None, Some(r)).unwrap();
+                        count_full += 1;
+                    },
+                    TileState::Queued => {
+                        count_empty += 1;
+                    },
+                    TileState::Working => {
+                        sdl.canvas.draw_rect(r);
+                        count_working += 1;
+                    },
+                };
             }
 
             println!("{} / {}", count_empty, count_empty + count_full);

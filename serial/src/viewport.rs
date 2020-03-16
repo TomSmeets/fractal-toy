@@ -51,7 +51,7 @@ impl Viewport {
     }
 
     pub fn get_pos_all(&self) -> Vec<TilePos> {
-        let z = (self.zoom + 4.0) as i8;
+        let z = (self.zoom + 2.5) as i8;
         let s = self.scale();
 
         let min = TilePos::from_f32(self.offset, z);
