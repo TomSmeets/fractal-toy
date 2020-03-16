@@ -195,14 +195,17 @@ impl Fractal {
                 let z_max = self_zoom + 4.0;
 
                 let s = self.pos.scale();
-                let s0 = s * 0.5;
-                let p_min = self.pos.offset - Vector2::new(s0, s0);
-                let p_max = self.pos.offset + Vector2::new(s + s0, s + s0);
+                let p_min = self.pos.offset;
+                let p_max = self.pos.offset + Vector2::new(s, s);
 
                 let mut keep = (p.z as f64) > z_min && (p.z as f64) < z_max;
                 if keep {
                     let [x, y, z] = p.to_f64();
-                    keep = x < p_max.x && y < p_max.y && x > p_min.x && y > p_min.y;
+                    let s0 = z;
+                    keep = x < p_max.x + s0
+                        && y < p_max.y + s0
+                        && x > p_min.x - s0
+                        && y > p_min.y - s0;
                 }
                 keep
             });
