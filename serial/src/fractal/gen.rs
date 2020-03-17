@@ -32,25 +32,23 @@ impl Gen {
     /// Tile size should probably be configurable by the generator backend
     /// implementations. As different backends have different optimal tile
     /// sizes.
+    /// TODO: don't return excact pixels, but the complex numbers and/or
+    /// iterations
     pub fn generate(tile: TilePos) -> Vec<u8> {
-        draw_tile(tile)
+        let mut pixels = vec![0; (TEXTURE_SIZE * TEXTURE_SIZE * 4) as usize];
+
+        let [x, y, size] = tile.to_f64();
+        let center = Vector2::new(x, y) * 4.0 - Vector2::new(2.0, 2.0);
+        draw_mandel(
+            &mut pixels,
+            TEXTURE_SIZE as u32,
+            TEXTURE_SIZE as u32,
+            size * 4.0,
+            center,
+        );
+
+        pixels
     }
-}
-
-pub fn draw_tile(p: TilePos) -> Vec<u8> {
-    let mut pixels = vec![0; (TEXTURE_SIZE * TEXTURE_SIZE * 4) as usize];
-
-    let [x, y, size] = p.to_f64();
-    let center = Vector2::new(x, y) * 4.0 - Vector2::new(2.0, 2.0);
-    draw_mandel(
-        &mut pixels,
-        TEXTURE_SIZE as u32,
-        TEXTURE_SIZE as u32,
-        size * 4.0,
-        center,
-    );
-
-    pixels
 }
 
 // TODO: profile!!

@@ -9,6 +9,10 @@ default-run = "linux"
 path = "src/lib.rs"
 crate_type = [ "lib", "cdylib" ]
 
+[[bench]]
+name = "fractal"
+harness = false
+
 [features]
 default = [ "dynamic" ]
 dynamic = [ "libloading" ]
@@ -29,5 +33,5 @@ rusttype  = "0.8.2"
 # winit             = "0.21" does not support gamepads yet :(
 # glx-hal (or gfx?) = we are doing fine with simple sdl rednerer by now
 
-[profile.release]
-panic = 'abort'
+[dev-dependencies]
+criterion = "0.3"
