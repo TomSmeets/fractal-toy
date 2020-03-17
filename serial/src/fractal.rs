@@ -40,6 +40,7 @@ pub struct Fractal {
     pub pos: Viewport,
     pub drag: DragState,
     pub gen: Arc<RwLock<Gen>>,
+    pub pause: bool,
 }
 
 pub fn worker(gen: Arc<RwLock<Gen>>, q: TileMap) {
@@ -94,6 +95,7 @@ impl Fractal {
             pos: Viewport::new(),
             drag: DragState::None,
             gen,
+            pause: false,
         }
     }
 
@@ -120,14 +122,14 @@ impl Fractal {
             t.unwrap().clear();
         }
 
-        if input.is_down(InputAction::X) {
-            let mut t = self.textures.lock().unwrap();
-            for (_, e) in t.iter_mut() {
-                e.dirty = true;
-            }
+        if input.is_down(InputAction::F1) {
+            self.pause = true;
+        }
+        if input.is_down(InputAction::F2) {
+            self.pause = false;
         }
 
-        {
+        if !self.pause {
             let ps = self.pos.get_pos_all();
             let mut t = self.textures.lock().unwrap();
             // Mark all entires as potentialy old
