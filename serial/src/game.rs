@@ -28,8 +28,8 @@ impl Time {
     }
 }
 
-// TODO: implemnt save and load, this will handle some types that dont work with reload.
-// For example the btreemap
+// TODO: implemnt save and load, this will handle some types that dont work with
+// reload. For example the btreemap
 pub struct State {
     time: Time,
     sdl: Sdl,

@@ -4,9 +4,34 @@ use super::TEXTURE_SIZE;
 use crate::math::*;
 use ::palette::*;
 
+/// A service that can produce fractal image tiles. This trait should only
+/// represent the method of computing and precision. Everything else is
+/// determined by the arguments to the generate function.
+///
+/// TODO: This should eventually become a trait.
+/// Future implementations could be:
+///     TODO: cuda-float
+///     TODO: cuda-double
+///     TODO: opencl-float
+///     TODO: opencl-double
+///     TODO: cpu-float
+///     TODO: cpu-double
+///     TODO: sse2
+///     TODO: avx
 pub struct Gen {}
 
 impl Gen {
+    /// This function should receive all required
+    /// information to generate a reproducible fractal image
+    ///
+    /// TODO:
+    /// the user should be able to change the algorithm.
+    /// This could be achieved with decent performance by doing each stage on
+    /// all pixels at the same time. this way the use of sse instructions
+    /// can be maximized and the number of comparisons minimized
+    /// Tile size should probably be configurable by the generator backend
+    /// implementations. As different backends have different optimal tile
+    /// sizes.
     pub fn generate(tile: TilePos) -> Vec<u8> {
         draw_tile(tile)
     }
