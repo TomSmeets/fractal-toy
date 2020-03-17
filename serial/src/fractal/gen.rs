@@ -21,6 +21,10 @@ use ::palette::*;
 pub struct Gen {}
 
 impl Gen {
+    pub fn new() -> Gen {
+        Gen {}
+    }
+
     /// This function should receive all required
     /// information to generate a reproducible fractal image
     ///
@@ -34,7 +38,9 @@ impl Gen {
     /// sizes.
     /// TODO: don't return excact pixels, but the complex numbers and/or
     /// iterations
-    pub fn generate(tile: TilePos) -> Vec<u8> {
+    /// TODO: This gen shold be initialized with fractal algorithm (and maybe
+    /// colorcheme), so it can pre compile a program for it.
+    pub fn generate(&self, tile: TilePos) -> Vec<u8> {
         let mut pixels = vec![0; (TEXTURE_SIZE * TEXTURE_SIZE * 4) as usize];
 
         let [x, y, size] = tile.to_f64();
@@ -50,6 +56,12 @@ impl Gen {
         pixels
     }
 }
+
+// How about this? a thread pool generator
+// NO, that won't work. how would you cancle queued jobs?
+// struct ThreadedGen<G> {
+//    gen: G,
+// }
 
 // TODO: profile!!
 fn draw_mandel(pixels: &mut [u8], w: u32, h: u32, zoom: f64, offset: Vector2<f64>) {
@@ -100,7 +112,10 @@ fn mandel(max: i32, c: Vector2<f64>) -> i32 {
     let mut z = c;
     let mut n = 0;
     loop {
+        // z.x = z.x.abs();
+        // z.y = z.y.abs();
         z = cpx_sqr(z) + c;
+        // z = cpx_mul(cpx_sqr(z), z) + c;
 
         if n == max {
             return max;

@@ -7,7 +7,7 @@ use sdl2::render::*;
 
 use std::collections::hash_map::{Entry, HashMap};
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 
 use crate::input::{Input, InputAction};
@@ -22,34 +22,39 @@ pub mod tile;
 use self::gen::*;
 use self::tile::{TileContent, TilePos, TileState};
 
-static TEXTURE_SIZE: usize = 64 * 4;
+const TEXTURE_SIZE: usize = 64 * 2;
 
 pub enum DragState {
     None,
     From(V2),
 }
 
-type TileMap = Arc<Mutex<HashMap<TilePos, TileState>>>;
+type TileMap = Arc<Mutex<HashMap<TilePos, TileContent>>>;
 
+// queue: [TilePos]
+// done:  [Pos, Content]
+// TODO: Queried tiles shold be exactly those displayed. All tiles that are not
+// directly Queried should be removed. what datastructure is best for this?
 pub struct Fractal {
     pub textures: TileMap,
     pub pos: Viewport,
     pub drag: DragState,
+    pub gen: Arc<RwLock<Gen>>,
 }
 
-pub fn worker(q: TileMap) {
+pub fn worker(gen: Arc<RwLock<Gen>>, q: TileMap) {
     loop {
         let next: Option<TilePos> = {
             let mut l = q.lock().unwrap();
             let p = l
                 .iter_mut()
-                .filter(|(_, x)| matches!(x, TileState::Queued))
+                .filter(|(_, x)| x.dirty && !x.working)
                 .map(|(p, t)| (*p, t))
                 .min_by_key(|(p, _)| p.z);
 
             match p {
                 Some((p, t)) => {
-                    *t = TileState::Working;
+                    t.working = true;
                     Some(p)
                 },
 
@@ -59,11 +64,16 @@ pub fn worker(q: TileMap) {
 
         match next {
             Some(p) => {
-                let t = TileContent::new(p);
+                let g = gen.read().unwrap();
+                let mut t = TileContent::new();
+                t.generate(&g, p);
                 let mut map = q.lock().unwrap();
-                map.insert(p, TileState::Done(t));
+                map.insert(p, t);
             },
-            None => thread::sleep(std::time::Duration::from_millis(50)),
+            None => {
+                thread::yield_now();
+                thread::sleep(std::time::Duration::from_millis(50));
+            },
         }
     }
 }
@@ -71,16 +81,19 @@ pub fn worker(q: TileMap) {
 impl Fractal {
     pub fn new() -> Self {
         let map: TileMap = Arc::new(Mutex::new(HashMap::new()));
+        let gen = Arc::new(RwLock::new(Gen::new()));
 
-        for _ in 0..4 {
-            let map = map.clone();
-            thread::spawn(move || worker(map));
+        for _ in 0..6 {
+            let map = Arc::clone(&map);
+            let gen = Arc::clone(&gen);
+            thread::spawn(move || worker(gen, map));
         }
 
         Fractal {
             textures: map,
             pos: Viewport::new(),
             drag: DragState::None,
+            gen,
         }
     }
 
@@ -107,18 +120,36 @@ impl Fractal {
             t.unwrap().clear();
         }
 
+        if input.is_down(InputAction::X) {
+            let mut t = self.textures.lock().unwrap();
+            for (_, e) in t.iter_mut() {
+                e.dirty = true;
+            }
+        }
+
         {
             let ps = self.pos.get_pos_all();
             let mut t = self.textures.lock().unwrap();
+            // Mark all entires as potentialy old
+            for (_, e) in t.iter_mut() {
+                e.old = true;
+            }
+
+            // iterate over all visible position and queue those tiles
             for p in ps {
                 let e = t.entry(p);
                 match e {
-                    Entry::Occupied(_) => (),
+                    Entry::Occupied(mut e) => {
+                        e.get_mut().old = false;
+                    },
                     Entry::Vacant(e) => {
-                        e.insert(TileState::Queued);
+                        e.insert(TileContent::new());
                     },
                 };
             }
+
+            // remove tiles that we did not encounter
+            t.retain(|_, t| !t.old);
         }
 
         {
@@ -141,19 +172,18 @@ impl Fractal {
 
             for (p, v) in &vs {
                 let r = self.pos_to_rect(window, p);
-                match v {
-                    TileState::Done(v) => {
-                        v.to_sdl(&mut texture);
-                        sdl.canvas.copy(&texture, None, Some(r)).unwrap();
-                        count_full += 1;
-                    },
-                    TileState::Queued => {
-                        count_empty += 1;
-                    },
-                    TileState::Working => {
-                        count_working += 1;
-                    },
-                };
+
+                if v.working {
+                    sdl.canvas.draw_rect(r).unwrap();
+                    count_working += 1;
+                } else if v.dirty {
+                    //       sdl.canvas.draw_rect((r)).unwrap();
+                    count_empty += 1;
+                } else {
+                    v.to_sdl(&mut texture);
+                    sdl.canvas.copy(&texture, None, Some(r)).unwrap();
+                    count_full += 1;
+                }
             }
 
             println!(
@@ -166,29 +196,6 @@ impl Fractal {
             unsafe {
                 texture.destroy();
             }
-        }
-
-        if true {
-            let self_zoom = self.pos.zoom;
-            self.textures.lock().unwrap().retain(|p, _| {
-                let z_min = self_zoom - 8.0;
-                let z_max = self_zoom + 3.0;
-
-                let s = self.pos.scale();
-                let p_min = self.pos.offset;
-                let p_max = self.pos.offset + Vector2::new(s, s);
-
-                let mut keep = (p.z as f64) > z_min && (p.z as f64) < z_max;
-                if keep {
-                    let [x, y, z] = p.to_f64();
-                    let s0 = z;
-                    keep = x < p_max.x + s0
-                        && y < p_max.y + s0
-                        && x > p_min.x - s0
-                        && y > p_min.y - s0;
-                }
-                keep
-            });
         }
 
         if input.is_down(InputAction::F1) {

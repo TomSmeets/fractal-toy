@@ -51,16 +51,19 @@ impl Viewport {
     }
 
     pub fn get_pos_all(&self) -> Vec<TilePos> {
-        let z = (self.zoom + 2.5) as i8;
+        let z_min = (self.zoom - 0.0) as i8;
+        let z_max = (self.zoom + 5.5) as i8;
         let s = self.scale();
 
-        let min = TilePos::from_f64(self.offset, z);
-        let max = TilePos::from_f64(self.offset + Vector2::new(s, s), z);
-
         let mut v = Vec::new();
-        for x in min.x..=max.x {
-            for y in min.y..=max.y {
-                v.push(TilePos { x, y, z });
+        for z in z_min..=z_max {
+            let min = TilePos::from_f64(self.offset, z);
+            let max = TilePos::from_f64(self.offset + Vector2::new(s, s), z);
+
+            for x in min.x..=max.x {
+                for y in min.y..=max.y {
+                    v.push(TilePos { x, y, z });
+                }
             }
         }
 

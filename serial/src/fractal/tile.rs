@@ -8,4 +8,5 @@ pub enum TileState {
     Queued,
     Working,
     Done(TileContent),
+    Old(TileContent),
 }

@@ -64,7 +64,8 @@ fn main() {
 
     let mut i = 0;
     let mut quit = false;
-    // let mut update: Option< &Symbol<unsafe extern fn(*mut State) -> bool> > = None;
+    // let mut update: Option< &Symbol<unsafe extern fn(*mut State) -> bool> > =
+    // None;
     let mut t_old = std::time::UNIX_EPOCH;
     while !quit {
         let t_new = lib_path.metadata().unwrap().modified().unwrap();
