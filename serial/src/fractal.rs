@@ -122,6 +122,8 @@ impl Fractal {
             t.unwrap().clear();
         }
 
+        // TODO: use button api for these, so we can use went_down
+        // TODO: int the future we want some kind of ui, or cli interface
         if input.is_down(InputAction::F1) {
             self.pause = true;
         }
