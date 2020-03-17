@@ -20,7 +20,7 @@ pub mod gen;
 pub mod tile;
 
 use self::gen::*;
-use self::tile::{TileContent, TilePos};
+use self::tile::{TileContent, TilePos, TileState};
 
 static TEXTURE_SIZE: usize = 64 * 4;
 
@@ -29,57 +29,56 @@ pub enum DragState {
     From(V2),
 }
 
-pub enum TileState {
-    Queued,
-    Working,
-    Done(TileContent),
-}
+type TileMap = Arc<Mutex<HashMap<TilePos, TileState>>>;
 
 pub struct Fractal {
-    pub textures: Arc<Mutex<HashMap<TilePos, TileState>>>,
+    pub textures: TileMap,
     pub pos: Viewport,
     pub drag: DragState,
 }
 
+pub fn worker(q: TileMap) {
+    loop {
+        let next: Option<TilePos> = {
+            let mut l = q.lock().unwrap();
+            let p = l
+                .iter_mut()
+                .filter(|(_, x)| matches!(x, TileState::Queued))
+                .map(|(p, t)| (*p, t))
+                .min_by_key(|(p, _)| p.z);
+
+            match p {
+                Some((p, t)) => {
+                    *t = TileState::Working;
+                    Some(p)
+                },
+
+                None => None,
+            }
+        };
+
+        match next {
+            Some(p) => {
+                let t = TileContent::new(p);
+                let mut map = q.lock().unwrap();
+                map.insert(p, TileState::Done(t));
+            },
+            None => thread::sleep(std::time::Duration::from_millis(50)),
+        }
+    }
+}
+
 impl Fractal {
     pub fn new() -> Self {
-        let h: HashMap<TilePos, TileState> = HashMap::new();
-        let q = Arc::new(Mutex::new(h));
+        let map: TileMap = Arc::new(Mutex::new(HashMap::new()));
 
         for _ in 0..4 {
-            let q = q.clone();
-            thread::spawn(move || loop {
-                let next: Option<TilePos> = {
-                    let mut l = q.lock().unwrap();
-                    let p = l
-                        .iter_mut()
-                        .filter(|(_, x)| matches!(x, TileState::Queued))
-                        .map(|(p, t)| (*p, t))
-                        .min_by_key(|(p, _)| p.z);
-
-                    match p {
-                        Some((p, t)) => {
-                            *t = TileState::Working;
-                            Some(p)
-                        },
-
-                        None => None,
-                    }
-                };
-
-                match next {
-                    Some(p) => {
-                        let t = TileContent::new(p);
-                        let mut map = q.lock().unwrap();
-                        map.insert(p, TileState::Done(t));
-                    },
-                    None => thread::sleep(std::time::Duration::from_millis(50)),
-                }
-            });
+            let map = map.clone();
+            thread::spawn(move || worker(map));
         }
 
         Fractal {
-            textures: q,
+            textures: map,
             pos: Viewport::new(),
             drag: DragState::None,
         }
