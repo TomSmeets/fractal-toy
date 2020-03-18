@@ -51,7 +51,7 @@ impl Viewport {
     }
 
     pub fn get_pos_all(&self) -> Vec<TilePos> {
-        let z_min = (self.zoom - 1.0).max(0.0) as i8;
+        let z_min = (self.zoom - 5.5).max(0.0) as i8;
         let z_max = (self.zoom + 5.5) as i8;
         let s = self.scale();
 

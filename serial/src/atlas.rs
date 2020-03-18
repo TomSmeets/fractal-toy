@@ -1,54 +1,90 @@
 use crate::math::*;
 use crate::sdl::Sdl;
 use crate::ui::Rect;
-use sdl2::pixels::*;
-use sdl2::rect::*;
-use sdl2::render::Texture;
-use sdl2::render::*;
+use sdl2::pixels::Color;
+use sdl2::pixels::PixelFormatEnum;
+use sdl2::render::{BlendMode, Texture};
+
+const PADDING: u32 = 2;
 
 pub struct Atlas {
-    pub free: Vec<Vector2<u32>>,
-    pub size: Vector2<u32>,
+    pub free: Vec<Vector3<u32>>,
+    pub size: u32,
     pub res: u32,
 
-    pub texture: Texture,
+    pub texture: Vec<Texture>,
 }
 
 impl Atlas {
-    pub fn new(sdl: &mut Sdl, size: Vector2<u32>, res: u32) -> Atlas {
-        let mut free = Vec::with_capacity(size.x as usize * size.y as usize);
-        for j in 0..size.y {
-            for i in 0..size.x {
-                free.push(Vector2::new(i, j));
-            }
+    pub fn new(res: u32) -> Atlas {
+        let size = 64 * 64 / (res + PADDING);
+        Atlas {
+            free: Vec::new(),
+            size,
+            res,
+            texture: Vec::new(),
         }
+    }
+
+    pub fn alloc_page(&mut self, sdl: &mut Sdl) {
+        let page = self.texture.len();
 
         let texture = sdl
             .canvas
             .texture_creator()
-            .create_texture_streaming(PixelFormatEnum::RGBA8888, size.x * res, size.y * res)
+            .create_texture_static(
+                PixelFormatEnum::RGBA8888,
+                self.size * (self.res + PADDING),
+                self.size * (self.res + PADDING),
+            )
             .unwrap();
 
-        Atlas {
-            free,
-            size,
-            res,
-            texture,
+        self.texture.push(texture);
+
+        self.free.reserve(self.size as usize * self.size as usize);
+        for j in 0..self.size {
+            for i in 0..self.size {
+                self.free.push(Vector3::new(i, j, page as u32));
+            }
         }
     }
 
-    pub fn alloc(&mut self) -> Option<AtlasRegion> {
-        let i = self.free.pop()?;
-        Some(AtlasRegion {
-            index: i,
-            res: self.res,
-            free: false,
-        })
+    pub fn alloc(&mut self, sdl: &mut Sdl) -> AtlasRegion {
+        match self.free.pop() {
+            Some(i) => AtlasRegion {
+                index: i,
+                res: self.res,
+                free: false,
+            },
+            None => {
+                self.alloc_page(sdl);
+                self.alloc(sdl)
+            },
+        }
     }
 
     pub fn update(&mut self, r: &AtlasRegion, pixels: &[u8]) {
-        self.texture
-            .update(Some(r.rect().into_sdl()), pixels, 4 * self.res as usize)
+        let r1 = r.rect();
+        let t = &mut self.texture[r.index.z as usize];
+
+        // draw a bit in the padding zone
+        // Meh, this is not ideal, but it kind of wokrs
+        {
+            let mut r2 = r.rect();
+            r2.pos.x += PADDING as i32 / 2;
+            r2.pos.y += PADDING as i32 / 2;
+            t.update(Some(r2.into_sdl()), pixels, 4 * self.res as usize)
+                .unwrap();
+        }
+        {
+            let mut r2 = r.rect();
+            r2.pos.x -= PADDING as i32 / 2;
+            r2.pos.y -= PADDING as i32 / 2;
+            t.update(Some(r2.into_sdl()), pixels, 4 * self.res as usize)
+                .unwrap();
+        }
+
+        t.update(Some(r1.into_sdl()), pixels, 4 * self.res as usize)
             .unwrap();
     }
 
@@ -58,8 +94,18 @@ impl Atlas {
     }
 }
 
+impl Drop for Atlas {
+    fn drop(&mut self) {
+        for t in self.texture.drain(..) {
+            unsafe {
+                t.destroy();
+            }
+        }
+    }
+}
+
 pub struct AtlasRegion {
-    index: Vector2<u32>,
+    pub index: Vector3<u32>,
     res: u32,
     free: bool,
 }
@@ -67,20 +113,22 @@ pub struct AtlasRegion {
 impl AtlasRegion {
     pub fn rect(&self) -> Rect {
         let pos = Vector2 {
-            x: (self.res * self.index.x) as i32,
-            y: (self.res * self.index.y) as i32,
+            x: ((self.res + PADDING) * self.index.x + PADDING / 2) as i32,
+            y: ((self.res + PADDING) * self.index.y + PADDING / 2) as i32,
         };
 
         let size = Vector2 {
             x: self.res as i32,
             y: self.res as i32,
         };
+
         Rect { pos, size }
     }
 }
 
 impl Drop for AtlasRegion {
     fn drop(&mut self) {
+        // TODO: somehow this triggers sometimes
         assert!(self.free);
     }
 }

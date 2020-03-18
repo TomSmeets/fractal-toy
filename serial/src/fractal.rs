@@ -43,6 +43,7 @@ pub struct Fractal {
     pub gen: Arc<RwLock<Gen>>,
     pub atlas: Atlas,
     pub pause: bool,
+    pub debug: bool,
 }
 
 pub fn worker(gen: Arc<RwLock<Gen>>, q: TileMap) {
@@ -86,22 +87,20 @@ impl Fractal {
         let map: TileMap = Arc::new(Mutex::new(HashMap::new()));
         let gen = Arc::new(RwLock::new(Gen::new()));
 
-        for _ in 0..6 {
+        for _ in 0..7 {
             let map = Arc::clone(&map);
             let gen = Arc::clone(&gen);
             thread::spawn(move || worker(gen, map));
         }
-
-        let tile_count = 64;
-        let tile_res = TEXTURE_SIZE;
 
         Fractal {
             textures: map,
             pos: Viewport::new(),
             drag: DragState::None,
             gen,
-            atlas: Atlas::new(sdl, Vector2::new(tile_count, tile_count), tile_res as u32),
+            atlas: Atlas::new(TEXTURE_SIZE as u32),
             pause: false,
+            debug: false,
         }
     }
 
@@ -123,11 +122,6 @@ impl Fractal {
             DragState::None
         };
 
-        if input.is_down(InputAction::Y) {
-            let t = self.textures.lock();
-            t.unwrap().clear();
-        }
-
         // TODO: use button api for these, so we can use went_down
         // TODO: int the future we want some kind of ui, or cli interface
         if input.is_down(InputAction::F1) {
@@ -135,6 +129,12 @@ impl Fractal {
         }
         if input.is_down(InputAction::F2) {
             self.pause = false;
+        }
+        if input.is_down(InputAction::F3) {
+            self.debug = true;
+        }
+        if input.is_down(InputAction::F4) {
+            self.debug = false;
         }
 
         if !self.pause {
@@ -158,11 +158,28 @@ impl Fractal {
                 };
             }
 
+            if input.is_down(InputAction::Y) {
+                for (_, t) in t.iter_mut() {
+                    t.old = true;
+                    let r = t.region.take();
+                    if let Some(r) = r {
+                        self.atlas.remove(r);
+                    }
+                }
+                self.atlas = Atlas::new(self.atlas.res);
+            }
+
             for (p, t) in t.iter_mut() {
                 if t.old {
                     let r = t.region.take();
                     if let Some(r) = r {
                         self.atlas.remove(r);
+                    }
+                } else {
+                    if !t.dirty && !t.working && !t.pixels.is_empty() && t.region.is_none() {
+                        let atlas_region = self.atlas.alloc(sdl);
+                        self.atlas.update(&atlas_region, &t.pixels);
+                        t.region = Some(atlas_region);
                     }
                 }
             }
@@ -184,38 +201,41 @@ impl Fractal {
                 let r = self.pos_to_rect(window, p);
 
                 if v.working {
-                    sdl.canvas.draw_rect(r).unwrap();
+                    if self.debug {
+                        sdl.canvas.draw_rect(r).unwrap();
+                    }
                     count_working += 1;
                 } else if v.dirty {
-                    //       sdl.canvas.draw_rect((r)).unwrap();
                     count_empty += 1;
                 } else {
-                    if v.region.is_none() {
-                        v.region = self.atlas.alloc();
-                        self.atlas.update(v.region.as_ref().unwrap(), &v.pixels);
+                    if let Some(atlas_region) = &v.region {
+                        sdl.canvas
+                            .copy(
+                                &self.atlas.texture[atlas_region.index.z as usize],
+                                Some(atlas_region.rect().into_sdl()),
+                                Some(r),
+                            )
+                            .unwrap();
                     }
-
-                    sdl.canvas
-                        .copy(
-                            &self.atlas.texture,
-                            Some(v.region.as_ref().unwrap().rect().into_sdl()),
-                            Some(r),
-                        )
-                        .unwrap();
                     count_full += 1;
                 }
             }
 
-            sdl.canvas
-                .copy(&self.atlas.texture, None, Some(Rect::new(0, 0, 400, 400)))
-                .unwrap();
+            if self.debug {
+                let w = window.size.x / self.atlas.texture.len().max(4) as u32;
+                for (i, t) in self.atlas.texture.iter().enumerate() {
+                    sdl.canvas
+                        .copy(t, None, Some(Rect::new(i as i32 * w as i32, 0, w, w)))
+                        .unwrap();
+                }
 
-            println!(
-                "{}+{} / {}",
-                count_working,
-                count_empty,
-                count_empty + count_full + count_working
-            );
+                println!(
+                    "{}+{} / {}",
+                    count_working,
+                    count_empty,
+                    count_empty + count_full + count_working
+                );
+            }
         }
 
         if input.is_down(InputAction::F1) {
