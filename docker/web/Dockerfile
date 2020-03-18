@@ -9,3 +9,4 @@ RUN apt-get install -y python                      \
  && ./emsdk activate latest
 
 RUN rustup target add asmjs-unknown-emscripten
+RUN cargo install cargo-web

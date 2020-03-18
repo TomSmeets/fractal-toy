@@ -9,7 +9,3 @@ static = [ "sdl2/static-link", "sdl2/bundled" ]
 
 [dependencies]
 sdl2 = { version = "0.33" }
-
-[profile.release]
-lto = "fat"
-panic = "abort"

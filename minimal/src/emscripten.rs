@@ -1,7 +1,8 @@
+use crate::game::Game;
+use crate::State;
 use std::cell::RefCell;
 use std::os::raw::{c_float, c_int, c_void};
 use std::ptr::null_mut;
-use crate::game::Game;
 
 #[allow(non_camel_case_types)]
 type em_callback_func = unsafe extern "C" fn();
@@ -16,20 +17,22 @@ extern "C" {
     pub fn emscripten_get_now() -> c_float;
 }
 
-static mut STATE: Option<Box<dyn Game>> = None;
+static mut STATE: Option<State> = None;
 
 unsafe extern "C" fn prog_update() {
+    println!("prog_update!()");
     match &mut STATE {
         Some(x) => {
             x.update();
         }
-        None => {}
+        None => {
+            STATE = Some(State::init());
+        }
     }
 }
 
-pub fn run(g: Box<dyn Game>) {
+pub fn run() {
     unsafe {
-        STATE = Some(g);
         emscripten_set_main_loop(prog_update, 0, 1);
     };
 }

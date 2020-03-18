@@ -13,13 +13,12 @@ struct State {
     ctx: sdl2::Sdl,
     #[allow(dead_code)]
     video_ctx: sdl2::VideoSubsystem,
-    #[allow(dead_code)]
-    window: sdl2::video::Window,
+    canvas: sdl2::render::Canvas<sdl2::video::Window>,
     events: sdl2::EventPump,
     rect: Rect,
 }
 
-impl State {
+impl Game for State {
     fn init() -> Self {
         let ctx = sdl2::init().unwrap();
         let video_ctx = ctx.video().unwrap();
@@ -37,19 +36,24 @@ impl State {
         let rect = Rect::new(10, 10, 10, 10);
         let events = ctx.event_pump().unwrap();
 
+        let canvas = window.into_canvas().present_vsync().build().unwrap();
+
         Self {
             ctx,
             events,
-            window,
+            canvas,
             video_ctx,
             rect,
         }
     }
-}
 
-impl Game for State {
     fn update(&mut self) {
+        self.canvas
+            .set_draw_color(sdl2::pixels::Color::RGB(255, 0, 255));
+        self.canvas.clear();
+        self.canvas.present();
         for event in self.events.poll_iter() {
+            println!("event {:#?}", event);
             match event {
                 Event::Quit { .. }
                 | Event::KeyDown {
@@ -101,13 +105,15 @@ mod emscripten;
 use emscripten::run;
 
 #[cfg(not(target_os = "emscripten"))]
-fn run(mut g: Box<dyn Game>) {
+fn run() {
+    let mut s = State::init();
+
     loop {
-        g.update()
+        s.update()
     }
 }
 
 fn main() {
-    let state = State::init();
-    run(Box::new(state));
+    println!("Hell oworld!");
+    run();
 }
