@@ -28,6 +28,7 @@ impl Sdl {
 
         let window = video
             .window("rust-sdl2 demo", 800, 600)
+            .resizable()
             .opengl()
             .position_centered()
             .build()

@@ -13,8 +13,12 @@ crate_type = [ "lib", "cdylib" ]
 name = "fractal"
 harness = false
 
+[[bin]]
+name = "runner"
+required-features = [ "dynamic" ]
+
 [features]
-default = [ "dynamic" ]
+default = [ ]
 dynamic = [ "libloading" ]
 static = [ "sdl2/static-link", "sdl2/bundled" ]
 
@@ -27,7 +31,7 @@ num        = "0.2"
 cgmath     = { version = "0.17", features = [ "serde" ] }
 rand       = "0.7"
 palette    = "0.5.0"
-rug        = "1.7.0"
+# rug        = "1.7.0"
 libloading = { version = "0.5", optional = true }
 rusttype  = "0.8.2"
 
