@@ -51,12 +51,12 @@ impl State {
     pub fn reload(&mut self) {}
 
     pub fn new() -> State {
-        let sdl = Sdl::new();
+        let mut sdl = Sdl::new();
         let window = Window::new(&sdl);
         let time = Time::new(1.0 / 60.0);
         let input = Input::new();
         let ui = UI::new();
-        let fractal = Fractal::new();
+        let fractal = Fractal::new(&mut sdl);
 
         // TODO: get window size
         State {

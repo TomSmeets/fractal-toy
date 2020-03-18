@@ -1,3 +1,4 @@
+use crate::atlas::AtlasRegion;
 use crate::fractal::gen::Gen;
 use crate::fractal::TEXTURE_SIZE;
 
@@ -8,7 +9,8 @@ pub struct TileContent {
     pub old: bool,     // did this tile become obsolete
     pub dirty: bool,   // does this tiles till need to be generated
     pub working: bool, // is a thread working on this tile
-    pixels: Vec<u8>,
+    pub pixels: Vec<u8>,
+    pub region: Option<AtlasRegion>,
 }
 
 impl TileContent {
@@ -18,6 +20,7 @@ impl TileContent {
             dirty: true,
             working: false,
             pixels: Vec::new(),
+            region: None,
         }
     }
 

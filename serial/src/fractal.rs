@@ -10,6 +10,7 @@ use std::collections::hash_map::{Entry, HashMap};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 
+use crate::atlas::Atlas;
 use crate::input::{Input, InputAction};
 use crate::sdl::Sdl;
 use crate::viewport::Viewport;
@@ -40,6 +41,7 @@ pub struct Fractal {
     pub pos: Viewport,
     pub drag: DragState,
     pub gen: Arc<RwLock<Gen>>,
+    pub atlas: Atlas,
     pub pause: bool,
 }
 
@@ -80,7 +82,7 @@ pub fn worker(gen: Arc<RwLock<Gen>>, q: TileMap) {
 }
 
 impl Fractal {
-    pub fn new() -> Self {
+    pub fn new(sdl: &mut Sdl) -> Self {
         let map: TileMap = Arc::new(Mutex::new(HashMap::new()));
         let gen = Arc::new(RwLock::new(Gen::new()));
 
@@ -90,11 +92,15 @@ impl Fractal {
             thread::spawn(move || worker(gen, map));
         }
 
+        let tile_count = 64;
+        let tile_res = TEXTURE_SIZE;
+
         Fractal {
             textures: map,
             pos: Viewport::new(),
             drag: DragState::None,
             gen,
+            atlas: Atlas::new(sdl, Vector2::new(tile_count, tile_count), tile_res as u32),
             pause: false,
         }
     }
@@ -152,29 +158,29 @@ impl Fractal {
                 };
             }
 
+            for (p, t) in t.iter_mut() {
+                if t.old {
+                    let r = t.region.take();
+                    if let Some(r) = r {
+                        self.atlas.remove(r);
+                    }
+                }
+            }
+
             // remove tiles that we did not encounter
-            t.retain(|_, t| !t.old);
+            t.retain(|_, t| if t.old { false } else { true });
         }
 
         {
-            let t = self.textures.lock().unwrap();
-            let mut vs: Vec<_> = t.iter().collect();
+            let mut t = self.textures.lock().unwrap();
+            let mut vs: Vec<_> = t.iter_mut().collect();
             vs.sort_unstable_by_key(|(p, _)| p.z);
-            let mut texture = sdl
-                .canvas
-                .texture_creator()
-                .create_texture_streaming(
-                    PixelFormatEnum::RGBA8888,
-                    TEXTURE_SIZE as u32,
-                    TEXTURE_SIZE as u32,
-                )
-                .unwrap();
 
             let mut count_empty = 0;
             let mut count_working = 0;
             let mut count_full = 0;
 
-            for (p, v) in &vs {
+            for (p, v) in vs.iter_mut() {
                 let r = self.pos_to_rect(window, p);
 
                 if v.working {
@@ -184,11 +190,25 @@ impl Fractal {
                     //       sdl.canvas.draw_rect((r)).unwrap();
                     count_empty += 1;
                 } else {
-                    v.to_sdl(&mut texture);
-                    sdl.canvas.copy(&texture, None, Some(r)).unwrap();
+                    if v.region.is_none() {
+                        v.region = self.atlas.alloc();
+                        self.atlas.update(v.region.as_ref().unwrap(), &v.pixels);
+                    }
+
+                    sdl.canvas
+                        .copy(
+                            &self.atlas.texture,
+                            Some(v.region.as_ref().unwrap().rect().into_sdl()),
+                            Some(r),
+                        )
+                        .unwrap();
                     count_full += 1;
                 }
             }
+
+            sdl.canvas
+                .copy(&self.atlas.texture, None, Some(Rect::new(0, 0, 400, 400)))
+                .unwrap();
 
             println!(
                 "{}+{} / {}",
@@ -196,10 +216,6 @@ impl Fractal {
                 count_empty,
                 count_empty + count_full + count_working
             );
-
-            unsafe {
-                texture.destroy();
-            }
         }
 
         if input.is_down(InputAction::F1) {
