@@ -72,7 +72,19 @@ pub fn worker(gen: Arc<RwLock<Gen>>, q: TileMap) {
                 let mut t = TileContent::new();
                 t.generate(&g, p);
                 let mut map = q.lock().unwrap();
-                map.insert(p, t);
+                match map.entry(p) {
+                    Entry::Occupied(mut e) => {
+                        // we are going to drop the previous tile, so make sure it does not contain a atlas region
+                        // that would be a bug for now
+                        // in the future wi might just update the pixels and not drop the tile!
+                        assert!(e.get().region.is_none());
+                        e.insert(t);
+                    },
+                    Entry::Vacant(_) => {
+                        // a tile got removed while we where working on it
+                        // let's just ignore it for now
+                    },
+                };
             },
             None => {
                 thread::yield_now();
@@ -87,7 +99,10 @@ impl Fractal {
         let map: TileMap = Arc::new(Mutex::new(HashMap::new()));
         let gen = Arc::new(RwLock::new(Gen::new()));
 
-        for _ in 0..7 {
+        let n = (sdl2::cpuinfo::cpu_count() - 1).max(1);
+        println!("spawning {} workers", n);
+
+        for _ in 0..n {
             let map = Arc::clone(&map);
             let gen = Arc::clone(&gen);
             thread::spawn(move || worker(gen, map));
