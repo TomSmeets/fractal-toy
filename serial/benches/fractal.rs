@@ -8,7 +8,10 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     let gen = Gen::new();
     g.sample_size(20);
     g.bench_function("TileContent at root", |b| {
-        b.iter(|| TileContent::new(&gen, TilePos::root()))
+        b.iter(|| {
+            let mut t = TileContent::new();
+            t.generate(&gen, black_box(TilePos::root()))
+        })
     });
 }
 

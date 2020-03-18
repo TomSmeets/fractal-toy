@@ -293,13 +293,3 @@ fn mk_rect(a: V2i, b: V2i) -> Rect {
 
     Rect::new(min_x, min_y, width as u32, height as u32)
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn fractal() {
-        TileContent::new(TilePos { x: 0, y: 0, z: 0 });
-    }
-}
