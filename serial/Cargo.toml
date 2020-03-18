@@ -16,6 +16,7 @@ harness = false
 [features]
 default = [ "dynamic" ]
 dynamic = [ "libloading" ]
+static = [ "sdl2/static-link", "sdl2/bundled" ]
 
 [dependencies]
 serde      = { version =  "1.0", features = ["derive"] }

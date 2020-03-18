@@ -18,7 +18,7 @@ pub struct Sdl {
 
 static FONT_DATA: &[u8] = include_bytes!(concat!(
     env!("FONT_DEJAVU"),
-    "/share/fonts/truetype/DejaVuSans.ttf"
+    "/DejaVuSans.ttf"
 ));
 
 impl Sdl {

@@ -66,7 +66,7 @@
         export PATH="${lib.makeBinPath path}:$PATH"
         export PKG_CONFIG_PATH='${lib.concatMapStringsSep ":" (x: (x.dev or x) + "/share/pkgconfig:" + (x.dev or x) + "/lib/pkgconfig") libs}'
 
-        export FONT_DEJAVU='${pkgs.dejavu_fonts}'
+        export FONT_DEJAVU='${pkgs.dejavu_fonts}/share/fonts/truetype'
         exec ${pkgs.bashInteractive}/bin/bash
     '';
 }
