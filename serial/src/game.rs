@@ -1,13 +1,17 @@
 use crate::math::*;
 use crate::module::{input::InputAction, Fractal, Input, Sdl, Time, Window, UI};
+use serde::{Deserialize, Serialize};
 
 // TODO: implemnt save and load, this will handle some types that dont work with
 // reload. For example the btreemap
+#[derive(Serialize, Deserialize)]
 pub struct State {
     time: Time,
+    #[serde(skip)]
     sdl: Sdl,
     window: Window,
-    input: Input,
+    #[serde(skip)]
+    pub input: Input,
     ui: UI,
     fractal: Fractal,
 }
@@ -59,7 +63,7 @@ impl State {
 
         fractal.update(time, sdl, window, input);
 
-        if false {
+        if true {
             ui.update(
                 sdl,
                 input,
@@ -93,6 +97,8 @@ impl State {
             });
         }
 
-        input.is_down(InputAction::Quit)
+        let quit = input.is_down(InputAction::Quit);
+
+        quit
     }
 }

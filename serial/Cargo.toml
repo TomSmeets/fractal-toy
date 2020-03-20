@@ -7,7 +7,7 @@ default-run = "linux"
 
 [lib]
 path = "src/lib.rs"
-crate_type = [ "lib", "cdylib" ]
+crate_type = [ "lib" ]
 
 [[bench]]
 name = "fractal"
@@ -28,7 +28,7 @@ dynamic = [ "libloading" ]
 static = [ "sdl2/static-link", "sdl2/bundled" ]
 
 [dependencies]
-serde      = { version =  "1.0", features = ["derive"] }
+serde      = { version =  "1.0", features = [ "derive", "rc" ] }
 serde_json = "1.0"
 bincode    = "1.0"
 sdl2       = { version = "0.33", features = [ "unsafe_textures" ] }
@@ -45,3 +45,6 @@ rusttype  = "0.8.2"
 
 [dev-dependencies]
 criterion = "0.3"
+
+[profile.release]
+debug = true

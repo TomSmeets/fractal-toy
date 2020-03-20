@@ -3,30 +3,34 @@ use crate::module::input::Button;
 use crate::module::input::Input;
 use crate::module::Sdl;
 use sdl2::pixels::Color;
+use serde::{Deserialize, Serialize};
 
 mod collection;
 mod window;
 
 pub use self::collection::Collection;
 
+#[derive(Serialize, Deserialize)]
 enum DragActionType {
     Drag,
     Resize,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct DragAction {
     id: String,
     offset: V2i,
     mode: DragActionType,
 }
 
+#[derive(Serialize, Deserialize)]
 pub enum DrawCommand {
     Text { rect: Rect, text: String },
     Rect { rect: Rect, color: [u8; 3] },
     Clip { rect: Option<Rect> },
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct UIState {
     pub rect: Rect,
 }
@@ -42,10 +46,12 @@ impl UIState {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct UI {
     pub mouse_pos: V2i,
     pub mouse_down: Button,
 
+    #[serde(skip)]
     pub rects: Vec<DrawCommand>,
 
     pub state: UIState,
@@ -95,6 +101,7 @@ impl UI {
         self.mouse_down = input.mouse_down;
         self.state.rect.size = window_size;
         self.state.rect.pos = V2i::new(0, 0);
+        self.current.clear();
 
         if self.drag.is_some() && !self.mouse_down.is_down {
             self.drag = None;

@@ -1,6 +1,8 @@
 use super::tile::TilePos;
 use crate::math::*;
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
 pub struct Viewport {
     pub zoom: f64,
     pub offset: Vector2<f64>,

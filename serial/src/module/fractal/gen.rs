@@ -3,6 +3,7 @@ use super::TilePos;
 use super::TEXTURE_SIZE;
 use crate::math::*;
 use ::palette::*;
+use serde::{Deserialize, Serialize};
 
 /// A service that can produce fractal image tiles. This trait should only
 /// represent the method of computing and precision. Everything else is
@@ -18,6 +19,7 @@ use ::palette::*;
 ///     TODO: cpu-double
 ///     TODO: sse2
 ///     TODO: avx
+#[derive(Serialize, Deserialize)]
 pub struct Gen {}
 
 impl Gen {

@@ -1,7 +1,9 @@
 use crate::math::*;
 use crate::module::Sdl;
 use sdl2::event::{Event, WindowEvent};
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
 pub struct Window {
     pub size: Vector2<u32>,
 }

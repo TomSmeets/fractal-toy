@@ -1,12 +1,10 @@
 use crate::math::*;
+use crate::module::{input::InputAction, Input, Sdl, Time, Window};
 use sdl2::rect::Rect;
-
+use serde::{Deserialize, Serialize};
 use std::collections::hash_map::{Entry, HashMap};
-
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
-
-use crate::module::{input::InputAction, Input, Sdl, Time, Window};
 
 pub mod atlas;
 pub mod gen;
@@ -20,18 +18,56 @@ use self::viewport::Viewport;
 
 const TEXTURE_SIZE: usize = 64 * 2;
 
+#[derive(Serialize, Deserialize)]
 pub enum DragState {
     None,
     From(V2),
 }
 
-type TileMap = Arc<Mutex<HashMap<TilePos, TileContent>>>;
+type TileMap = Arc<RwLock<HashMap<TilePos, TileContent>>>;
+
+pub struct Worker {
+    quit: Arc<RwLock<bool>>,
+    handle: Option<std::thread::JoinHandle<()>>,
+}
+
+impl Worker {
+    pub fn new(gen: &mut Arc<RwLock<Gen>>, map: &mut TileMap) -> Worker {
+        let quit = Arc::new(RwLock::new(false));
+
+        let handle = {
+            let map = Arc::clone(&map);
+            let gen = Arc::clone(&gen);
+            let quit = Arc::clone(&quit);
+            thread::spawn(move || worker(gen, map, quit))
+        };
+
+        Worker {
+            quit,
+            handle: Some(handle),
+        }
+    }
+
+    pub fn quit(&mut self) {
+        *(self.quit.write().unwrap()) = true;
+    }
+}
+
+impl Drop for Worker {
+    fn drop(&mut self) {
+        self.quit();
+        self.handle.take().unwrap().join().unwrap();
+    }
+}
 
 // queue: [TilePos]
 // done:  [Pos, Content]
 // TODO: Queried tiles shold be exactly those displayed. All tiles that are not
 // directly Queried should be removed. what datastructure is best for this?
+// multiple gen types, like threaded gen, etc
+#[derive(Serialize, Deserialize)]
 pub struct Fractal {
+    #[serde(skip)]
     pub textures: TileMap,
     pub pos: Viewport,
     pub drag: DragState,
@@ -39,12 +75,19 @@ pub struct Fractal {
     pub atlas: Atlas,
     pub pause: bool,
     pub debug: bool,
+
+    #[serde(skip)]
+    pub workers: Vec<Worker>,
 }
 
-pub fn worker(gen: Arc<RwLock<Gen>>, q: TileMap) {
+pub fn worker(gen: Arc<RwLock<Gen>>, q: TileMap, quit: Arc<RwLock<bool>>) {
     loop {
+        if *quit.read().unwrap() {
+            break;
+        }
+
         let next: Option<TilePos> = {
-            let mut l = q.lock().unwrap();
+            let mut l = q.write().unwrap();
             let p = l
                 .iter_mut()
                 .filter(|(_, x)| x.dirty && !x.working)
@@ -66,13 +109,13 @@ pub fn worker(gen: Arc<RwLock<Gen>>, q: TileMap) {
                 let g = gen.read().unwrap();
                 let mut t = TileContent::new();
                 t.generate(&g, p);
-                let mut map = q.lock().unwrap();
+                let mut map = q.write().unwrap();
                 match map.entry(p) {
                     Entry::Occupied(mut e) => {
                         // we are going to drop the previous tile, so make sure it does not contain
                         // a atlas region that would be a bug for now
                         // in the future wi might just update the pixels and not drop the tile!
-                        assert!(e.get().region.is_none());
+                        // assert!(e.get().region.is_none());
                         e.insert(t);
                     },
                     Entry::Vacant(_) => {
@@ -91,17 +134,8 @@ pub fn worker(gen: Arc<RwLock<Gen>>, q: TileMap) {
 
 impl Fractal {
     pub fn new() -> Self {
-        let map: TileMap = Arc::new(Mutex::new(HashMap::new()));
+        let map: TileMap = Arc::new(RwLock::new(HashMap::new()));
         let gen = Arc::new(RwLock::new(Gen::new()));
-
-        let n = (sdl2::cpuinfo::cpu_count() - 1).max(1);
-        println!("spawning {} workers", n);
-
-        for _ in 0..n {
-            let map = Arc::clone(&map);
-            let gen = Arc::clone(&gen);
-            thread::spawn(move || worker(gen, map));
-        }
 
         Fractal {
             textures: map,
@@ -111,6 +145,16 @@ impl Fractal {
             atlas: Atlas::new(TEXTURE_SIZE as u32),
             pause: false,
             debug: false,
+            workers: Vec::new(),
+        }
+    }
+
+    fn spaw_workers(&mut self) {
+        let n = (sdl2::cpuinfo::cpu_count() - 1).max(1);
+        println!("spawning {} workers", n);
+        for _ in 0..n {
+            self.workers
+                .push(Worker::new(&mut self.gen, &mut self.textures));
         }
     }
 
@@ -121,6 +165,10 @@ impl Fractal {
         self.pos.translate(time.dt as f64 * input.dir_move * 2.0);
         self.pos
             .zoom_in(time.dt as f64 * input.dir_look.y * 4.0, V2::new(0.5, 0.5));
+
+        if self.workers.is_empty() {
+            self.spaw_workers();
+        }
 
         if let DragState::From(p1) = self.drag {
             self.pos.translate(p1 - mouse_in_view);
@@ -147,105 +195,115 @@ impl Fractal {
             self.debug = false;
         }
 
-        if !self.pause {
-            let ps = self.pos.get_pos_all();
-            let mut t = self.textures.lock().unwrap();
-            // Mark all entires as potentialy old
-            for (_, e) in t.iter_mut() {
-                e.old = true;
-            }
-
-            // iterate over all visible position and queue those tiles
-            for p in ps {
-                let e = t.entry(p);
-                match e {
-                    Entry::Occupied(mut e) => {
-                        e.get_mut().old = false;
-                    },
-                    Entry::Vacant(e) => {
-                        e.insert(TileContent::new());
-                    },
-                };
-            }
-
-            if input.is_down(InputAction::Y) {
-                for (_, t) in t.iter_mut() {
-                    t.old = true;
-                    let r = t.region.take();
-                    if let Some(r) = r {
-                        self.atlas.remove(r);
+        let ps = self.pos.get_pos_all();
+        let t = self.textures.try_write();
+        match t {
+            Ok(mut t) => {
+                if !self.pause {
+                    // Mark all entires as potentialy old
+                    for (_, e) in t.iter_mut() {
+                        e.old = true;
                     }
+
+                    // iterate over all visible position and queue those tiles
+                    for p in ps {
+                        let e = t.entry(p);
+                        match e {
+                            Entry::Occupied(mut e) => {
+                                e.get_mut().old = false;
+                            },
+                            Entry::Vacant(e) => {
+                                e.insert(TileContent::new());
+                            },
+                        };
+                    }
+
+                    if input.is_down(InputAction::Y) {
+                        for (_, t) in t.iter_mut() {
+                            t.old = true;
+                            let r = t.region.take();
+                            if let Some(r) = r {
+                                self.atlas.remove(r);
+                            }
+                        }
+                        self.atlas = Atlas::new(self.atlas.res);
+                    }
+
+                    for (_, t) in t.iter_mut() {
+                        if t.old {
+                            let r = t.region.take();
+                            if let Some(r) = r {
+                                self.atlas.remove(r);
+                            }
+                        } else {
+                            if !t.dirty && !t.working && !t.pixels.is_empty() && t.region.is_none()
+                            {
+                                let atlas_region = self.atlas.alloc(sdl);
+                                self.atlas.update(&atlas_region, &t.pixels);
+                                t.region = Some(atlas_region);
+                            }
+                        }
+                    }
+
+                    // remove tiles that we did not encounter
+                    t.retain(|_, t| if t.old { false } else { true });
                 }
-                self.atlas = Atlas::new(self.atlas.res);
-            }
-
-            for (_, t) in t.iter_mut() {
-                if t.old {
-                    let r = t.region.take();
-                    if let Some(r) = r {
-                        self.atlas.remove(r);
-                    }
-                } else {
-                    if !t.dirty && !t.working && !t.pixels.is_empty() && t.region.is_none() {
-                        let atlas_region = self.atlas.alloc(sdl);
-                        self.atlas.update(&atlas_region, &t.pixels);
-                        t.region = Some(atlas_region);
-                    }
-                }
-            }
-
-            // remove tiles that we did not encounter
-            t.retain(|_, t| if t.old { false } else { true });
+            },
+            Err(_) => (),
         }
 
-        {
-            let mut t = self.textures.lock().unwrap();
-            let mut vs: Vec<_> = t.iter_mut().collect();
-            vs.sort_unstable_by_key(|(p, _)| p.z);
+        let t = self.textures.read();
+        match t {
+            Ok(t) => {
+                let mut vs: Vec<_> = t.iter().collect();
+                vs.sort_unstable_by_key(|(p, _)| p.z);
 
-            let mut count_empty = 0;
-            let mut count_working = 0;
-            let mut count_full = 0;
+                let mut count_empty = 0;
+                let mut count_working = 0;
+                let mut count_full = 0;
 
-            for (p, v) in vs.iter_mut() {
-                let r = self.pos_to_rect(window, p);
+                for (p, v) in vs.iter() {
+                    let r = self.pos_to_rect(window, p);
 
-                if v.working {
-                    if self.debug {
-                        sdl.canvas.draw_rect(r).unwrap();
+                    if v.working {
+                        if self.debug {
+                            sdl.canvas.draw_rect(r).unwrap();
+                        }
+                        count_working += 1;
+                    } else if v.dirty {
+                        count_empty += 1;
+                    } else {
+                        if let Some(atlas_region) = &v.region {
+                            // TODO: make rendering seperate from
+                            sdl.canvas
+                                .copy(
+                                    &self.atlas.texture[atlas_region.index.z as usize],
+                                    Some(atlas_region.rect().into_sdl()),
+                                    Some(r),
+                                )
+                                .unwrap();
+                        }
+                        count_full += 1;
                     }
-                    count_working += 1;
-                } else if v.dirty {
-                    count_empty += 1;
-                } else {
-                    if let Some(atlas_region) = &v.region {
+                }
+
+                if self.debug {
+                    let w = window.size.x / self.atlas.texture.len().max(4) as u32;
+                    for (i, t) in self.atlas.texture.iter().enumerate() {
                         sdl.canvas
-                            .copy(
-                                &self.atlas.texture[atlas_region.index.z as usize],
-                                Some(atlas_region.rect().into_sdl()),
-                                Some(r),
-                            )
+                            .copy(t, None, Some(Rect::new(i as i32 * w as i32, 0, w, w)))
                             .unwrap();
                     }
-                    count_full += 1;
-                }
-            }
 
-            if self.debug {
-                let w = window.size.x / self.atlas.texture.len().max(4) as u32;
-                for (i, t) in self.atlas.texture.iter().enumerate() {
-                    sdl.canvas
-                        .copy(t, None, Some(Rect::new(i as i32 * w as i32, 0, w, w)))
-                        .unwrap();
+                    println!(
+                        "{}+{} / {}",
+                        count_working,
+                        count_empty,
+                        count_empty + count_full + count_working
+                    );
                 }
-
-                println!(
-                    "{}+{} / {}",
-                    count_working,
-                    count_empty,
-                    count_empty + count_full + count_working
-                );
-            }
+            },
+            Err(_) => {},
         }
 
         if input.is_down(InputAction::F1) {
@@ -277,6 +335,14 @@ impl Fractal {
     }
 }
 
+impl Drop for Fractal {
+    fn drop(&mut self) {
+        for w in self.workers.iter_mut() {
+            w.quit();
+        }
+    }
+}
+
 fn screen_to_view(window: &Window, p: V2i) -> V2 {
     V2::new(
         p.x as f64 / window.size.x as f64,
@@ -302,4 +368,10 @@ fn mk_rect(a: V2i, b: V2i) -> Rect {
     let height = max_y - min_y;
 
     Rect::new(min_x, min_y, width as u32, height as u32)
+}
+
+impl Default for Fractal {
+    fn default() -> Fractal {
+        Fractal::new()
+    }
 }

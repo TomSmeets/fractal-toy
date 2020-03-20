@@ -4,7 +4,9 @@ use crate::module::fractal::TEXTURE_SIZE;
 
 use super::pos::TilePos;
 use sdl2::render::Texture;
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
 pub struct TileContent {
     pub old: bool,     // did this tile become obsolete
     pub dirty: bool,   // does this tiles till need to be generated

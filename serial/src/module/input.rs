@@ -1,9 +1,10 @@
+use crate::math::*;
+use crate::module::sdl::Sdl;
+
 use sdl2::event::*;
 use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
-
-use crate::math::*;
-use crate::module::sdl::Sdl;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy)]
 pub enum InputAction {
@@ -42,7 +43,7 @@ pub enum InputAction {
     Count,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct Button {
     pub is_down: bool,
     pub was_down: bool,
@@ -69,6 +70,7 @@ impl Button {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Input {
     pub mouse: V2i,
     pub mouse_down: Button,
