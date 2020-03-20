@@ -26,9 +26,7 @@ pub struct Gen {
 
 impl Gen {
     pub fn new() -> Gen {
-        Gen {
-            iterations: 256,
-        }
+        Gen { iterations: 256 }
     }
 
     /// This function should receive all required
@@ -71,7 +69,14 @@ impl Gen {
 // }
 
 // TODO: profile!!
-fn draw_mandel(iterations: u32, pixels: &mut [u8], w: u32, h: u32, zoom: f64, offset: Vector2<f64>) {
+fn draw_mandel(
+    iterations: u32,
+    pixels: &mut [u8],
+    w: u32,
+    h: u32,
+    zoom: f64,
+    offset: Vector2<f64>,
+) {
     for y in 0..h {
         for x in 0..w {
             let mut c0 = Vector2::new(x as f64, y as f64);
