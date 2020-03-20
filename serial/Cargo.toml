@@ -17,8 +17,13 @@ harness = false
 name = "runner"
 required-features = [ "dynamic" ]
 
+[[bin]]
+name = "web"
+required-features = [ "web" ]
+
 [features]
 default = [ ]
+web = []
 dynamic = [ "libloading" ]
 static = [ "sdl2/static-link", "sdl2/bundled" ]
 
