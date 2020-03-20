@@ -125,10 +125,6 @@ impl Input {
         self.dir_move = limit(self.dir_move);
     }
 
-    pub fn is_down(&self, act: InputAction) -> bool {
-        self.button(act).is_down
-    }
-
     pub fn button(&self, act: InputAction) -> &Button {
         &self.action[act as usize]
     }

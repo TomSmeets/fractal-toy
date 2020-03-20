@@ -211,7 +211,7 @@ impl Fractal {
                         };
                     }
 
-                    if input.is_down(InputAction::Y) {
+                    if input.button(InputAction::Y).went_down() {
                         for (_, t) in t.iter_mut() {
                             t.old = true;
                             let r = t.region.take();
@@ -299,7 +299,7 @@ impl Fractal {
             Err(_) => {},
         }
 
-        if input.is_down(InputAction::F1) {
+        if input.button(InputAction::F1).went_down() {
             println!("---- INFO ----");
             self.info(input, window);
         }
