@@ -1,10 +1,10 @@
 use crate::math::*;
 
-#[derive(Clone, Copy, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
 pub struct TilePos {
+    pub z: i8,
     pub x: u64,
     pub y: u64,
-    pub z: i8,
 }
 
 impl TilePos {

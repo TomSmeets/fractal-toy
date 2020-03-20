@@ -1,6 +1,6 @@
-use crate::atlas::AtlasRegion;
-use crate::fractal::gen::Gen;
-use crate::fractal::TEXTURE_SIZE;
+use super::super::atlas::AtlasRegion;
+use crate::module::fractal::gen::Gen;
+use crate::module::fractal::TEXTURE_SIZE;
 
 use super::pos::TilePos;
 use sdl2::render::Texture;

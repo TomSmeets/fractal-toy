@@ -1,5 +1,5 @@
 pub mod pos;
-use crate::quadtree::pos::*;
+use self::pos::*;
 
 #[derive(Debug)]
 pub struct QuadTree<T> {

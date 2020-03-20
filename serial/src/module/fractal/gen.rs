@@ -112,10 +112,10 @@ fn mandel(max: i32, c: Vector2<f64>) -> i32 {
     let mut z = c;
     let mut n = 0;
     loop {
-        // z.x = z.x.abs();
-        // z.y = z.y.abs();
-        z = cpx_sqr(z) + c;
-        // z = cpx_mul(cpx_sqr(z), z) + c;
+        z.x = z.x.abs();
+        z.y = z.y.abs();
+        // z = cpx_sqr(z) + c;
+        z = cpx_mul(cpx_sqr(z), z) + c;
 
         if n == max {
             return max;

@@ -10,16 +10,19 @@ use std::collections::hash_map::{Entry, HashMap};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 
-use crate::atlas::Atlas;
 use crate::input::{Input, InputAction};
 use crate::sdl::Sdl;
-use crate::viewport::Viewport;
 use crate::window::Window;
 use crate::*;
 
 pub mod gen;
 pub mod tile;
+pub mod viewport;
+pub mod atlas;
+pub mod quadtree;
 
+use self::atlas::Atlas;
+use self::viewport::Viewport;
 use self::gen::*;
 use self::tile::{TileContent, TilePos, TileState};
 

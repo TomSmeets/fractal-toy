@@ -1,4 +1,7 @@
-use crate::fractal::Fractal;
+use crate::module::{
+    Fractal,
+};
+
 use crate::input::{Input, InputAction};
 use crate::math::*;
 use crate::sdl::Sdl;

@@ -1,4 +1,4 @@
-use crate::fractal::tile::TilePos;
+use super::tile::TilePos;
 use crate::math::*;
 
 pub struct Viewport {
