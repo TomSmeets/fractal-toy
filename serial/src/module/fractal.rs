@@ -6,10 +6,7 @@ use std::collections::hash_map::{Entry, HashMap};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 
-use crate::module::input::{Input, InputAction};
-use crate::module::Sdl;
-use crate::module::Window;
-use crate::Time;
+use crate::module::{input::InputAction, Input, Sdl, Time, Window};
 
 pub mod atlas;
 pub mod gen;
