@@ -20,11 +20,15 @@ use serde::{Deserialize, Serialize};
 ///     TODO: sse2
 ///     TODO: avx
 #[derive(Serialize, Deserialize)]
-pub struct Gen {}
+pub struct Gen {
+    iterations: u32,
+}
 
 impl Gen {
     pub fn new() -> Gen {
-        Gen {}
+        Gen {
+            iterations: 256,
+        }
     }
 
     /// This function should receive all required
@@ -48,6 +52,7 @@ impl Gen {
         let [x, y, size] = tile.to_f64();
         let center = Vector2::new(x, y) * 4.0 - Vector2::new(2.0, 2.0);
         draw_mandel(
+            self.iterations,
             &mut pixels,
             TEXTURE_SIZE as u32,
             TEXTURE_SIZE as u32,
@@ -66,7 +71,7 @@ impl Gen {
 // }
 
 // TODO: profile!!
-fn draw_mandel(pixels: &mut [u8], w: u32, h: u32, zoom: f64, offset: Vector2<f64>) {
+fn draw_mandel(iterations: u32, pixels: &mut [u8], w: u32, h: u32, zoom: f64, offset: Vector2<f64>) {
     for y in 0..h {
         for x in 0..w {
             let mut c0 = Vector2::new(x as f64, y as f64);
@@ -79,9 +84,9 @@ fn draw_mandel(pixels: &mut [u8], w: u32, h: u32, zoom: f64, offset: Vector2<f64
             // -1 , 1
             c0 = zoom * c0 + offset;
 
-            let itr = mandel(256, c0);
+            let itr = mandel(iterations, c0);
 
-            let mut v = itr as f64 / 256.0;
+            let mut v = itr as f64 / iterations as f64;
             v *= v;
             v = 1. - v;
 
@@ -110,7 +115,7 @@ fn cpx_sqr(a: V2) -> V2 {
     }
 }
 
-fn mandel(max: i32, c: Vector2<f64>) -> i32 {
+fn mandel(max: u32, c: Vector2<f64>) -> u32 {
     let mut z = c;
     let mut n = 0;
     loop {
