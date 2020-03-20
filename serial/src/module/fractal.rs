@@ -180,19 +180,12 @@ impl Fractal {
             DragState::None
         };
 
-        // TODO: use button api for these, so we can use went_down
         // TODO: int the future we want some kind of ui, or cli interface
-        if input.is_down(InputAction::F1) {
-            self.pause = true;
+        if input.button(InputAction::F1).went_down() {
+            self.pause = !self.pause;
         }
-        if input.is_down(InputAction::F2) {
-            self.pause = false;
-        }
-        if input.is_down(InputAction::F3) {
-            self.debug = true;
-        }
-        if input.is_down(InputAction::F4) {
-            self.debug = false;
+        if input.button(InputAction::F2).went_down() {
+            self.debug = !self.debug;
         }
 
         let ps = self.pos.get_pos_all();

@@ -79,7 +79,7 @@ pub struct Input {
     pub dir_move: V2,
     pub dir_look: V2,
 
-    action: [bool; (InputAction::Count as usize)],
+    action: [Button; (InputAction::Count as usize)],
 }
 
 impl Default for Input {
@@ -106,7 +106,7 @@ impl Input {
             scroll: 0,
             dir_move: V2::zero(),
             dir_look: V2::zero(),
-            action: [false; InputAction::Count as usize],
+            action: [Button::new(); InputAction::Count as usize],
         }
     }
 
@@ -115,6 +115,10 @@ impl Input {
         self.dir_look = V2::zero();
         self.dir_move = V2::zero();
 
+        for a in self.action.iter_mut() {
+            a.update();
+        }
+
         self.handle_sdl(&sdl.events);
 
         self.dir_look = limit(self.dir_look);
@@ -122,14 +126,22 @@ impl Input {
     }
 
     pub fn is_down(&self, act: InputAction) -> bool {
-        self.action[act as usize]
+        self.button(act).is_down
+    }
+
+    pub fn button(&self, act: InputAction) -> &Button {
+        &self.action[act as usize]
+    }
+
+    pub fn button_mut(&mut self, act: InputAction) -> &mut Button {
+        &mut self.action[act as usize]
     }
 
     pub fn handle_sdl(&mut self, events: &[Event]) {
         self.mouse_down.update();
         for e in events {
             match e {
-                Event::Quit { .. } => self.action[InputAction::Quit as usize] = true,
+                Event::Quit { .. } => self.button_mut(InputAction::Quit).is_down = true,
                 Event::KeyUp {
                     keycode: Some(key), ..
                 } => self.handle_sdl_key(*key, false),
@@ -156,29 +168,29 @@ impl Input {
             }
         }
 
-        if self.is_down(InputAction::MoveUp) {
+        if self.button(InputAction::MoveUp).is_down {
             self.dir_move.y += 1.;
         }
-        if self.is_down(InputAction::MoveDown) {
+        if self.button(InputAction::MoveDown).is_down {
             self.dir_move.y -= 1.;
         }
-        if self.is_down(InputAction::MoveRight) {
+        if self.button(InputAction::MoveRight).is_down {
             self.dir_move.x += 1.;
         }
-        if self.is_down(InputAction::MoveLeft) {
+        if self.button(InputAction::MoveLeft).is_down {
             self.dir_move.x -= 1.;
         }
 
-        if self.is_down(InputAction::LookUp) {
+        if self.button(InputAction::LookUp).is_down {
             self.dir_look.y += 1.;
         }
-        if self.is_down(InputAction::LookDown) {
+        if self.button(InputAction::LookDown).is_down {
             self.dir_look.y -= 1.;
         }
-        if self.is_down(InputAction::LookRight) {
+        if self.button(InputAction::LookRight).is_down {
             self.dir_look.x += 1.;
         }
-        if self.is_down(InputAction::LookLeft) {
+        if self.button(InputAction::LookLeft).is_down {
             self.dir_look.x -= 1.;
         }
     }
@@ -218,13 +230,11 @@ impl Input {
     }
 
     fn handle_sdl_key(&mut self, key: Keycode, down: bool) {
-        // println!("key {:?} {}", key, if down { "down" } else { "up" });
         let act = self.sdl_key_to_action(key);
-        let was_down = self.is_down(act);
-        if !was_down && down {
+        let button = self.button_mut(act);
+        button.is_down = down;
+        if button.went_down() {
             eprintln!("action: {:?} = {}", act, if down { "down" } else { "up" });
         }
-
-        self.action[act as usize] = down;
     }
 }

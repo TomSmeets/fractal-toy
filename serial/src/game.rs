@@ -97,8 +97,6 @@ impl State {
             });
         }
 
-        let quit = input.is_down(InputAction::Quit);
-
-        quit
+        input.button(InputAction::Quit).is_down
     }
 }

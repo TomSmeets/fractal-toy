@@ -12,8 +12,8 @@ fn main() {
             break;
         }
 
-        let do_save = s.input.is_down(InputAction::F5);
-        let do_load = s.input.is_down(InputAction::F6);
+        let do_save = s.input.button(InputAction::F5).went_down();
+        let do_load = s.input.button(InputAction::F6).went_down();
 
         if do_save {
             save("manual", &s);
