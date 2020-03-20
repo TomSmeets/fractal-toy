@@ -108,13 +108,12 @@ impl Fractal {
             self.debug = !self.debug;
         }
 
-        let ps = self.pos.get_pos_all();
         if !self.pause || input.button(InputAction::F3).went_down() {
             if let Ok(mut q) = self.queue.try_lock() {
                 // iterate over all visible position and queue those tiles
                 let mut todo = Vec::with_capacity(256);
                 let mut new = TileMap::new();
-                for p in ps {
+                for p in self.pos.get_pos_all() {
                     let e = self.textures.remove(&p);
                     match e {
                         Some(e) => {
