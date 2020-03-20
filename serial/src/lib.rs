@@ -2,12 +2,8 @@
 // TODO: compute tiles in background
 
 pub mod game;
-pub mod input;
 pub mod math;
-pub mod sdl;
 pub mod state;
-pub mod ui;
-pub mod window;
 
 pub mod module;
 

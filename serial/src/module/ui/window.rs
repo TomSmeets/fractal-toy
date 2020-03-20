@@ -1,6 +1,5 @@
-use super::rect::Rect;
-use crate::math::V2i;
-use crate::sdl::Sdl;
+use crate::math::*;
+use crate::module::Sdl;
 use sdl2::pixels::Color;
 use serde::{Deserialize, Serialize};
 

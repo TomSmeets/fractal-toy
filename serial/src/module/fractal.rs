@@ -6,9 +6,9 @@ use std::collections::hash_map::{Entry, HashMap};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 
-use crate::input::{Input, InputAction};
-use crate::sdl::Sdl;
-use crate::window::Window;
+use crate::module::input::{Input, InputAction};
+use crate::module::Sdl;
+use crate::module::Window;
 use crate::Time;
 
 pub mod atlas;

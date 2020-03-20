@@ -1,6 +1,5 @@
 use crate::math::*;
-use crate::sdl::Sdl;
-use crate::ui::Rect;
+use crate::module::Sdl;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::Texture;
 

@@ -1,15 +1,13 @@
-use crate::input::Button;
-use crate::input::Input;
 use crate::math::*;
-use crate::sdl::Sdl;
+use crate::module::input::Button;
+use crate::module::input::Input;
+use crate::module::Sdl;
 use sdl2::pixels::Color;
 
 mod collection;
-mod rect;
 mod window;
 
 pub use self::collection::Collection;
-pub use self::rect::Rect;
 
 enum DragActionType {
     Drag,

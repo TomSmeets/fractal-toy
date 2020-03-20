@@ -1,5 +1,5 @@
 use crate::math::*;
-use crate::sdl::Sdl;
+use crate::module::Sdl;
 use sdl2::event::{Event, WindowEvent};
 
 pub struct Window {

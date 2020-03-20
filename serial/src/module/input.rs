@@ -3,7 +3,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
 
 use crate::math::*;
-use crate::sdl::Sdl;
+use crate::module::sdl::Sdl;
 
 #[derive(Debug, Clone, Copy)]
 pub enum InputAction {

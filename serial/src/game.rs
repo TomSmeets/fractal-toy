@@ -1,10 +1,10 @@
 use crate::module::Fractal;
 
-use crate::input::{Input, InputAction};
 use crate::math::*;
-use crate::sdl::Sdl;
-use crate::ui::UI;
-use crate::window::Window;
+use crate::module::input::{Input, InputAction};
+use crate::module::Sdl;
+use crate::module::Window;
+use crate::module::UI;
 
 pub struct Time {
     pub dt: f32,
