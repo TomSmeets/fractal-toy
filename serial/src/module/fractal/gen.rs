@@ -2,7 +2,6 @@ use super::TilePos;
 
 use super::TEXTURE_SIZE;
 use crate::math::*;
-use ::palette::*;
 use serde::{Deserialize, Serialize};
 
 /// A service that can produce fractal image tiles. This trait should only
@@ -25,17 +24,19 @@ pub struct Gen {
 }
 
 fn hsv2rgb(h: f64, s: f64, v: f64) -> [u8; 3] {
-    let h = h % 1.0;
+    let h = h.fract();
     let h = h * 6.0;
     let part = h as u32;
     let f    = h - part as f64;
 
     let max = 255.0*v;
     let min = 255.0*v - 255.0*v*s;
-    let p   = (f*max + (1.0-f)*min) as u8;
-    let n = 255 - p;
+    let p   = f*max + (1.0-f)*min;
+    let n   = f*min + (1.0-f)*max;
     let min = min as u8;
     let max = max as u8;
+    let p = p as u8;
+    let n = n as u8;
     match part {
         0 => [ max,    p, min ],
         1 => [   n,  max, min ],
@@ -119,7 +120,6 @@ fn draw_mandel(
             v = 1. - v;
 
             let rgb = hsv2rgb(itr as f64 / 32.0, v, v);
-
             pixels[(0 + (x + y * w) * 4) as usize] = 255;
             pixels[(1 + (x + y * w) * 4) as usize] = rgb[0];
             pixels[(2 + (x + y * w) * 4) as usize] = rgb[1];
