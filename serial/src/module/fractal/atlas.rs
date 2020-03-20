@@ -4,7 +4,7 @@ use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::Texture;
 use serde::{Deserialize, Serialize};
 
-const PADDING: u32 = 2;
+pub const PADDING: u32 = 1;
 
 #[derive(Serialize, Deserialize)]
 pub struct Atlas {
@@ -20,7 +20,7 @@ pub struct Atlas {
 
 impl Atlas {
     pub fn new(res: u32) -> Atlas {
-        let size = 64 * 64 / (res + PADDING);
+        let size = 64 * 64 / res;
         Atlas {
             free: Vec::new(),
             size,
@@ -37,8 +37,8 @@ impl Atlas {
             .texture_creator()
             .create_texture_static(
                 PixelFormatEnum::RGBA8888,
-                self.size * (self.res + PADDING),
-                self.size * (self.res + PADDING),
+                self.size * self.res,
+                self.size * self.res,
             )
             .unwrap();
 
@@ -69,24 +69,6 @@ impl Atlas {
     pub fn update(&mut self, r: &AtlasRegion, pixels: &[u8]) {
         let r1 = r.rect();
         let t = &mut self.texture[r.index.z as usize];
-
-        // draw a bit in the padding zone
-        // Meh, this is not ideal, but it kind of wokrs
-        {
-            let mut r2 = r.rect();
-            r2.pos.x += PADDING as i32 / 2;
-            r2.pos.y += PADDING as i32 / 2;
-            t.update(Some(r2.into_sdl()), pixels, 4 * self.res as usize)
-                .unwrap();
-        }
-        {
-            let mut r2 = r.rect();
-            r2.pos.x -= PADDING as i32 / 2;
-            r2.pos.y -= PADDING as i32 / 2;
-            t.update(Some(r2.into_sdl()), pixels, 4 * self.res as usize)
-                .unwrap();
-        }
-
         t.update(Some(r1.into_sdl()), pixels, 4 * self.res as usize)
             .unwrap();
     }
@@ -117,13 +99,28 @@ pub struct AtlasRegion {
 impl AtlasRegion {
     pub fn rect(&self) -> Rect {
         let pos = Vector2 {
-            x: ((self.res + PADDING) * self.index.x + PADDING / 2) as i32,
-            y: ((self.res + PADDING) * self.index.y + PADDING / 2) as i32,
+            x: (self.res * self.index.x) as i32,
+            y: (self.res * self.index.y) as i32,
         };
 
         let size = Vector2 {
-            x: self.res as i32,
-            y: self.res as i32,
+            x: (self.res) as i32,
+            y: (self.res) as i32,
+        };
+
+        Rect { pos, size }
+    }
+
+    // returns smaller rectangle with padding removed
+    pub fn rect_padded(&self) -> Rect {
+        let pos = Vector2 {
+            x: (self.res * self.index.x + PADDING) as i32,
+            y: (self.res * self.index.y + PADDING) as i32,
+        };
+
+        let size = Vector2 {
+            x: (self.res - PADDING * 2) as i32,
+            y: (self.res - PADDING * 2) as i32,
         };
 
         Rect { pos, size }

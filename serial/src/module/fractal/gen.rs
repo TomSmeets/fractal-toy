@@ -3,6 +3,7 @@ use super::TilePos;
 use super::TEXTURE_SIZE;
 use crate::math::*;
 use serde::{Deserialize, Serialize};
+use super::atlas::PADDING;
 
 /// A service that can produce fractal image tiles. This trait should only
 /// represent the method of computing and precision. Everything else is
@@ -71,7 +72,7 @@ impl Gen {
     pub fn generate(&self, tile: TilePos) -> Vec<u8> {
         let mut pixels = vec![0; (TEXTURE_SIZE * TEXTURE_SIZE * 4) as usize];
 
-        let [x, y, size] = tile.to_f64();
+        let [x, y, size] = tile.to_f64_with_padding();
         let center = Vector2::new(x, y) * 4.0 - Vector2::new(2.0, 2.0);
         draw_mandel(
             self.iterations,

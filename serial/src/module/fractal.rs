@@ -182,7 +182,7 @@ impl Fractal {
                 sdl.canvas
                     .copy(
                         &self.atlas.texture[atlas_region.index.z as usize],
-                        Some(atlas_region.rect().into_sdl()),
+                        Some(atlas_region.rect_padded().into_sdl()),
                         Some(r),
                     )
                     .unwrap();

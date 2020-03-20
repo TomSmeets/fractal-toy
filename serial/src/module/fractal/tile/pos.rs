@@ -1,6 +1,9 @@
 use crate::math::*;
 use serde::{Deserialize, Serialize};
 
+use crate::module::fractal::atlas::PADDING;
+use crate::module::fractal::TEXTURE_SIZE;
+
 #[derive(Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Serialize, Deserialize, Debug)]
 pub struct TilePos {
     pub z: i8,
@@ -41,18 +44,19 @@ impl TilePos {
         1_u64 << self.z
     }
 
-    pub fn tile_scale(&self) -> f64 {
+    fn tile_scale(&self) -> f64 {
         1.0 / self.max_size() as f64
     }
 
-    pub fn to_f32(&self) -> [f32; 4] {
-        let s = self.tile_scale() as f32;
-        [self.x as f32 * s, self.y as f32 * s, s, s]
+    pub fn to_f64(&self) -> [f64; 3] {
+        let s   = self.tile_scale();
+        [self.x as f64 * s, self.y as f64 * s, s]
     }
 
-    pub fn to_f64(&self) -> [f64; 3] {
-        let s = self.tile_scale();
-        [self.x as f64 * s, self.y as f64 * s, s]
+    pub fn to_f64_with_padding(&self) -> [f64; 3] {
+        let s   = self.tile_scale();
+        let pad = s * (PADDING as f64 / TEXTURE_SIZE as f64);
+        [self.x as f64 * s - pad, self.y as f64 * s - pad, s + pad*2.0]
     }
 
     // pub fn around_region(&self, sx: u64, sy: u64) -> Vec<TilePos> {
