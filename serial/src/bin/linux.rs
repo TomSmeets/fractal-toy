@@ -1,6 +1,6 @@
 use serial::game::State;
 use serial::module::input::InputAction;
-use serial::state::{load, save};
+use serial::state::{load, load_in_place, save};
 
 fn main() {
     let mut s = match load("auto") {
@@ -20,8 +20,11 @@ fn main() {
         }
 
         if do_load {
-            drop(s);
-            s = load("manual").unwrap();
+            let (s2, err) = load_in_place("manual", s);
+            if let Some(e) = err {
+                eprintln!("{}", e);
+            }
+            s = s2;
         }
     }
     serial::state::save("auto", &s);

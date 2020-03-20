@@ -15,6 +15,19 @@ pub fn save<T: Serialize>(name: &str, m: &T) {
     serde_json::to_writer_pretty(&mut writer, &m).unwrap();
 }
 
+pub fn load_in_place<T: DeserializeOwned>(name: &str, v: T) -> (T, Option<Error>) {
+    let file = match File::open(format!("{}/{}.json", DIR, name)) {
+        Ok(f) => f,
+        Err(e) => return (v, Some(e)),
+    };
+
+    let mut reader = BufReader::new(file);
+
+    drop(v);
+    let v = serde_json::from_reader(&mut reader).unwrap();
+    (v, None)
+}
+
 pub fn load<T: DeserializeOwned>(name: &str) -> Result<T, Error> {
     let file = File::open(format!("{}/{}.json", DIR, name))?;
     let mut reader = BufReader::new(file);
