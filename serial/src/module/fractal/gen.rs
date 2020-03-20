@@ -1,9 +1,9 @@
 use super::TilePos;
 
+use super::atlas::PADDING;
 use super::TEXTURE_SIZE;
 use crate::math::*;
 use serde::{Deserialize, Serialize};
-use super::atlas::PADDING;
 
 /// A service that can produce fractal image tiles. This trait should only
 /// represent the method of computing and precision. Everything else is
@@ -28,24 +28,24 @@ fn hsv2rgb(h: f64, s: f64, v: f64) -> [u8; 3] {
     let h = h.fract();
     let h = h * 6.0;
     let part = h as u32;
-    let f    = h - part as f64;
+    let f = h - part as f64;
 
-    let max = 255.0*v;
-    let min = 255.0*v - 255.0*v*s;
-    let p   = f*max + (1.0-f)*min;
-    let n   = f*min + (1.0-f)*max;
+    let max = 255.0 * v;
+    let min = 255.0 * v - 255.0 * v * s;
+    let p = f * max + (1.0 - f) * min;
+    let n = f * min + (1.0 - f) * max;
     let min = min as u8;
     let max = max as u8;
     let p = p as u8;
     let n = n as u8;
     match part {
-        0 => [ max,    p, min ],
-        1 => [   n,  max, min ],
-        2 => [ min,  max,   p ],
-        3 => [ min,    n, max ],
-        4 => [   p,  min, max ],
-        5 => [ max,  min,   n ],
-        _ => [ max,  max, max ],
+        0 => [max, p, min],
+        1 => [n, max, min],
+        2 => [min, max, p],
+        3 => [min, n, max],
+        4 => [p, min, max],
+        5 => [max, min, n],
+        _ => [max, max, max],
     }
 }
 

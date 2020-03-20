@@ -49,14 +49,18 @@ impl TilePos {
     }
 
     pub fn to_f64(&self) -> [f64; 3] {
-        let s   = self.tile_scale();
+        let s = self.tile_scale();
         [self.x as f64 * s, self.y as f64 * s, s]
     }
 
     pub fn to_f64_with_padding(&self) -> [f64; 3] {
-        let s   = self.tile_scale();
+        let s = self.tile_scale();
         let pad = s * (PADDING as f64 / TEXTURE_SIZE as f64);
-        [self.x as f64 * s - pad, self.y as f64 * s - pad, s + pad*2.0]
+        [
+            self.x as f64 * s - pad,
+            self.y as f64 * s - pad,
+            s + pad * 2.0,
+        ]
     }
 
     // pub fn around_region(&self, sx: u64, sy: u64) -> Vec<TilePos> {
