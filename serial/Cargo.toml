@@ -14,17 +14,12 @@ name = "fractal"
 harness = false
 
 [[bin]]
-name = "runner"
-required-features = [ "dynamic" ]
-
-[[bin]]
 name = "web"
 required-features = [ "web" ]
 
 [features]
 default = [ ]
 web = []
-dynamic = [ "libloading" ]
 static = [ "sdl2/static-link", "sdl2/bundled" ]
 
 [dependencies]
@@ -33,7 +28,6 @@ serde_json = "1.0"
 sdl2       = { version = "0.33", features = [ "unsafe_textures" ] }
 cgmath     = { version = "0.17", features = [ "serde" ] }
 rand       = "0.7"
-libloading = { version = "0.5", optional = true }
 rusttype  = "0.8.2"
 # bincode    = "1.0"
 # num        = "0.2"
