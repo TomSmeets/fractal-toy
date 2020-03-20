@@ -1,9 +1,11 @@
 use crate::math::*;
 use rusttype::Font;
-use sdl2::pixels::{Color, PixelFormatEnum};
-use sdl2::rect::Rect;
-use sdl2::render::{BlendMode, Canvas};
-use sdl2::video::Window;
+use sdl2::{
+    pixels::{Color, PixelFormatEnum},
+    rect::Rect,
+    render::{BlendMode, Canvas},
+    video::Window,
+};
 
 pub struct Sdl {
     pub ctx: sdl2::Sdl,

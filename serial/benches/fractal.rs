@@ -1,7 +1,8 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-
-use serial::fractal::gen::Gen;
-use serial::fractal::tile::{TileContent, TilePos};
+use serial::fractal::{
+    gen::Gen,
+    tile::{TileContent, TilePos},
+};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     let mut g = c.benchmark_group("fractal");

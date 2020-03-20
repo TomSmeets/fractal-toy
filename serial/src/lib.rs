@@ -3,9 +3,8 @@
 
 pub mod game;
 pub mod math;
-pub mod state;
-
 pub mod module;
+pub mod state;
 
 use crate::game::*;
 

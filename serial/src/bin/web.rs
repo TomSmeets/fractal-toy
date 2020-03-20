@@ -1,6 +1,5 @@
-use std::os::raw::{c_float, c_int, c_void};
-
 use serial::game::State;
+use std::os::raw::{c_float, c_int, c_void};
 
 #[allow(non_camel_case_types)]
 type em_callback_func = unsafe extern "C" fn();

@@ -1,5 +1,4 @@
-use crate::math::*;
-use crate::module::Sdl;
+use crate::{math::*, module::Sdl};
 use sdl2::event::{Event, WindowEvent};
 use serde::{Deserialize, Serialize};
 

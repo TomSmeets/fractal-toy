@@ -1,9 +1,6 @@
-use crate::math::*;
-use crate::module::sdl::Sdl;
+use crate::{math::*, module::sdl::Sdl};
 
-use sdl2::event::*;
-use sdl2::keyboard::Keycode;
-use sdl2::mouse::MouseButton;
+use sdl2::{event::*, keyboard::Keycode, mouse::MouseButton};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy)]

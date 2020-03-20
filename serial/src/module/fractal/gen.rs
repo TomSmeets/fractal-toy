@@ -1,7 +1,4 @@
-use super::TilePos;
-
-use super::atlas::PADDING;
-use super::TEXTURE_SIZE;
+use super::{TilePos, TEXTURE_SIZE};
 use crate::math::*;
 use serde::{Deserialize, Serialize};
 

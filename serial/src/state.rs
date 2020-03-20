@@ -1,10 +1,10 @@
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-use std::fs;
-use std::fs::File;
-use std::io::*;
-use std::result::Result;
-use std::result::Result::*;
+use serde::{de::DeserializeOwned, Serialize};
+use std::{
+    fs,
+    fs::File,
+    io::*,
+    result::{Result, Result::*},
+};
 
 static DIR: &str = "target/state";
 

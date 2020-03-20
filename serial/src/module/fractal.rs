@@ -1,10 +1,13 @@
-use crate::math::*;
-use crate::module::{input::InputAction, Input, Sdl, Time, Window};
+use crate::{
+    math::*,
+    module::{input::InputAction, Input, Sdl, Time, Window},
+};
 use sdl2::rect::Rect;
 use serde::{Deserialize, Serialize};
-use std::collections::btree_map::BTreeMap;
-use std::collections::hash_map::HashMap;
-use std::sync::{Arc, Mutex, RwLock};
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, Mutex, RwLock},
+};
 
 pub mod atlas;
 pub mod gen;
@@ -12,11 +15,13 @@ pub mod tile;
 pub mod viewport;
 pub mod worker;
 
-use self::atlas::Atlas;
-use self::gen::Gen;
-use self::tile::{TileContent, TilePos};
-use self::viewport::Viewport;
-use self::worker::*;
+use self::{
+    atlas::Atlas,
+    gen::Gen,
+    tile::{TileContent, TilePos},
+    viewport::Viewport,
+    worker::{TileQueue, WorkQueue, Worker},
+};
 
 const TEXTURE_SIZE: usize = 64 * 2;
 

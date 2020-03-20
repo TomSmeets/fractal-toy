@@ -1,6 +1,8 @@
-use serial::game::State;
-use serial::module::input::InputAction;
-use serial::state::{load, load_in_place, save};
+use serial::{
+    game::State,
+    module::input::InputAction,
+    state::{load, load_in_place, save},
+};
 
 fn main() {
     let mut s = match load("auto") {

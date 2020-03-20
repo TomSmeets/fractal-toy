@@ -1,8 +1,9 @@
-use std::env;
-use std::ffi::c_void;
-use std::ffi::OsStr;
-use std::fs;
-use std::path::*;
+use std::{
+    env,
+    ffi::{c_void, OsStr},
+    fs,
+    path::*,
+};
 
 extern crate libloading as lib;
 use libloading::os::unix::*;

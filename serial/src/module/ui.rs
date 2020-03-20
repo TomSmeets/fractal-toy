@@ -1,7 +1,10 @@
-use crate::math::*;
-use crate::module::input::Button;
-use crate::module::input::Input;
-use crate::module::Sdl;
+use crate::{
+    math::*,
+    module::{
+        input::{Button, Input},
+        Sdl,
+    },
+};
 use sdl2::pixels::Color;
 use serde::{Deserialize, Serialize};
 

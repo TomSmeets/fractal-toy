@@ -1,7 +1,5 @@
-use crate::math::*;
-use crate::module::Sdl;
-use sdl2::pixels::PixelFormatEnum;
-use sdl2::render::Texture;
+use crate::{math::*, module::Sdl};
+use sdl2::{pixels::PixelFormatEnum, render::Texture};
 use serde::{Deserialize, Serialize};
 
 pub const PADDING: u32 = 1;

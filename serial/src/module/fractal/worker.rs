@@ -1,7 +1,11 @@
-use super::gen::Gen;
-use super::tile::{TileContent, TilePos};
-use std::sync::{Arc, Mutex, RwLock};
-use std::thread;
+use super::{
+    gen::Gen,
+    tile::{TileContent, TilePos},
+};
+use std::{
+    sync::{Arc, Mutex, RwLock},
+    thread,
+};
 
 pub type TileQueue = WorkQueue<TilePos, TileContent>;
 

@@ -1,10 +1,6 @@
-use super::super::atlas::AtlasRegion;
-use crate::module::fractal::gen::Gen;
-use crate::module::fractal::TEXTURE_SIZE;
-
 use super::pos::TilePos;
+use crate::module::fractal::{atlas::AtlasRegion, gen::Gen, TEXTURE_SIZE};
 use sdl2::render::Texture;
-use serde::{Deserialize, Serialize};
 
 pub struct TileContent {
     pub pixels: Vec<u8>,
@@ -29,7 +25,7 @@ impl TileContent {
         }
 
         texture
-            .update(None, &self.pixels, (4 * TEXTURE_SIZE) as usize)
+            .update(None, &self.pixels, 4 * TEXTURE_SIZE as usize)
             .unwrap();
     }
 }

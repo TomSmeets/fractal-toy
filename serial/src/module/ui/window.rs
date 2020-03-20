@@ -1,9 +1,7 @@
-use crate::math::*;
-use crate::module::Sdl;
+use super::Collection;
+use crate::{math::*, module::Sdl};
 use sdl2::pixels::Color;
 use serde::{Deserialize, Serialize};
-
-use super::Collection;
 
 #[derive(Serialize, Deserialize)]
 pub struct Element {

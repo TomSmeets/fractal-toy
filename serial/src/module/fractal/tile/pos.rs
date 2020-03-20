@@ -1,8 +1,7 @@
 use crate::math::*;
 use serde::{Deserialize, Serialize};
 
-use crate::module::fractal::atlas::PADDING;
-use crate::module::fractal::TEXTURE_SIZE;
+use crate::module::fractal::{atlas::PADDING, TEXTURE_SIZE};
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Serialize, Deserialize, Debug)]
 pub struct TilePos {

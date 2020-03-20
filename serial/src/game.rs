@@ -1,5 +1,7 @@
-use crate::math::*;
-use crate::module::{input::InputAction, Fractal, Input, Sdl, Time, Window, UI};
+use crate::{
+    math::*,
+    module::{input::InputAction, Fractal, Input, Sdl, Time, Window, UI},
+};
 use serde::{Deserialize, Serialize};
 
 // TODO: implemnt save and load, this will handle some types that dont work with
