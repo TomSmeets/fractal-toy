@@ -2,8 +2,8 @@ use crate::math::*;
 use crate::module::{input::InputAction, Input, Sdl, Time, Window};
 use sdl2::rect::Rect;
 use serde::{Deserialize, Serialize};
-// use std::collections::btree_map::{Entry, BTreeMap};
-use std::collections::hash_map::{Entry, HashMap};
+use std::collections::btree_map::BTreeMap;
+use std::collections::hash_map::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 
 pub mod atlas;
@@ -26,7 +26,7 @@ pub enum DragState {
     From(V2),
 }
 
-type TileMap = HashMap<TilePos, TileContent>;
+type TileMap = BTreeMap<TilePos, TileContent>;
 
 // queue: [TilePos]
 // done:  [Pos, Content]
@@ -53,7 +53,7 @@ pub struct Fractal {
 
 impl Fractal {
     pub fn new() -> Self {
-        let map: TileMap = HashMap::new();
+        let map: TileMap = TileMap::new();
         let gen = Arc::new(RwLock::new(Gen::new()));
 
         Fractal {
@@ -111,18 +111,14 @@ impl Fractal {
         let ps = self.pos.get_pos_all();
         if !self.pause || input.button(InputAction::F3).went_down() {
             if let Ok(mut q) = self.queue.try_lock() {
-                // Mark all entires as potentialy old
-                for (_, e) in self.textures.iter_mut() {
-                    e.old = true;
-                }
-
                 // iterate over all visible position and queue those tiles
-                let mut todo = Vec::with_capacity(16);
+                let mut todo = Vec::with_capacity(256);
+                let mut new = TileMap::new();
                 for p in ps {
-                    let e = self.textures.get_mut(&p);
+                    let e = self.textures.remove(&p);
                     match e {
-                        Some(mut e) => {
-                            e.old = false;
+                        Some(e) => {
+                            new.insert(p, e);
                         },
                         None => {
                             if todo.len() < todo.capacity()
@@ -134,66 +130,65 @@ impl Fractal {
                         },
                     };
                 }
-                todo.sort_by_key(|p| -p.z);
-                q.todo = todo;
+
+                todo.reverse();
 
                 println!("--- queue ---");
-                println!("todo: {:?}", q.todo.len());
+                println!("todo_old: {:?}", q.todo.len());
+                println!("todo_new: {:?}", todo.len());
                 println!("doing: {:?}", q.doing.len());
                 println!("done: {:?}", q.done.len());
 
-                for (k, v) in q.done.drain(..) {
-                    self.textures.insert(k, v);
-                }
-            }
+                q.todo = todo;
 
-            if input.button(InputAction::Y).went_down() {
-                for (_, t) in self.textures.iter_mut() {
-                    t.old = true;
-                    if let Some(r) = t.region.take() {
-                        self.atlas.remove(r);
-                    }
-                }
-                self.atlas = Atlas::new(self.atlas.res);
-            }
-
-            for (_, t) in self.textures.iter_mut() {
-                if t.old {
-                    let r = t.region.take();
-                    if let Some(r) = r {
-                        self.atlas.remove(r);
-                    }
-                } else {
-                    if !t.dirty && !t.working && !t.pixels.is_empty() && t.region.is_none() {
+                for (k, mut v) in q.done.drain(..) {
+                    if v.region.is_none() {
                         let atlas_region = self.atlas.alloc(sdl);
-                        self.atlas.update(&atlas_region, &t.pixels);
-                        t.region = Some(atlas_region);
+                        self.atlas.update(&atlas_region, &v.pixels);
+                        v.region = Some(atlas_region);
+                    }
+                    new.insert(k, v);
+                }
+
+                let t2 = std::mem::replace(&mut self.textures, new);
+                println!("removed {}", t2.len());
+                for (_, t) in t2 {
+                    if let Some(r) = t.region {
+                        self.atlas.remove(r);
                     }
                 }
             }
+
+            // if input.button(InputAction::Y).went_down() {
+            //     for (_, t) in self.textures.iter_mut() {
+            //         t.old = true;
+            //         if let Some(r) = t.region.take() {
+            //             self.atlas.remove(r);
+            //         }
+            //     }
+            //     self.atlas = Atlas::new(self.atlas.res);
+            // }
 
             // remove tiles that we did not encounter
-            self.textures.retain(|_, t| !t.old);
+            // self.textures.retain(|_, t| !t.old);
+            println!("count: {}", self.textures.len());
         }
 
         // fast stuff
-        {
-            let mut vs: Vec<_> = self.textures.iter().collect();
-            vs.sort_unstable_by_key(|(p, _)| p.z);
+        for (p, v) in self.textures.iter() {
+            let r = self.pos_to_rect(window, p);
 
-            for (p, v) in vs.iter() {
-                let r = self.pos_to_rect(window, p);
-
-                if let Some(atlas_region) = &v.region {
-                    // TODO: make rendering seperate from sdl
-                    sdl.canvas
-                        .copy(
-                            &self.atlas.texture[atlas_region.index.z as usize],
-                            Some(atlas_region.rect().into_sdl()),
-                            Some(r),
-                        )
-                        .unwrap();
-                }
+            if let Some(atlas_region) = &v.region {
+                // TODO: make rendering seperate from sdl
+                sdl.canvas
+                    .copy(
+                        &self.atlas.texture[atlas_region.index.z as usize],
+                        Some(atlas_region.rect().into_sdl()),
+                        Some(r),
+                    )
+                    .unwrap();
+            } else {
+                panic!("withot region!?");
             }
         }
 

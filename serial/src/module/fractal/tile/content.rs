@@ -6,11 +6,7 @@ use super::pos::TilePos;
 use sdl2::render::Texture;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
 pub struct TileContent {
-    pub old: bool,     // did this tile become obsolete
-    pub dirty: bool,   // does this tiles till need to be generated
-    pub working: bool, // is a thread working on this tile
     pub pixels: Vec<u8>,
     pub region: Option<AtlasRegion>,
 }
@@ -18,19 +14,13 @@ pub struct TileContent {
 impl TileContent {
     pub fn new() -> TileContent {
         TileContent {
-            old: false,
-            dirty: true,
-            working: false,
             pixels: Vec::new(),
             region: None,
         }
     }
 
     pub fn generate(&mut self, g: &Gen, p: TilePos) {
-        let pixels = g.generate(p);
-        self.dirty = false;
-        self.pixels = pixels;
-        self.working = false;
+        self.pixels = g.generate(p);
     }
 
     pub fn to_sdl(&self, texture: &mut Texture) {
