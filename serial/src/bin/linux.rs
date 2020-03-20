@@ -1,23 +1,28 @@
 use serial::game::State;
 use serial::module::input::InputAction;
+use serial::state::{load, save};
 
 fn main() {
-    let mut s = State::new();
+    let mut s = match load("auto") {
+        Ok(s) => s,
+        Err(_) => State::new(),
+    };
     loop {
         if s.update() {
             break;
         }
 
-        let save = s.input.is_down(InputAction::F5);
-        let load = s.input.is_down(InputAction::F6);
+        let do_save = s.input.is_down(InputAction::F5);
+        let do_load = s.input.is_down(InputAction::F6);
 
-        if save {
-            serial::state::save("auto", &s);
+        if do_save {
+            save("manual", &s);
         }
 
-        if load {
+        if do_load {
             drop(s);
-            s = serial::state::load("auto").unwrap();
+            s = load("manual").unwrap();
         }
     }
+    serial::state::save("auto", &s);
 }
