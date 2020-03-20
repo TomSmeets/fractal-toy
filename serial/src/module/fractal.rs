@@ -1,9 +1,5 @@
 use crate::math::*;
-use palette::*;
-
-use sdl2::pixels::*;
-use sdl2::rect::*;
-use sdl2::render::*;
+use sdl2::rect::Rect;
 
 use std::collections::hash_map::{Entry, HashMap};
 
@@ -13,18 +9,17 @@ use std::thread;
 use crate::input::{Input, InputAction};
 use crate::sdl::Sdl;
 use crate::window::Window;
-use crate::*;
+use crate::Time;
 
+pub mod atlas;
 pub mod gen;
 pub mod tile;
 pub mod viewport;
-pub mod atlas;
-pub mod quadtree;
 
 use self::atlas::Atlas;
+use self::gen::Gen;
+use self::tile::{TileContent, TilePos};
 use self::viewport::Viewport;
-use self::gen::*;
-use self::tile::{TileContent, TilePos, TileState};
 
 const TEXTURE_SIZE: usize = 64 * 2;
 
@@ -77,8 +72,8 @@ pub fn worker(gen: Arc<RwLock<Gen>>, q: TileMap) {
                 let mut map = q.lock().unwrap();
                 match map.entry(p) {
                     Entry::Occupied(mut e) => {
-                        // we are going to drop the previous tile, so make sure it does not contain a atlas region
-                        // that would be a bug for now
+                        // we are going to drop the previous tile, so make sure it does not contain
+                        // a atlas region that would be a bug for now
                         // in the future wi might just update the pixels and not drop the tile!
                         assert!(e.get().region.is_none());
                         e.insert(t);
@@ -98,7 +93,7 @@ pub fn worker(gen: Arc<RwLock<Gen>>, q: TileMap) {
 }
 
 impl Fractal {
-    pub fn new(sdl: &mut Sdl) -> Self {
+    pub fn new() -> Self {
         let map: TileMap = Arc::new(Mutex::new(HashMap::new()));
         let gen = Arc::new(RwLock::new(Gen::new()));
 
@@ -187,7 +182,7 @@ impl Fractal {
                 self.atlas = Atlas::new(self.atlas.res);
             }
 
-            for (p, t) in t.iter_mut() {
+            for (_, t) in t.iter_mut() {
                 if t.old {
                     let r = t.region.take();
                     if let Some(r) = r {

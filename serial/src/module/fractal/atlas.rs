@@ -1,9 +1,8 @@
 use crate::math::*;
 use crate::sdl::Sdl;
 use crate::ui::Rect;
-use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
-use sdl2::render::{BlendMode, Texture};
+use sdl2::render::Texture;
 
 const PADDING: u32 = 2;
 
