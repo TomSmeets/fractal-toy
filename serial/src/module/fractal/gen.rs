@@ -24,6 +24,29 @@ pub struct Gen {
     iterations: u32,
 }
 
+fn hsv2rgb(h: f64, s: f64, v: f64) -> [u8; 3] {
+    let h = h % 1.0;
+    let h = h * 6.0;
+    let part = h as u32;
+    let f    = h - part as f64;
+
+    let max = 255.0*v;
+    let min = 255.0*v - 255.0*v*s;
+    let p   = (f*max + (1.0-f)*min) as u8;
+    let n = 255 - p;
+    let min = min as u8;
+    let max = max as u8;
+    match part {
+        0 => [ max,    p, min ],
+        1 => [   n,  max, min ],
+        2 => [ min,  max,   p ],
+        3 => [ min,    n, max ],
+        4 => [   p,  min, max ],
+        5 => [ max,  min,   n ],
+        _ => [ max,  max, max ],
+    }
+}
+
 impl Gen {
     pub fn new() -> Gen {
         Gen { iterations: 256 }
@@ -95,13 +118,12 @@ fn draw_mandel(
             v *= v;
             v = 1. - v;
 
-            let hsv = Hsv::new(itr as f64 / 32.0 * 360., v, v);
-            let rgb = Srgb::from(hsv).into_linear();
+            let rgb = hsv2rgb(itr as f64 / 32.0, v, v);
 
             pixels[(0 + (x + y * w) * 4) as usize] = 255;
-            pixels[(1 + (x + y * w) * 4) as usize] = (rgb.red * 255.) as u8;
-            pixels[(2 + (x + y * w) * 4) as usize] = (rgb.green * 255.) as u8;
-            pixels[(3 + (x + y * w) * 4) as usize] = (rgb.blue * 255.) as u8;
+            pixels[(1 + (x + y * w) * 4) as usize] = rgb[0];
+            pixels[(2 + (x + y * w) * 4) as usize] = rgb[1];
+            pixels[(3 + (x + y * w) * 4) as usize] = rgb[2];
         }
     }
 }
