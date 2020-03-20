@@ -101,13 +101,17 @@ fn draw_mandel(
     zoom: f64,
     offset: Vector2<f64>,
 ) {
+    let inv_w = 1.0 / w as f64;
+    let inv_h = 1.0 / h as f64;
+    let inv_iter = 1.0 / iterations as f64;
+
     for y in 0..h {
         for x in 0..w {
             let mut c0 = Vector2::new(x as f64, y as f64);
 
             // screen coords 0 - 1
-            c0.x /= w as f64;
-            c0.y /= h as f64;
+            c0.x *= inv_w;
+            c0.y *= inv_h;
             c0.y = 1.0 - c0.y;
 
             // -1 , 1
@@ -115,7 +119,7 @@ fn draw_mandel(
 
             let itr = mandel(iterations, c0);
 
-            let mut v = itr as f64 / iterations as f64;
+            let mut v = itr as f64 * inv_iter;
             v *= v;
             v = 1. - v;
 
