@@ -65,14 +65,14 @@ impl State {
 
         fractal.update(time, sdl, window, input);
 
-        if false {
+        if true {
             ui.update(
                 sdl,
                 input,
                 V2i::new(window.size.x as i32, window.size.y as i32),
             );
 
-            let _ = ui.button("hi");
+            // let _ = ui.button("hi");
             ui.window("win", |ui| {
                 if ui.button("Hello?") {
                     println!("Hello world!");
@@ -88,15 +88,15 @@ impl State {
                 let _ = ui.button("d");
             });
 
-            ui.window("hi", |ui| {
-                if ui.button("Foo") {
-                    println!("Foooooooo!");
-                }
+            // ui.window("hi", |ui| {
+            //     if ui.button("Foo") {
+            //         println!("Foooooooo!");
+            //     }
 
-                if ui.button("Bar") {
-                    println!("Bar");
-                }
-            });
+            //     if ui.button("Bar") {
+            //         println!("Bar");
+            //     }
+            // });
         }
 
         input.button(InputAction::Quit).is_down

@@ -76,15 +76,31 @@ impl Gen {
         let mut pixels = vec![0; (TEXTURE_SIZE * TEXTURE_SIZE * 4) as usize];
 
         let [x, y, size] = tile.to_f64_with_padding();
-        let center = Vector2::new(x, y) * 4.0 - Vector2::new(2.0, 2.0);
-        draw_mandel(
-            self.iterations,
-            &mut pixels,
-            TEXTURE_SIZE as u32,
-            TEXTURE_SIZE as u32,
-            size * 4.0,
-            center,
-        );
+        let mut center = Vector2::new(x, y) * 4.0 - Vector2::new(2.0, 2.0);
+
+        if false {
+            draw_mandel(
+                self.iterations,
+                &mut pixels,
+                TEXTURE_SIZE as u32,
+                TEXTURE_SIZE as u32,
+                size * 4.0,
+                center,
+            );
+        }
+
+        if true {
+            for y in 0..TEXTURE_SIZE {
+                for x in 0..TEXTURE_SIZE {
+                    if x <= 4 || y <= 4 || x >= TEXTURE_SIZE - 5 || y >= TEXTURE_SIZE - 5 {
+                        pixels[0 + y * TEXTURE_SIZE * 4 + x * 4] = 64;
+                        pixels[1 + y * TEXTURE_SIZE * 4 + x * 4] = 64;
+                        pixels[2 + y * TEXTURE_SIZE * 4 + x * 4] = 64;
+                        pixels[3 + y * TEXTURE_SIZE * 4 + x * 4] = 64;
+                    }
+                }
+            }
+        }
 
         pixels
     }
