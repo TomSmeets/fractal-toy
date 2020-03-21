@@ -52,18 +52,27 @@ impl Viewport {
         TilePos::from_f64(self.offset + Vector2::new(s, s), (self.zoom + 2.0) as i8)
     }
 
-    // should be sorted from z_low to z_high
+    /// should be sorted from z_low to z_high
+    /// ordering is: z > y > x
+    /// this should probably be the same as the ord implementation of TilePos
+    /// ```rust
+    ///     use serial::module::fractal::viewport::Viewport;
+    ///     let v = Viewport::new();
+    ///     let xs: Vec<_> = v.get_pos_all().collect();
+    ///     let mut ys = xs.clone();
+    ///     ys.sort();
+    ///     assert_eq!(xs, ys);
+    /// ```
     pub fn get_pos_all(&self) -> impl Iterator<Item = TilePos> {
         let z_min = (self.zoom - 5.5).max(0.0) as i8;
         let z_max = (self.zoom + 5.5) as i8;
         let s = self.scale();
         let off = self.offset;
 
-        let it = (z_min..=z_max).flat_map(move |z| {
+        (z_min..=z_max).flat_map(move |z| {
             let min = TilePos::from_f64(off, z);
             let max = TilePos::from_f64(off + Vector2::new(s, s), z);
             (min.x..=max.x).flat_map(move |x| (min.y..=max.y).map(move |y| TilePos { x, y, z }))
-        });
-        it
+        })
     }
 }
