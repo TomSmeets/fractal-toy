@@ -29,5 +29,6 @@ fn main() {
             s = s2;
         }
     }
+
     serial::state::save("auto", &s);
 }
