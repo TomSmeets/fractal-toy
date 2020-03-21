@@ -16,6 +16,12 @@ use serde::{Deserialize, Serialize};
 ///     TODO: cpu-double
 ///     TODO: sse2
 ///     TODO: avx
+///
+/// TODO: ablility to save and load multiple locations
+/// TODO: share saved location (via clipboard)
+/// TODO: when loading a location, we could transition to it, by first zooming
+///       out, then zooming in to that location
+/// TODO: share sets of locations?
 #[derive(Serialize, Deserialize)]
 pub struct Gen {
     iterations: u32,
