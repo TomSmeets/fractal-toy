@@ -56,12 +56,12 @@ impl Viewport {
     /// ordering is: z > y > x
     /// this should probably be the same as the ord implementation of TilePos
     /// ```rust
-    ///     use serial::module::fractal::viewport::Viewport;
-    ///     let v = Viewport::new();
-    ///     let xs: Vec<_> = v.get_pos_all().collect();
-    ///     let mut ys = xs.clone();
-    ///     ys.sort();
-    ///     assert_eq!(xs, ys);
+    /// use serial::module::fractal::viewport::Viewport;
+    /// let v = Viewport::new();
+    /// let xs: Vec<_> = v.get_pos_all().collect();
+    /// let mut ys = xs.clone();
+    /// ys.sort();
+    /// assert_eq!(xs, ys);
     /// ```
     pub fn get_pos_all(&self) -> impl Iterator<Item = TilePos> {
         let z_min = (self.zoom - 5.5).max(0.0) as i8;
