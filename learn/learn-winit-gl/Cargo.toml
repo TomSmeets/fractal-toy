@@ -10,6 +10,7 @@ build   = "build.rs"
 [dependencies]
 glutin = "0.24.0"
 gilrs  = "0.7.4"
+memoffset = "0.5.4"
 
 [build-dependencies]
 gl_generator = "0.14.0"

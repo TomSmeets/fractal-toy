@@ -6,6 +6,9 @@ use glutin::{ContextBuilder, ContextWrapper, PossiblyCurrent};
 
 use crate::gl::Gl;
 
+use std::sync::Arc;
+use std::sync::Mutex;
+
 pub struct Platform {
     pub gilrs: Gilrs,
     pub gl: Gl,
