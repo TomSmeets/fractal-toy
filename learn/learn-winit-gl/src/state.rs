@@ -1,3 +1,5 @@
+use gilrs;
+use gilrs::Gilrs;
 use glutin::event::Event;
 use glutin::event::WindowEvent;
 use std::time::Instant;
@@ -7,17 +9,19 @@ use crate::Platform;
 
 pub struct State {
     pub quit: bool,
-
-    time: Instant,
-    dt: f32,
+    pub time: Instant,
+    pub dt: f32,
+    pub gilrs: Gilrs,
 }
 
 impl State {
     pub fn new() -> State {
+        let gilrs = Gilrs::new().unwrap();
         State {
             dt: 0.0,
             quit: false,
             time: Instant::now(),
+            gilrs,
         }
     }
 
@@ -37,6 +41,10 @@ impl State {
             let dt = (time_now - self.time).as_secs_f32();
             self.time = time_now;
             self.dt = dt;
+        }
+
+        while let Some(gilrs::Event { id, event, time }) = self.gilrs.next_event() {
+            println!("{:?} New event from {}: {:?}", time, id, event);
         }
 
         unsafe {
