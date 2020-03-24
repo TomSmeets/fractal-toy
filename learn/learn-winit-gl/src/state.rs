@@ -1,37 +1,40 @@
-use gilrs;
-use gilrs::Gilrs;
 use glutin::event::Event;
+use glutin::event::VirtualKeyCode;
 use glutin::event::WindowEvent;
 use std::time::Instant;
 
 use crate::gl;
 use crate::Platform;
 
+#[derive(Debug)]
 pub struct State {
     pub quit: bool,
     pub time: Instant,
     pub dt: f32,
-    pub gilrs: Gilrs,
 }
 
 impl State {
     pub fn new() -> State {
-        let gilrs = Gilrs::new().unwrap();
         State {
             dt: 0.0,
             quit: false,
             time: Instant::now(),
-            gilrs,
         }
     }
 
     pub fn event(&mut self, event: &Event<()>) {
-        if let Event::WindowEvent {
-            event: WindowEvent::CloseRequested,
-            ..
-        } = event
-        {
-            self.quit = true;
+        if let Event::WindowEvent { event, .. } = event {
+            match event {
+                WindowEvent::CloseRequested => self.quit = true,
+                WindowEvent::KeyboardInput { input, .. } => match input.virtual_keycode {
+                    Some(VirtualKeyCode::Q) => self.quit = true,
+                    Some(VirtualKeyCode::I) => {
+                        println!("{:#?}", self);
+                    }
+                    _ => (),
+                },
+                _ => (),
+            }
         }
     }
 
@@ -43,12 +46,12 @@ impl State {
             self.dt = dt;
         }
 
-        while let Some(gilrs::Event { id, event, time }) = self.gilrs.next_event() {
+        while let Some(gilrs::Event { id, event, time }) = platform.gilrs.next_event() {
             println!("{:?} New event from {}: {:?}", time, id, event);
         }
 
+        let gl = &mut platform.gl;
         unsafe {
-            let gl = &mut platform.gl;
             gl.ClearColor(1.0, 0.0, 1.0, 1.0);
             gl.Clear(gl::COLOR_BUFFER_BIT);
         }
