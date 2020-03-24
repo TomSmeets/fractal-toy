@@ -1,10 +1,9 @@
 use super::program::ShaderProgram;
-use super::shader::Shader;
 use crate::gl;
 use crate::gl::types::*;
 use crate::gl::Gl;
 use memoffset::offset_of;
-use std::ffi::{CStr, CString};
+use std::ffi::CString;
 
 #[repr(C)]
 #[derive(Debug)]

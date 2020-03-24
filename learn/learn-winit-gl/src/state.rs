@@ -5,8 +5,6 @@ use std::time::Instant;
 
 use crate::gfx::imm::GfxImmState;
 use crate::gl;
-use crate::gl::types::*;
-use crate::gl::Gl;
 use crate::Platform;
 
 #[derive(Debug)]
