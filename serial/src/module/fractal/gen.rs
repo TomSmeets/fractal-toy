@@ -78,7 +78,7 @@ impl Gen {
         let [x, y, size] = tile.to_f64_with_padding();
         let mut center = Vector2::new(x, y) * 4.0 - Vector2::new(2.0, 2.0);
 
-        if false {
+        if true {
             draw_mandel(
                 self.iterations,
                 &mut pixels,
@@ -89,7 +89,7 @@ impl Gen {
             );
         }
 
-        if true {
+        if false {
             for y in 0..TEXTURE_SIZE {
                 for x in 0..TEXTURE_SIZE {
                     if x <= 4 || y <= 4 || x >= TEXTURE_SIZE - 5 || y >= TEXTURE_SIZE - 5 {
@@ -139,7 +139,7 @@ fn draw_mandel(
 
             let itr = mandel(iterations, c0);
 
-            let mut v = itr as f64 * inv_iter;
+            let mut v = itr * inv_iter;
             v *= v;
             v = 1. - v;
 
@@ -166,21 +166,21 @@ fn cpx_sqr(a: V2) -> V2 {
     }
 }
 
-fn mandel(max: u32, c: Vector2<f64>) -> u32 {
+fn mandel(max: u32, c: Vector2<f64>) -> f64 {
     let mut z = c;
     let mut n = 0;
     loop {
-        z.x = z.x.abs();
-        z.y = z.y.abs();
-        // z = cpx_sqr(z) + c;
-        z = cpx_mul(cpx_sqr(z), z) + c;
+        // z.x = z.x.abs();
+        // z.y = -z.y.abs();
+        z = cpx_sqr(z) + c;
+        // z = cpx_mul(cpx_sqr(z), z) + c;
 
         if n == max {
-            return max;
+            return max as f64;
         }
 
         if z.x * z.x + z.y * z.y > 4.0 {
-            return n;
+            return n as f64;
         }
 
         n += 1;

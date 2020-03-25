@@ -65,7 +65,7 @@ impl State {
 
         fractal.update(time, sdl, window, input);
 
-        if true {
+        if false {
             ui.update(
                 sdl,
                 input,

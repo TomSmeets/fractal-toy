@@ -85,11 +85,11 @@ impl Fractal {
 
     pub fn update(&mut self, time: &Time, sdl: &mut Sdl, window: &Window, input: &Input) {
         let mouse_in_view = screen_to_view(window, input.mouse);
-        self.pos.zoom_in(0.1 * input.scroll as f64, mouse_in_view);
+        self.pos.zoom_in(0.3 * input.scroll as f64, mouse_in_view);
 
         self.pos.translate(time.dt as f64 * input.dir_move * 2.0);
         self.pos
-            .zoom_in(time.dt as f64 * input.dir_look.y * 4.0, V2::new(0.5, 0.5));
+            .zoom_in(time.dt as f64 * input.dir_look.y * 3.5, V2::new(0.5, 0.5));
 
         if self.workers.is_empty() {
             self.spaw_workers();
