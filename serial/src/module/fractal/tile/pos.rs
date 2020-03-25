@@ -6,8 +6,8 @@ use crate::module::fractal::{atlas::PADDING, TEXTURE_SIZE};
 #[derive(Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Serialize, Deserialize, Debug)]
 pub struct TilePos {
     pub z: i8,
-    pub x: u64,
-    pub y: u64,
+    pub x: i64,
+    pub y: i64,
 }
 
 impl TilePos {
@@ -18,8 +18,8 @@ impl TilePos {
     pub fn from_f64(p: Vector2<f64>, z: i8) -> TilePos {
         let s = (1_u64 << z) as f64;
         TilePos {
-            x: (p.x * s) as u64,
-            y: (p.y * s) as u64,
+            x: (p.x * s).floor() as i64,
+            y: (p.y * s).floor() as i64,
             z,
         }
     }
@@ -32,7 +32,7 @@ impl TilePos {
         }
     }
 
-    pub fn child(&mut self, dx: u64, dy: u64) {
+    pub fn child(&mut self, dx: i64, dy: i64) {
         assert!(self.z < 64);
         self.x = self.x * 2 + dx;
         self.y = self.y * 2 + dy;

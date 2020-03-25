@@ -34,9 +34,11 @@ impl Viewport {
     }
 
     pub fn zoom_in(&mut self, amount: f64, view_pos: V2) {
-        self.offset += self.scale() * view_pos;
-        self.zoom += amount;
-        self.offset -= self.scale() * view_pos;
+        if amount*amount > 0.001 {
+            self.offset += self.scale() * view_pos;
+            self.zoom = (self.zoom + amount).min(48.5).max(-0.5);
+            self.offset -= self.scale() * view_pos;
+        }
     }
 
     pub fn scale(&self) -> f64 {
