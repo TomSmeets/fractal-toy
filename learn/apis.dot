@@ -6,7 +6,7 @@ digraph {
     { rank = same; node[color=red]; gl; vulkan; metal; dx11; web_wgpu; }
 
     // these seem ok for my purpose
-    { node[color=green]; gl_generator; wgpu_rs; vulkano; }
+    { node[color=green]; gl_generator; wgpu_rs; vulkano; rendy; }
 
     gl -> asmjs,wasm,linux,windows,android,macos,ios;
     vulkan -> wasm,linux,windows,macos;
