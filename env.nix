@@ -15,6 +15,20 @@
         python3
     ];
 
+    combinedLib = pkgs.symlinkJoin {
+        name = "combined-lib";
+        paths = libs;
+        postBuild = ''
+            rm -rf $out/bin
+            rm $out/sbin
+        '';
+    };
+
+    combinedBin = pkgs.symlinkJoin {
+        name = "combined-bin";
+        paths = path;
+    };
+
     libs = with pkgs; [
         # probably want to statically link SDL2
         # SDL2
@@ -61,11 +75,11 @@
     env = writeScript "env.sh" ''
         #!${pkgs.stdenv.shell}
         export hardeningDisable=all
-        export LD_LIBRARY_PATH=${lib.makeLibraryPath libs}
-        export RUSTFLAGS='${lib.concatMapStringsSep " " (x: "-L " + x + "/lib/") libs}'
+        export LD_LIBRARY_PATH="${combinedLib}/lib"
+        export RUSTFLAGS='-L ${combinedLib}/lib'
         export RUSTDOCFLAGS="$RUSTFLAGS"
-        export PATH="${lib.makeBinPath path}:$PATH"
-        export PKG_CONFIG_PATH='${lib.concatMapStringsSep ":" (x: (x.dev or x) + "/share/pkgconfig:" + (x.dev or x) + "/lib/pkgconfig") libs}'
+        export PATH="${combinedBin}/bin:$PATH"
+        export PKG_CONFIG_PATH='${combinedLib}/share/pkgconfig:${combinedLib}/lib/pkgconfig'
 
         export FONT_DEJAVU='${pkgs.dejavu_fonts}/share/fonts/truetype'
         exec ${pkgs.bashInteractive}/bin/bash
