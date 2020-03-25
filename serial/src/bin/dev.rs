@@ -18,9 +18,9 @@ fn main() {
         let do_save = s.input.button(InputAction::F5).went_down();
         let do_load = s.input.button(InputAction::F6).went_down();
 
-       if do_save {
-           save("manual", &s);
-       }
+        if do_save {
+            save("manual", &s);
+        }
 
         if do_load {
             let (s2, err) = load_in_place("manual", s);

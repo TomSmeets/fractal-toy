@@ -1,9 +1,6 @@
-use serial::{
-    game::State,
-};
+use serial::game::State;
 
 fn main() {
     let mut s = State::new();
-    while !s.update() {
-    }
+    while !s.update() {}
 }
