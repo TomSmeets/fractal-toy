@@ -27,27 +27,33 @@ pub struct Gen {
     iterations: u32,
 }
 
-fn hsv2rgb(h: f64, s: f64, v: f64) -> [u8; 3] {
-    let h = h.fract();
-    let h = h * 6.0;
-    let part = h as u32;
-    let f = h - part as f64;
+fn hsv2rgb(hue: f64, sat: f64, val: f64) -> [u8; 3] {
+    let hue = hue.fract();
+    let hue = hue * 6.0;
+    let part = hue as u32;
+    let fract = hue - part as f64;
 
-    let max = 255.0 * v;
-    let min = 255.0 * v - 255.0 * v * s;
-    let p = f * max + (1.0 - f) * min;
-    let n = f * min + (1.0 - f) * max;
+    // upper limit
+    let max = 255.0 * val;
+    // lower limit
+    let min = 255.0 * val - 255.0 * val * sat;
+    // increasing slope
+    let inc = fract * max + (1.0 - fract) * min;
+    // decreasing slope
+    let dec = fract * min + (1.0 - fract) * max;
+
+    // as u8
     let min = min as u8;
     let max = max as u8;
-    let p = p as u8;
-    let n = n as u8;
+    let inc = inc as u8;
+    let dec = dec as u8;
     match part {
-        0 => [max, p, min],
-        1 => [n, max, min],
-        2 => [min, max, p],
-        3 => [min, n, max],
-        4 => [p, min, max],
-        5 => [max, min, n],
+        0 => [max, inc, min],
+        1 => [dec, max, min],
+        2 => [min, max, inc],
+        3 => [min, dec, max],
+        4 => [inc, min, max],
+        5 => [max, min, dec],
         _ => [max, max, max],
     }
 }
