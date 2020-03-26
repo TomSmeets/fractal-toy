@@ -4,6 +4,8 @@ use winit::{
     window::WindowBuilder,
 };
 
+mod platform {}
+
 pub fn main() {
     let mut window = WindowBuilder::new()
         .with_title("A fantastic window!")
@@ -30,17 +32,11 @@ pub fn main() {
     {
         // ignore window size set by winit, the size is set with css in index.html
         use stdweb::js;
-        use winit::platform::web::WindowExtStdweb;
+        use stdweb::web::event::ResizeEvent;
         use stdweb::web::html_element::CanvasElement;
         use stdweb::web::INonElementParentNode;
-        use stdweb::web::{
-            IEventTarget,
-            IHtmlElement,
-            IParentNode,
-            document,
-            TypedArray,
-        };
-        use stdweb::web::event::ResizeEvent;
+        use stdweb::web::{document, IEventTarget, IHtmlElement, IParentNode, TypedArray};
+        use winit::platform::web::WindowExtStdweb;
         let canvas = window.canvas();
         stdweb::web::window().add_event_listener(move |_: ResizeEvent| {
             canvas.set_width(canvas.offset_width() as u32);
@@ -55,10 +51,14 @@ pub fn main() {
         // }
     }
 
-    event_loop.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Wait;
+    let mut gilrs = gilrs::Gilrs::new().unwrap();
 
-        println!("{:?}", event);
+    stdweb::console!(log, "%s", format!("{:#?}", gilrs));
+
+    event_loop.run(move |event, _, control_flow| {
+        *control_flow = ControlFlow::Poll;
+
+        // println!("{:?}", event);
 
         // stdweb::console!(log, "%s", format!("{:?}", event));
 
@@ -70,10 +70,13 @@ pub fn main() {
             Event::WindowEvent {
                 event: WindowEvent::Resized(size),
                 window_id,
-            } => 
-                stdweb::console!(log, "%s", format!("size: {:?}", size)),
+            } => (),
+            // stdweb::console!(log, "%s", format!("size: {:?}", size)),
             Event::MainEventsCleared => {
-                stdweb::console!(log, "%s", format!("{:?}", "done"));
+                while let Some(ev) = gilrs.next_event() {
+                    stdweb::console!(log, "%s", format!("{:?}", ev));
+                }
+
                 window.request_redraw();
             }
             _ => (),
