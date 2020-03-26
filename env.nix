@@ -19,8 +19,6 @@
         name = "combined-lib";
         paths = libs;
         postBuild = ''
-            rm -rf $out/bin
-            rm $out/sbin
         '';
     };
 
@@ -29,7 +27,7 @@
         paths = path;
     };
 
-    libs = with pkgs; [
+    libs = with pkgs; lib.filter (x: x != null) (lib.concatMap (x: [ (x.dev or null) (x.lib or null) (x.out or null) x ]) [
         # probably want to statically link SDL2
         # SDL2
 
@@ -70,12 +68,12 @@
         pkgs.xorg.libXi
         pkgs.xorg.libXxf86vm
         pkgs.xorg.libXScrnSaver
-    ];
+    ]);
 
     env = writeScript "env.sh" ''
         #!${pkgs.stdenv.shell}
         export hardeningDisable=all
-        export LD_LIBRARY_PATH="${combinedLib}/lib"
+        export LD_LIBRARY_PATH="${lib.makeLibraryPath libs}/lib"
         export RUSTFLAGS='-L ${combinedLib}/lib'
         export RUSTDOCFLAGS="$RUSTFLAGS"
         export PATH="${combinedBin}/bin:$PATH"
