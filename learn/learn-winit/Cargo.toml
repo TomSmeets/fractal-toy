@@ -1,0 +1,18 @@
+[package]
+name = "learn-winit"
+version = "0.1.0"
+authors = ["Tom Smeets <tom.tsmeets@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = [ "web" ]
+web = [ "winit/stdweb" ]
+
+[dependencies]
+winit = { path = "./winit" }
+stdweb = "0.4.20"
+stdweb-derive = "0.5.3"
+serde = "1.0.105"
+serde_derive = "1.0.105"
