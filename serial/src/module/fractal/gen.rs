@@ -60,7 +60,7 @@ fn hsv2rgb(hue: f64, sat: f64, val: f64) -> [u8; 3] {
 
 impl Gen {
     pub fn new() -> Gen {
-        Gen { iterations: 256 }
+        Gen { iterations: 8 }
     }
 
     /// This function should receive all required

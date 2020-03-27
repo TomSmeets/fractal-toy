@@ -1,6 +1,6 @@
 use crate::{
     math::*,
-    module::{input::InputAction, Fractal, Input, Sdl, Time, Window, UI},
+    module::{input::InputAction, Fractal, Input, Platform, Sdl, Time, Window, UI},
 };
 use serde::{Deserialize, Serialize};
 
@@ -18,6 +18,8 @@ pub struct State {
     pub input: Input,
     ui: UI,
     fractal: Fractal,
+
+    platform: Platform,
 }
 
 impl Default for State {
@@ -32,6 +34,7 @@ impl State {
     pub fn reload(&mut self) {}
 
     pub fn new() -> State {
+        let platform = Platform {};
         let sdl = Sdl::new();
         let window = Window::new(&sdl);
         let time = Time::new(1.0 / 60.0);
@@ -47,6 +50,7 @@ impl State {
             input,
             ui,
             fractal,
+            platform,
         }
     }
 
@@ -58,6 +62,7 @@ impl State {
             input,
             ui,
             fractal,
+            platform,
         } = self;
 
         time.update();
@@ -65,7 +70,7 @@ impl State {
         window.update(sdl);
         input.update(sdl);
 
-        fractal.update(time, sdl, window, input);
+        fractal.update(platform, time, sdl, window, input);
 
         if false {
             ui.update(

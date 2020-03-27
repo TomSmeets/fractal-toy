@@ -1,6 +1,6 @@
 use crate::{
     math::*,
-    module::{input::InputAction, Input, Sdl, Time, Window},
+    module::{input::InputAction, Input, Platform, Sdl, Time, Window},
 };
 use sdl2::rect::Rect;
 use serde::{Deserialize, Serialize};
@@ -74,8 +74,8 @@ impl Fractal {
         }
     }
 
-    fn spaw_workers(&mut self) {
-        let n = (sdl2::cpuinfo::cpu_count() - 1).max(1);
+    fn spaw_workers(&mut self, platform: &Platform) {
+        let n = (platform.cpu_count() - 1).max(1);
         println!("spawning {} workers", n);
         for _ in 0..8 {
             self.workers
@@ -83,7 +83,14 @@ impl Fractal {
         }
     }
 
-    pub fn update(&mut self, time: &Time, sdl: &mut Sdl, window: &Window, input: &Input) {
+    pub fn update(
+        &mut self,
+        platform: &Platform,
+        time: &Time,
+        sdl: &mut Sdl,
+        window: &Window,
+        input: &Input,
+    ) {
         let mouse_in_view = screen_to_view(window, input.mouse);
         self.pos.zoom_in(0.3 * input.scroll as f64, mouse_in_view);
 
@@ -92,7 +99,7 @@ impl Fractal {
             .zoom_in(time.dt as f64 * input.dir_look.y * 3.5, V2::new(0.5, 0.5));
 
         if self.workers.is_empty() {
-            self.spaw_workers();
+            self.spaw_workers(platform);
         }
 
         if let DragState::From(p1) = self.drag {
