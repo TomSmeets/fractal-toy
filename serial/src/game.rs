@@ -4,6 +4,8 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 
+// NOTE: gpu contains a memory allocator, that is why drop should work
+
 // TODO: implemnt save and load, this will handle some types that dont work with
 // reload. For example the btreemap
 #[derive(Serialize, Deserialize)]
