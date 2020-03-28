@@ -23,11 +23,26 @@ impl Stuff {
     }
 }
 
+#[derive(Debug)]
+struct Texture {
+    text: String,
+}
+
+impl Drop for Texture {
+    fn drop(&mut self) {
+        println!("bye bye Texture");
+    }
+}
+
+
+
 fn main() {
-    let mut stuff = Stuff::new();
-    println!("{:?}, {:?}", stuff.strings, stuff.last());
-    stuff.push("Hello");
-    println!("{:?}, {:?}", stuff.strings, stuff.last());
-    stuff.push("World");
-    println!("{:?}, {:?}", stuff.strings, stuff.last());
+    let r = Texture { text: String::from("Hello world") };
+    let r = Rc::new(r);
+    let w1 = Rc::downgrade(&r);
+    let w2 = Rc::downgrade(&r);
+    println!("r: strong={} weak={}", Rc::strong_count(&r), Rc::weak_count(&r));
+    println!("r: {:?}", r);
+    println!("r: strong={} weak={}", Weak::strong_count(&w1), Weak::weak_count(&w1));
+    println!("r: strong={} weak={}", Weak::strong_count(&w2), Weak::weak_count(&w2));
 }
