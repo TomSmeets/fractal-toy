@@ -16,8 +16,10 @@ impl Generator {
         }
     }
 
-    pub fn next(&mut self, maze: &mut Maze) -> bool {
-        if let Some((x, y)) = self.queue.pop() {
+    pub fn next(&mut self, maze: &mut Maze) -> Option<(i32, i32)> {
+        let (x, y) = self.queue.pop()?;
+
+        {
             let mut directions = vec![(0, 1), (1, 0), (-1, 0), (0, -1)];
             directions.shuffle(&mut self.rng);
             maze.set((x, y), Tile::Empty);
@@ -30,9 +32,7 @@ impl Generator {
                     self.queue.push(p2);
                 }
             }
-            true
-        } else {
-            false
+            Some((x, y))
         }
     }
 }
