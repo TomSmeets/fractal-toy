@@ -8,6 +8,7 @@ use std::time::Duration;
 use termion::raw::*;
 use termion::*;
 
+#[allow(dead_code)]
 pub fn run() {
     let mut maze = Maze::new(53, 53);
     let mut gen = Generator::new();
@@ -37,7 +38,7 @@ pub fn run() {
     }
 }
 
-pub fn show(maze: &Maze, out: &mut impl Write) {
+fn show(maze: &Maze, out: &mut impl Write) {
     for y in 0..maze.size_y {
         for x in 0..maze.size_x {
             match maze.at((x, y)) {
