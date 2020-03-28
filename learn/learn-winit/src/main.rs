@@ -1,10 +1,24 @@
+#[macro_use]
+extern crate stdweb;
+
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
 };
+use std::time::Instant;
 
 mod platform {}
+
+#[cfg(feature = "web")]
+macro_rules! println {
+    ($($token:tt)*) => {
+        let string = format!( $($token)+ );
+        stdweb::js! {
+            console.log( @{string} );
+        }
+    };
+}
 
 pub fn main() {
     let mut window = WindowBuilder::new()
@@ -42,21 +56,16 @@ pub fn main() {
             canvas.set_width(canvas.offset_width() as u32);
             canvas.set_height(canvas.offset_height() as u32);
         });
-
-        let canvas = window.canvas();
-        // js! {
-        //     @{&canvas}.removeAttribute("width");
-        //     @{&canvas}.removeAttribute("height");
-        //     @{&canvas}.style = "";
-        // }
     }
 
     let mut gilrs = gilrs::Gilrs::new().unwrap();
 
-    stdweb::console!(log, "%s", format!("{:#?}", gilrs));
+    println!("gilrs: {:#?}", gilrs);
 
-    event_loop.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Poll;
+    let mut time_old = Instant::now();
+
+    event_loop.run(move |event, runner, control_flow| {
+        *control_flow = ControlFlow::Wait;
 
         // println!("{:?}", event);
 
@@ -65,19 +74,24 @@ pub fn main() {
         match event {
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
-                window_id,
-            } if window_id == window.id() => *control_flow = ControlFlow::Exit,
+                ..
+            } => *control_flow = ControlFlow::Exit,
             Event::WindowEvent {
                 event: WindowEvent::Resized(size),
-                window_id,
+                ..
             } => (),
             // stdweb::console!(log, "%s", format!("size: {:?}", size)),
             Event::MainEventsCleared => {
                 while let Some(ev) = gilrs.next_event() {
-                    stdweb::console!(log, "%s", format!("{:?}", ev));
+                    println!("event {:?}", ev);
                 }
 
-                window.request_redraw();
+                let time = Instant::now();
+                let dt = (time - time_old).as_secs();
+                println!("dt: {}", dt);
+                time_old = time;
+
+                // window.request_redraw();
             }
             _ => (),
         }
