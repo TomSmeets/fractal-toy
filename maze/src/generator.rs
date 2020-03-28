@@ -1,8 +1,5 @@
 use rand::prelude::*;
 use rand::Rng;
-use std::io::{stdin, stdout, Write};
-use termion::raw::*;
-use termion::*;
 
 use crate::maze::Maze;
 use crate::tile::Tile;
