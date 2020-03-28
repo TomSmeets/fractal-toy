@@ -1,5 +1,5 @@
-use crate::maze::Maze;
-use crate::tile::Tile;
+use super::Maze;
+use super::Tile;
 use rand::prelude::*;
 use rand::Rng;
 
@@ -15,7 +15,6 @@ impl Generator {
     }
 
     pub fn next(&mut self, maze: &mut Maze, rng: &mut impl Rng) -> bool {
-        // self.queue.shuffle(rng);
         if let Some((x, y)) = self.queue.pop() {
             let mut directions = vec![(0, 1), (1, 0), (-1, 0), (0, -1)];
             directions.shuffle(rng);
@@ -27,7 +26,6 @@ impl Generator {
                     maze.set(p1, Tile::Empty);
                     maze.set(p2, Tile::Empty);
                     self.queue.push(p2);
-                    // self.generate(rng, p2);
                 }
             }
             true

@@ -1,4 +1,4 @@
-use crate::tile::Tile;
+use super::Tile;
 use std::io::Write;
 use termion::*;
 

@@ -1,14 +1,13 @@
 use rand::prelude::*;
 use std::io::{stdout, Write};
+use std::thread;
+use std::time::Duration;
 use termion::raw::*;
 use termion::*;
 
-mod generator;
-mod maze;
-mod tile;
+mod core;
 
-use crate::generator::Generator;
-use crate::maze::Maze;
+use crate::core::{Generator, Maze};
 
 fn main() {
     let mut m = Maze::new(53, 53);
@@ -33,6 +32,6 @@ fn main() {
         write!(stdout, "{}", style::Reset).unwrap();
         write!(stdout, "{}", cursor::Goto(1, 1)).unwrap();
         stdout.flush().unwrap();
-        std::thread::sleep_ms(20);
+        thread::sleep(Duration::from_millis(20));
     }
 }
