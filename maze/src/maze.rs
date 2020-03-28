@@ -1,8 +1,6 @@
-use std::io::Write;
-
-use termion::*;
-
 use crate::tile::Tile;
+use std::io::Write;
+use termion::*;
 
 pub struct Maze {
     size_x: i32,

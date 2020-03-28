@@ -1,8 +1,7 @@
-use rand::prelude::*;
-use rand::Rng;
-
 use crate::maze::Maze;
 use crate::tile::Tile;
+use rand::prelude::*;
+use rand::Rng;
 
 pub struct Generator {
     pub queue: Vec<(i32, i32)>,

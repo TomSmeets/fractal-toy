@@ -1,5 +1,4 @@
 use rand::prelude::*;
-
 use std::io::{stdout, Write};
 use termion::raw::*;
 use termion::*;
