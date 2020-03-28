@@ -1,9 +1,9 @@
+use super::Config;
 use crate::core::Generator;
 use crate::core::Maze;
 
-#[allow(dead_code)]
-pub fn run() {
-    let mut maze = Maze::new(53, 53);
+pub fn run(cfg: Config) {
+    let mut maze = Maze::new(cfg.height, cfg.width);
     let mut gen = Generator::new();
     while let Some(p) = gen.next(&mut maze) {
         println!("gen.next: {:?}", p);

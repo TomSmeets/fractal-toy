@@ -8,6 +8,8 @@ pub struct Maze {
 
 impl Maze {
     pub fn new(sx: u32, sy: u32) -> Maze {
+        let sx = sx * 2 + 1;
+        let sy = sy * 2 + 1;
         Maze {
             size_x: sx as i32,
             size_y: sy as i32,
