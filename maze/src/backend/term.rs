@@ -51,8 +51,7 @@ pub fn run(cfg: Config) {
     out.flush().unwrap();
 
     for c in stdin.events() {
-        let evt = c.unwrap();
-        match evt {
+        match c.unwrap() {
             Event::Key(Key::Char('q')) => break,
             _ => {}
         };
