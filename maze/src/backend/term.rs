@@ -28,6 +28,7 @@ pub fn run(cfg: Config) {
         write!(out, "{}", cursor::Goto(1, 1)).unwrap();
         write!(out, "Generating...").unwrap();
         write!(out, "{}", cursor::Goto(1, 2)).unwrap();
+        out.flush().unwrap();
         show(maze, out);
         write!(out, "{}", color::Bg(color::Blue)).unwrap();
         for (x, y) in gen.queue.iter() {
@@ -54,13 +55,14 @@ pub fn run(cfg: Config) {
         match evt {
             Event::Key(Key::Char('q')) => break,
             _ => {}
-        }
+        };
         stdout.flush().unwrap();
     }
 }
 
 fn show(maze: &Maze, out: &mut impl Write) {
     for y in 0..maze.size_y {
+        write!(out, "{}", cursor::Goto(1, y as u16 + 2)).unwrap();
         for x in 0..maze.size_x {
             match maze.at((x, y)) {
                 Tile::Undefined => write!(out, "??").unwrap(),
@@ -68,6 +70,5 @@ fn show(maze: &Maze, out: &mut impl Write) {
                 Tile::Wall => write!(out, "{}  {}", style::Invert, style::Reset).unwrap(),
             }
         }
-        writeln!(out, "{}", cursor::Goto(1, y as u16 + 2)).unwrap();
     }
 }
