@@ -9,7 +9,7 @@ pub struct Window {
 
 impl Window {
     pub fn new(sdl: &Sdl) -> Self {
-        let (x, y) = sdl.canvas().output_size().unwrap();
+        let (x, y) = sdl.canvas.output_size().unwrap();
         Window {
             size: Vector2::new(x, y),
         }

@@ -1,4 +1,5 @@
 use crate::math::*;
+use rusttype::Font;
 use sdl2::{
     pixels::{Color, PixelFormatEnum},
     rect::Rect,
@@ -7,81 +8,23 @@ use sdl2::{
 };
 
 pub struct Sdl {
+    pub ctx: sdl2::Sdl,
+    pub video: sdl2::VideoSubsystem,
+    pub event: sdl2::EventPump,
+    pub canvas: Canvas<Window>,
     pub events: Vec<sdl2::event::Event>,
+
+    pub font: Font<'static>,
 }
 
-pub mod ctx {
-    use rusttype::Font;
-    use sdl2::{render::Canvas, video::Window};
-
-    pub type Texture = sdl2::render::Texture<'static>;
-    pub type TextureCreator = sdl2::render::TextureCreator<sdl2::video::WindowContext>;
-
-    static FONT_DATA: &[u8] = include_bytes!(concat!(env!("FONT_DEJAVU"), "/DejaVuSans.ttf"));
-    static mut SDL: Option<SdlContext> = None;
-
-    pub struct SdlContext {
-        pub ctx: sdl2::Sdl,
-        pub video: sdl2::VideoSubsystem,
-        pub event: sdl2::EventPump,
-        pub font: Font<'static>,
-        pub canvas: Option<Canvas<Window>>,
-        pub texture_creator: Option<TextureCreator>,
-    }
-
-    impl SdlContext {
-        pub fn new() -> Self {
-            let ctx = sdl2::init().unwrap();
-            let video = ctx.video().unwrap();
-            let event = ctx.event_pump().unwrap();
-            let font: Font<'static> = Font::from_bytes(FONT_DATA).unwrap();
-            SdlContext {
-                ctx,
-                video,
-                event,
-                font,
-                canvas: None,
-                texture_creator: None,
-            }
-        }
-    }
-
-    impl Drop for SdlContext {
-        fn drop(&mut self) {
-            self.texture_creator = None;
-            self.canvas = None;
-        }
-    }
-
-    pub fn init() {
-        unsafe {
-            assert!(SDL.is_none());
-            SDL = Some(SdlContext::new());
-        }
-    }
-
-    pub fn get() -> &'static mut SdlContext {
-        unsafe {
-            assert!(SDL.is_some());
-            SDL.as_mut().unwrap()
-        }
-    }
-
-    pub fn exit() {
-        unsafe {
-            assert!(SDL.is_some());
-            SDL = None;
-        }
-    }
-}
+static FONT_DATA: &[u8] = include_bytes!(concat!(env!("FONT_DEJAVU"), "/DejaVuSans.ttf"));
 
 impl Sdl {
     pub fn new() -> Self {
-        let ctx = ctx::get();
-        ctx.canvas = None;
+        let ctx = sdl2::init().unwrap();
+        let video = ctx.video().unwrap();
 
-        let window = ctx
-            .video
+        let window = video
             .window("rust-sdl2 demo", 800, 600)
             .resizable()
             .opengl()
@@ -89,10 +32,10 @@ impl Sdl {
             .build()
             .unwrap();
 
+        let event = ctx.event_pump().unwrap();
         let mut canvas = window.into_canvas().present_vsync().build().unwrap();
+
         canvas.set_blend_mode(BlendMode::Blend);
-        ctx.texture_creator = Some(canvas.texture_creator());
-        ctx.canvas = Some(canvas);
 
         unsafe {
             sdl2::sys::SDL_SetHint(
@@ -101,19 +44,16 @@ impl Sdl {
             );
         }
 
-        Sdl { events: Vec::new() }
-    }
+        let font: Font<'static> = Font::from_bytes(FONT_DATA).unwrap();
 
-    pub fn canvas(&self) -> &Canvas<Window> {
-        ctx::get().canvas.as_ref().unwrap()
-    }
-
-    pub fn canvas_mut(&mut self) -> &mut Canvas<Window> {
-        ctx::get().canvas.as_mut().unwrap()
-    }
-
-    pub fn texture_creator(&self) -> &'static ctx::TextureCreator {
-        ctx::get().texture_creator.as_ref().unwrap()
+        Sdl {
+            ctx,
+            video,
+            event,
+            canvas,
+            events: Vec::new(),
+            font,
+        }
     }
 
     pub fn draw_text(&mut self, text: &str, pos: V2i) {
@@ -124,18 +64,21 @@ impl Sdl {
     }
 
     pub fn draw_rgba(&mut self, r: Rect, p: &[u8]) {
-        let mut texture: ctx::Texture = self
-            .texture_creator()
+        let mut texture = self
+            .canvas
             .create_texture_static(PixelFormatEnum::RGBA8888, r.w as u32, r.h as u32)
             .unwrap();
         texture.set_blend_mode(BlendMode::Blend);
         texture.update(None, &p, 4 * r.w as usize).unwrap();
-        self.canvas_mut().copy(&texture, None, Some(r)).unwrap();
+        self.canvas.copy(&texture, None, Some(r)).unwrap();
+
+        unsafe {
+            texture.destroy();
+        }
     }
 
     pub fn make_text(&self, text: &str, size: f32) -> (Rect, Vec<u8>) {
-        let ctx = ctx::get();
-        let l = ctx.font.layout(
+        let l = self.font.layout(
             text,
             rusttype::Scale::uniform(size),
             rusttype::point(0.0, 0.0),
@@ -180,10 +123,10 @@ impl Sdl {
     }
 
     pub fn update(&mut self) {
-        self.canvas_mut().present();
-        self.events = ctx::get().event.poll_iter().collect();
-        self.canvas_mut().set_draw_color(Color::RGB(255, 0, 255));
-        self.canvas_mut().clear();
+        self.canvas.present();
+        self.events = self.event.poll_iter().collect();
+        self.canvas.set_draw_color(Color::RGB(255, 0, 255));
+        self.canvas.clear();
     }
 }
 

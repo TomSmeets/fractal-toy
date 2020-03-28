@@ -1,8 +1,5 @@
-use crate::{
-    math::*,
-    module::{sdl::ctx::Texture, Sdl},
-};
-use sdl2::pixels::PixelFormatEnum;
+use crate::{math::*, module::Sdl};
+use sdl2::{pixels::PixelFormatEnum, render::Texture};
 use serde::{Deserialize, Serialize};
 
 pub const PADDING: u32 = 1;
@@ -34,6 +31,7 @@ impl Atlas {
         let page = self.texture.len();
 
         let texture = sdl
+            .canvas
             .texture_creator()
             .create_texture_static(
                 PixelFormatEnum::RGBA8888,
@@ -76,6 +74,16 @@ impl Atlas {
     pub fn remove(&mut self, mut r: AtlasRegion) {
         self.free.push(r.index);
         r.free = true;
+    }
+}
+
+impl Drop for Atlas {
+    fn drop(&mut self) {
+        for t in self.texture.drain(..) {
+            unsafe {
+                t.destroy();
+            }
+        }
     }
 }
 

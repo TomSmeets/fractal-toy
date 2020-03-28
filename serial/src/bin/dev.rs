@@ -5,8 +5,6 @@ use serial::{
 };
 
 fn main() {
-    serial::module::sdl::ctx::init();
-
     let mut s = match load("auto") {
         Ok(s) => s,
         Err(_) => State::new(),
@@ -34,6 +32,4 @@ fn main() {
     }
 
     serial::state::save("auto", &s);
-
-    serial::module::sdl::ctx::exit();
 }

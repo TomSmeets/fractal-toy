@@ -40,12 +40,12 @@ impl UI {
         for e in self.draw_list.drain(..) {
             match e {
                 DrawCmd::Rect(rect, col) => {
-                    sdl.canvas_mut().set_draw_color(Color::RGB(
+                    sdl.canvas.set_draw_color(Color::RGB(
                         (col[0] * 255.0) as u8,
                         (col[1] * 255.0) as u8,
                         (col[2] * 255.0) as u8,
                     ));
-                    sdl.canvas_mut().fill_rect(rect.into_sdl()).unwrap();
+                    sdl.canvas.fill_rect(rect.into_sdl()).unwrap();
                 },
                 _ => (),
             }
