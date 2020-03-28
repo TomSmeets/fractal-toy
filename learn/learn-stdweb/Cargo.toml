@@ -7,6 +7,7 @@ edition = "2018"
 [dependencies]
 stdweb = "0.4.20"
 stdweb-derive = "0.5.3"
+gilrs = "0.7.4"
 serde = "1.0.105"
 serde_derive = "1.0.105"
 

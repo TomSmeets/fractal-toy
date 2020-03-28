@@ -4,31 +4,78 @@
         <meta charset="utf-8">
         <title>stdweb • WebGL</title>
         <style>
-            container {
-                display: flex;
-                flex-flow: column;
-                height: 100vh;
+            #header {
+                background-color: pink;
+                layout: flex;
             }
-            footer {
-                background-color: lightblue;
+
+            #body {
+                layout: flex;
+                background-color: green;
             }
-            canvas {
-                flex: 1;
-                overflow: auto;
+
+            .gutter {
                 background-color: black;
             }
+
+            #footer {
+                background-color: lightblue;
+                layout: flex;
+            }
+
+            .hflex {
+                display: flex;
+                flex-direction: column;
+                width: 100vw;
+                height: 100vh;
+                background-color: lightgrey;
+            }
+
+            .vflex {
+                display: flex;
+                flex-direction: row;
+                width: 100vw;
+                height: 100vh;
+            }
+
             body {
-            margin: 0;
+                margin: 0;
+            }
+
+            #canvas {
+                background-color: red;
             }
         </style>
+        <script src="https://unpkg.com/split.js/dist/split.min.js"></script>
     </head>
     <body>
-        <container>
-            <canvas id="canvas"></canvas>
-            <footer>
-               <p id="log">log here please<p>
-            </footer>
-        </container>
-            <script src="learn-stdweb.js"></script>
+        <div class="hflex">
+            <div class="vflex", id='body'>
+                body
+            <div id='left'>left             </div>
+            <canvas id='canvas'></canvas>
+            <div id='right'>right           </div>
+            </div>
+
+            <div id='footer' class='vflex' >
+                <table id='log-info' >
+                    info
+                </table >
+                <table id='log-trace' >
+                    trace
+                </table>
+            </div>
+        </div>
+
+        <script src="learn-stdweb.js"></script>
+        <script>
+            Split(['#body', '#footer'], {
+                direction: 'vertical',
+            })
+            Split(['#left', '#canvas', '#right'], {
+            })
+            Split(['#log-info', '#log-trace' ], {
+            })
+        </script>
     </body>
 </html>
