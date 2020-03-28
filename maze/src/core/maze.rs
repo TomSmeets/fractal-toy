@@ -1,11 +1,9 @@
 use super::Tile;
-use std::io::Write;
-use termion::*;
 
 pub struct Maze {
-    size_x: i32,
-    size_y: i32,
-    data: Vec<Tile>,
+    pub size_x: i32,
+    pub size_y: i32,
+    pub data: Vec<Tile>,
 }
 
 impl Maze {
@@ -29,18 +27,5 @@ impl Maze {
             return;
         }
         self.data[(y * self.size_x + x) as usize] = t;
-    }
-
-    pub fn show(&self, out: &mut impl Write) {
-        for y in 0..self.size_y {
-            for x in 0..self.size_x {
-                match self.at((x, y)) {
-                    Tile::Undefined => write!(out, "??").unwrap(),
-                    Tile::Empty => write!(out, "  ").unwrap(),
-                    Tile::Wall => write!(out, "{}  {}", style::Invert, style::Reset).unwrap(),
-                }
-            }
-            writeln!(out, "{}", cursor::Goto(1, y as u16 + 1)).unwrap();
-        }
     }
 }

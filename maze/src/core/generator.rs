@@ -1,23 +1,25 @@
 use super::Maze;
 use super::Tile;
 use rand::prelude::*;
-use rand::Rng;
+use rand::rngs::ThreadRng;
 
 pub struct Generator {
+    pub rng: ThreadRng,
     pub queue: Vec<(i32, i32)>,
 }
 
 impl Generator {
     pub fn new() -> Generator {
         Generator {
+            rng: thread_rng(),
             queue: vec![(0, 0)],
         }
     }
 
-    pub fn next(&mut self, maze: &mut Maze, rng: &mut impl Rng) -> bool {
+    pub fn next(&mut self, maze: &mut Maze) -> bool {
         if let Some((x, y)) = self.queue.pop() {
             let mut directions = vec![(0, 1), (1, 0), (-1, 0), (0, -1)];
-            directions.shuffle(rng);
+            directions.shuffle(&mut self.rng);
             maze.set((x, y), Tile::Empty);
             for (dx, dy) in directions.into_iter() {
                 let p1 = (x + dx, y + dy);
