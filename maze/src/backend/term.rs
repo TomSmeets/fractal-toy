@@ -1,6 +1,6 @@
 use super::Config;
-use crate::core::Generator;
 use crate::core::Maze;
+use crate::core::MazeBuilder;
 use crate::core::Tile;
 use std::io::Write;
 use std::io::{stdin, stdout};
@@ -13,7 +13,7 @@ use termion::screen::AlternateScreen;
 use termion::*;
 
 pub fn run(cfg: Config) {
-    let mut gen = Generator::new(cfg.width, cfg.height);
+    let mut gen = MazeBuilder::new(cfg.width, cfg.height);
     let stdout = stdout().into_raw_mode().unwrap();
     let stdout = MouseTerminal::from(stdout);
     let mut stdout = AlternateScreen::from(stdout);

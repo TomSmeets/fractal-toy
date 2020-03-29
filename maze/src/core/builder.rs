@@ -3,15 +3,15 @@ use super::Tile;
 use rand::prelude::*;
 use rand::rngs::ThreadRng;
 
-pub struct Generator {
+pub struct MazeBuilder {
     pub rng: ThreadRng,
     pub maze: Maze,
     pub queue: Vec<(i32, i32)>,
 }
 
-impl Generator {
-    pub fn new(sx: u32, sy: u32) -> Generator {
-        Generator {
+impl MazeBuilder {
+    pub fn new(sx: u32, sy: u32) -> MazeBuilder {
+        MazeBuilder {
             rng: thread_rng(),
             queue: vec![(0, 0)],
             maze: Maze::new(sx, sy),
