@@ -1,6 +1,6 @@
-/// `backend` is not a good name. This module is more like a frontend.
-/// All backends shuld provide is platform spesific stuff. Config might even be moved into core. Im not shure about that yet.
-/// TODO: graphical backends: sdl2, opengl, vulkan
+//! `backend` is not a good name. This module is more like a frontend.
+//! All backends shuld provide is platform spesific stuff. Config might even be moved into core. Im not shure about that yet.
+//! TODO: graphical backends: sdl2, opengl, vulkan
 use clap::arg_enum;
 use structopt::StructOpt;
 

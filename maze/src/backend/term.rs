@@ -60,9 +60,9 @@ pub fn run(cfg: Config) {
 }
 
 fn show(maze: &Maze, out: &mut impl Write) {
-    for y in 0..maze.size_y {
+    for y in 0..maze.data.size_y {
         write!(out, "{}", cursor::Goto(1, y as u16 + 2)).unwrap();
-        for x in 0..maze.size_x {
+        for x in 0..maze.data.size_x {
             match maze.at((x, y)) {
                 Tile::Undefined => write!(out, "??").unwrap(),
                 Tile::Empty => write!(out, "  ").unwrap(),

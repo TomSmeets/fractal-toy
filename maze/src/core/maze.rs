@@ -1,9 +1,8 @@
+use super::Array2;
 use super::Tile;
 
 pub struct Maze {
-    pub size_x: i32,
-    pub size_y: i32,
-    pub data: Vec<Tile>,
+    pub data: Array2<Tile>,
 }
 
 impl Maze {
@@ -11,23 +10,15 @@ impl Maze {
         let sx = sx * 2 + 1;
         let sy = sy * 2 + 1;
         Maze {
-            size_x: sx as i32,
-            size_y: sy as i32,
-            data: vec![Tile::Wall; (sx * sy) as usize],
+            data: Array2::new(sx, sy, Tile::Wall),
         }
     }
 
-    pub fn at(&self, (x, y): (i32, i32)) -> Tile {
-        if x < 0 || y < 0 || x >= self.size_x || y >= self.size_y {
-            return Tile::Undefined;
-        }
-        self.data[(y * self.size_x + x) as usize]
+    pub fn at(&self, p: (i32, i32)) -> Tile {
+        self.data.at(p).map(|x| *x).unwrap_or(Tile::Undefined)
     }
 
-    pub fn set(&mut self, (x, y): (i32, i32), t: Tile) {
-        if x < 0 || y < 0 || x >= self.size_x || y >= self.size_y {
-            return;
-        }
-        self.data[(y * self.size_x + x) as usize] = t;
+    pub fn set(&mut self, p: (i32, i32), t: Tile) {
+        self.data.set(p, t)
     }
 }
