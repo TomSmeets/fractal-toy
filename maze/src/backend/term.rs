@@ -13,8 +13,7 @@ use termion::screen::AlternateScreen;
 use termion::*;
 
 pub fn run(cfg: Config) {
-    let mut maze = Maze::new(cfg.width, cfg.height);
-    let mut gen = Generator::new();
+    let mut gen = Generator::new(cfg.width, cfg.height);
     let stdout = stdout().into_raw_mode().unwrap();
     let stdout = MouseTerminal::from(stdout);
     let mut stdout = AlternateScreen::from(stdout);
@@ -22,14 +21,13 @@ pub fn run(cfg: Config) {
 
     let out = &mut stdout;
     let gen = &mut gen;
-    let maze = &mut maze;
     write!(out, "{}", clear::All).unwrap();
-    while let Some(_) = gen.next(maze) {
+    while let Some(_) = gen.next() {
         write!(out, "{}", cursor::Goto(1, 1)).unwrap();
         write!(out, "Generating...").unwrap();
         write!(out, "{}", cursor::Goto(1, 2)).unwrap();
         out.flush().unwrap();
-        show(maze, out);
+        show(&gen.maze, out);
         write!(out, "{}", color::Bg(color::Blue)).unwrap();
         for (x, y) in gen.queue.iter() {
             write!(
