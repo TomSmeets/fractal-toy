@@ -1,22 +1,21 @@
 use crate::module::fractal::{
     builder::{queue::*, TileRequest},
-    gen::Gen,
-    tile::{TileContent, TilePos},
+    tile::{TileContent},
 };
 use std::{
-    sync::{Arc, Mutex, RwLock},
+    sync::{Arc, Mutex, atomic::AtomicBool, atomic::Ordering},
     thread,
 };
 
 // TODO: it should be possible to generate wihout thread support
 pub struct Worker {
-    quit: Arc<RwLock<bool>>,
+    quit: Arc<AtomicBool>,
     handle: Option<std::thread::JoinHandle<()>>,
 }
 
 impl Worker {
     pub fn new(map: Arc<Mutex<TileQueue>>) -> Worker {
-        let quit = Arc::new(RwLock::new(false));
+        let quit = Arc::new(AtomicBool::new(false));
 
         let handle = {
             let quit = Arc::clone(&quit);
@@ -30,20 +29,20 @@ impl Worker {
     }
 
     pub fn quit(&mut self) {
-        *(self.quit.write().unwrap()) = true;
+        self.quit.store(true, Ordering::Relaxed);
     }
 }
 
-fn worker(q: Arc<Mutex<TileQueue>>, quit: Arc<RwLock<bool>>) {
+fn worker(q: Arc<Mutex<TileQueue>>, quit: Arc<AtomicBool>) {
     loop {
-        if *quit.read().unwrap() {
+        if quit.load(Ordering::Relaxed) {
             break;
         }
 
         let next: Option<TileRequest> = q.lock().unwrap().pop_todo();
         match next {
             Some(p) => {
-                let mut t = TileContent {
+                let t = TileContent {
                     pixels: super::super::cpu::build(p),
                     region: None,
                 };
