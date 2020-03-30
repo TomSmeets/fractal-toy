@@ -49,13 +49,6 @@ pub fn build(rq: TileRequest) -> Vec<u8> {
     pixels
 }
 
-// How about this? a thread pool generator
-// NO, that won't work. how would you cancle queued jobs?
-// struct ThreadedGen<G> {
-//    gen: G,
-// }
-
-// TODO: profile!!
 fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(rq: TileRequest, pixels: &mut [u8], f: F) {
     let [offset_x, offset_y, zoom] = rq.pos.to_f64_with_padding();
     let offset = Vector2::new(offset_x, offset_y);

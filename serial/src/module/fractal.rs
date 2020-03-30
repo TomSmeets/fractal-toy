@@ -11,7 +11,6 @@ use std::{
 
 pub mod atlas;
 pub mod builder;
-pub mod gen;
 pub mod tile;
 pub mod viewport;
 

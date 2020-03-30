@@ -1,5 +1,5 @@
 use super::pos::TilePos;
-use crate::module::fractal::{atlas::AtlasRegion, gen::Gen, TEXTURE_SIZE};
+use crate::module::fractal::{atlas::AtlasRegion, TEXTURE_SIZE};
 use sdl2::render::Texture;
 
 pub struct TileContent {
@@ -13,10 +13,6 @@ impl TileContent {
             pixels: Vec::new(),
             region: None,
         }
-    }
-
-    pub fn generate(&mut self, g: &Gen, p: TilePos) {
-        self.pixels = g.generate(p);
     }
 
     pub fn to_sdl(&self, texture: &mut Texture) {
