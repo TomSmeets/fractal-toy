@@ -10,3 +10,5 @@
     * can be shared as a url
     * probably something simple and universal as quadtree path + offset
     * this url shuld gneerate a nice preview on redded (use open graph, https://css-tricks.com/essential-meta-tags-social-media/)
+
+* Idea: make core platform independend.

@@ -33,6 +33,34 @@ pub enum DragState {
 
 type TileMap = BTreeMap<TilePos, TileContent>;
 
+pub struct ThreadedTileBuilder {
+    pub workers: Vec<Worker>,
+}
+
+impl ThreadedTileBuilder {
+    pub fn new(queue: Arc<Mutex<TileQueue>>) -> Self {
+        let n = (sdl2::cpuinfo::cpu_count() - 1).max(1);
+        let mut workers = Vec::with_capacity(n as usize);
+        println!("spawning {} workers", n);
+        for _ in 0..n {
+            // TODO: remove gen here, move iteration count into tile request queue
+            workers.push(Worker::new(
+                Arc::new(RwLock::new(Gen::new())),
+                Arc::clone(&queue),
+            ));
+        }
+        Self { workers }
+    }
+}
+
+impl Drop for ThreadedTileBuilder {
+    fn drop(&mut self) {
+        for w in self.workers.iter_mut() {
+            w.quit();
+        }
+    }
+}
+
 // queue: [TilePos]
 // done:  [Pos, Content]
 // TODO: Queried tiles shold be exactly those displayed. All tiles that are not
@@ -50,7 +78,7 @@ pub struct Fractal {
     pub debug: bool,
 
     #[serde(skip)]
-    pub workers: Vec<Worker>,
+    pub tile_builder: Option<ThreadedTileBuilder>,
 
     #[serde(skip)]
     pub queue: Arc<Mutex<TileQueue>>,
@@ -69,17 +97,8 @@ impl Fractal {
             atlas: Atlas::new(TEXTURE_SIZE as u32),
             pause: false,
             debug: false,
-            workers: Vec::new(),
+            tile_builder: None,
             queue: Arc::new(Mutex::new(WorkQueue::new())),
-        }
-    }
-
-    fn spaw_workers(&mut self) {
-        let n = (sdl2::cpuinfo::cpu_count() - 1).max(1);
-        println!("spawning {} workers", n);
-        for _ in 0..8 {
-            self.workers
-                .push(Worker::new(&mut self.gen, &mut self.queue));
         }
     }
 
@@ -91,8 +110,8 @@ impl Fractal {
         self.pos
             .zoom_in(time.dt as f64 * input.dir_look.y * 3.5, V2::new(0.5, 0.5));
 
-        if self.workers.is_empty() {
-            self.spaw_workers();
+        if self.tile_builder.is_none() {
+            self.tile_builder = Some(ThreadedTileBuilder::new(Arc::clone(&self.queue)));
         }
 
         if let DragState::From(p1) = self.drag {
@@ -233,14 +252,6 @@ impl Fractal {
         println!("view    {:6.2} {:6.2}", mouse_view.x, mouse_view.y);
         println!("world   {:6.2} {:6.2}", mouse_world.x, mouse_world.y);
         println!("screen2 {:6.2} {:6.2}", mouse_screen.x, mouse_screen.y);
-    }
-}
-
-impl Drop for Fractal {
-    fn drop(&mut self) {
-        for w in self.workers.iter_mut() {
-            w.quit();
-        }
     }
 }
 

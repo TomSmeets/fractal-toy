@@ -16,12 +16,10 @@ pub struct Worker {
 }
 
 impl Worker {
-    pub fn new(gen: &mut Arc<RwLock<Gen>>, map: &mut Arc<Mutex<TileQueue>>) -> Worker {
+    pub fn new(gen: Arc<RwLock<Gen>>, map: Arc<Mutex<TileQueue>>) -> Worker {
         let quit = Arc::new(RwLock::new(false));
 
         let handle = {
-            let map = Arc::clone(&map);
-            let gen = Arc::clone(&gen);
             let quit = Arc::clone(&quit);
             thread::spawn(move || worker(gen, map, quit))
         };

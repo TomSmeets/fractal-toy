@@ -17,6 +17,8 @@ use serde::{Deserialize, Serialize};
 ///     TODO: sse2
 ///     TODO: avx
 ///
+/// INFO:
+///     cuda: cudaStreamQuery
 /// TODO: ablility to save and load multiple locations
 /// TODO: share saved location (via clipboard)
 /// TODO: when loading a location, we could transition to it, by first zooming
@@ -26,6 +28,38 @@ use serde::{Deserialize, Serialize};
 pub struct Gen {
     iterations: u32,
 }
+
+pub enum TileType {
+    /// Used mostly for debugging
+    Empty,
+    /// ```
+    /// z = z ^ 2 + c
+    /// ```
+    Mandelbrot,
+    /// Looks like a ship that is burning.
+    /// ```
+    /// z = |re(z)| - |im(z)|i
+    /// z = z^2 + c
+    /// ```
+    BurningShip,
+    /// Very interesting fractal, burning ship + mandel3
+    /// ```
+    /// z = |re(z)| - |im(z)|i
+    /// z = z^2 + c
+    /// z = z^3 + c
+    /// ```
+    ShipHybrid,
+}
+
+/// TileBuilder:  threaded, cuda, opencl
+/// TileType:     Empty, Mandel, BurningShip
+///
+/// we have one queue, and ecach tilebuilder grabs from that queue
+/// builders = [ CudaTileBuilder(Arc::clone(queue)),
+/// ThrededBuidler(Arc::clone(queue)) ]
+///
+/// then the queue contains all information for poducing a tile.
+/// like iteration count, fractal type, etc
 
 fn hsv2rgb(hue: f64, sat: f64, val: f64) -> [u8; 3] {
     let hue = hue.fract();
@@ -172,6 +206,8 @@ fn cpx_sqr(a: V2) -> V2 {
     }
 }
 
+// some cool algorithms
+// nice: ((|re| + |im|i)^2 + c)^3 + c
 fn mandel(max: u32, c: Vector2<f64>) -> f64 {
     let mut z = c;
     let mut n = 0;
