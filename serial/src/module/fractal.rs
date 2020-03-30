@@ -17,6 +17,7 @@ pub mod viewport;
 use self::{
     atlas::Atlas,
     builder::{
+        ocl::OCLTileBuilder,
         queue::{TileQueue, WorkQueue},
         threaded::ThreadedTileBuilder,
         TileRequest, TileType,
@@ -51,7 +52,7 @@ pub struct Fractal {
     pub debug: bool,
 
     #[serde(skip)]
-    pub tile_builder: Option<ThreadedTileBuilder>,
+    pub tile_builder: Option<OCLTileBuilder>,
 
     #[serde(skip)]
     pub queue: Arc<Mutex<TileQueue>>,
@@ -88,8 +89,9 @@ impl Fractal {
             .zoom_in(time.dt as f64 * input.dir_look.y * 3.5, V2::new(0.5, 0.5));
 
         if self.tile_builder.is_none() {
-            self.tile_builder = Some(ThreadedTileBuilder::new(Arc::clone(&self.queue)));
+            self.tile_builder = Some(OCLTileBuilder::new(Arc::clone(&self.queue)));
         }
+        self.tile_builder.as_mut().unwrap().update();
 
         if let DragState::From(p1) = self.drag {
             self.pos.translate(p1 - mouse_in_view);
