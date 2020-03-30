@@ -1,9 +1,12 @@
 use crate::module::fractal::{
     builder::{queue::*, TileRequest},
-    tile::{TileContent},
+    tile::TileContent,
 };
 use std::{
-    sync::{Arc, Mutex, atomic::AtomicBool, atomic::Ordering},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex,
+    },
     thread,
 };
 

@@ -38,23 +38,25 @@
 //! can be maximized and the number of comparisons minimized
 //! Tile size should probably be configurable by the generator backend
 //! implementations. As different backends have different optimal tile
-//! sizes. (this was attemted but it was not very fast at all, also it is very hard to use sse for this)
-//! NOTE: don't return excact pixels, but the complex numbers and/or
-//! iterations, same stuff. best would be to just return array of iteration count for each pixel. this would save.
-//! argb8: 4 bytes per pixel
+//! sizes. (this was attemted but it was not very fast at all, also it is very
+//! hard to use sse for this) NOTE: don't return excact pixels, but the complex
+//! numbers and/or iterations, same stuff. best would be to just return array of
+//! iteration count for each pixel. this would save. argb8: 4 bytes per pixel
 //! rgb8:  3 bytes per pixel
 //! iter:  2 bytes per pixel (u16)
 //! iter:  4 bytes per pixel (f32)
 //! iter:  8 bytes per pixel (f64)
-//! so rgb is not that bad actually, we should drop the alpha component (what about alignment? profile!)
+//! so rgb is not that bad actually, we should drop the alpha component (what
+//! about alignment? profile!)
 
 pub mod cpu;
 pub mod queue;
 pub mod threaded;
 
 use crate::module::fractal::tile::TilePos;
+use serde::{Deserialize, Serialize};
 
-#[derive(Eq, PartialEq, Copy, Clone)]
+#[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum TileType {
     /// Used mostly for debugging
     Empty,
@@ -77,7 +79,7 @@ pub enum TileType {
     ShipHybrid,
 }
 
-#[derive(Eq, PartialEq, Copy, Clone)]
+#[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd)]
 pub struct TileRequest {
     pub pos: TilePos,
     pub kind: TileType,

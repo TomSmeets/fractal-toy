@@ -33,7 +33,7 @@ pub enum DragState {
     From(V2),
 }
 
-type TileMap = BTreeMap<TilePos, TileContent>;
+type TileMap = BTreeMap<TileRequest, TileContent>;
 
 // queue: [TilePos]
 // done:  [Pos, Content]
@@ -55,6 +55,9 @@ pub struct Fractal {
 
     #[serde(skip)]
     pub queue: Arc<Mutex<TileQueue>>,
+
+    pub iter: i32,
+    pub kind: TileType,
 }
 
 impl Fractal {
@@ -70,6 +73,9 @@ impl Fractal {
             debug: false,
             tile_builder: None,
             queue: Arc::new(Mutex::new(WorkQueue::new())),
+
+            iter: 64,
+            kind: TileType::Mandelbrot,
         }
     }
 
@@ -99,31 +105,52 @@ impl Fractal {
         if input.button(InputAction::F1).went_down() {
             self.pause = !self.pause;
         }
+
         if input.button(InputAction::F2).went_down() {
             self.debug = !self.debug;
+        }
+
+        if input.button(InputAction::F3).went_down() {
+            self.iter += 10;
+        }
+
+        if input.button(InputAction::F4).went_down() {
+            self.iter -= 10;
+            self.iter = self.iter.max(0);
+        }
+
+        if input.button(InputAction::F7).went_down() {
+            self.kind = match self.kind {
+                TileType::Empty => TileType::Mandelbrot,
+                TileType::Mandelbrot => TileType::BurningShip,
+                TileType::BurningShip => TileType::ShipHybrid,
+                TileType::ShipHybrid => TileType::Empty,
+            }
         }
 
         if !self.pause || input.button(InputAction::F3).went_down() {
             if let Ok(mut q) = self.queue.try_lock() {
                 // iterate over all visible position and queue those tiles
-                let mut todo = Vec::with_capacity(256);
+                let mut todo = Vec::with_capacity(16);
                 let mut new = TileMap::new();
                 for p in self.pos.get_pos_all() {
-                    let e = self.textures.remove(&p);
+                    let rq = TileRequest {
+                        pos: p,
+                        iterations: self.iter,
+                        kind: self.kind,
+                    };
+                    let e = self.textures.remove(&rq);
+
                     match e {
                         Some(e) => {
-                            new.insert(p, e);
+                            new.insert(rq, e);
                         },
                         None => {
                             if todo.len() < todo.capacity()
-                                && !q.doing.iter().any(|x| x.pos == p)
-                                && !q.done.iter().any(|(y, _)| y.pos == p)
+                                && !q.doing.iter().any(|x| x == &rq)
+                                && !q.done.iter().any(|(y, _)| y == &rq)
                             {
-                                todo.push(TileRequest {
-                                    pos: p,
-                                    iterations: 128,
-                                    kind: TileType::Mandelbrot,
-                                });
+                                todo.push(rq);
                             }
                         },
                     };
@@ -145,7 +172,7 @@ impl Fractal {
                         self.atlas.update(&atlas_region, &v.pixels);
                         v.region = Some(atlas_region);
                     }
-                    new.insert(k.pos, v);
+                    new.insert(k, v);
                 }
 
                 let t2 = std::mem::replace(&mut self.textures, new);
@@ -174,7 +201,7 @@ impl Fractal {
 
         // fast stuff
         for (p, v) in self.textures.iter() {
-            let r = self.pos_to_rect(window, p);
+            let r = self.pos_to_rect(window, &p.pos);
 
             if let Some(atlas_region) = &v.region {
                 // TODO: make rendering seperate from sdl

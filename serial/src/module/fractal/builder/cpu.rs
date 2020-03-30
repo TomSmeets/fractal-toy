@@ -36,15 +36,21 @@ pub fn build(rq: TileRequest) -> Vec<u8> {
                 z
             });
         },
-        TileType::ShipHybrid => {
+        TileType::BurningShip => {
             draw_mandel(rq, &mut pixels, |mut z, c| {
                 z = cpx_abs(z);
-                z = cpx_sqr(z) + c;
                 z = cpx_sqr(z) + c;
                 z
             });
         },
-        _ => (),
+        TileType::ShipHybrid => {
+            draw_mandel(rq, &mut pixels, |mut z, c| {
+                z = cpx_abs(z);
+                z = cpx_sqr(z) + c;
+                z = cpx_cube(z) + c;
+                z
+            });
+        },
     }
     pixels
 }
@@ -89,6 +95,10 @@ fn cpx_mul(a: V2, b: V2) -> V2 {
         x: a.x * b.x - a.y * b.y,
         y: a.x * b.y + a.y * b.x,
     }
+}
+
+fn cpx_cube(a: V2) -> V2 {
+    cpx_mul(cpx_sqr(a), a)
 }
 
 fn cpx_sqr(a: V2) -> V2 {
