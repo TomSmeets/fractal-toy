@@ -10,17 +10,20 @@ use std::{
 };
 
 pub mod atlas;
+pub mod builder;
 pub mod gen;
 pub mod tile;
 pub mod viewport;
-pub mod worker;
 
 use self::{
     atlas::Atlas,
+    builder::{
+        queue::{TileQueue, WorkQueue},
+        threaded::ThreadedTileBuilder,
+    },
     gen::Gen,
     tile::{TileContent, TilePos},
     viewport::Viewport,
-    worker::{TileQueue, WorkQueue, Worker},
 };
 
 const TEXTURE_SIZE: usize = 64 * 2;
@@ -33,34 +36,6 @@ pub enum DragState {
 
 type TileMap = BTreeMap<TilePos, TileContent>;
 
-pub struct ThreadedTileBuilder {
-    pub workers: Vec<Worker>,
-}
-
-impl ThreadedTileBuilder {
-    pub fn new(queue: Arc<Mutex<TileQueue>>) -> Self {
-        let n = (sdl2::cpuinfo::cpu_count() - 1).max(1);
-        let mut workers = Vec::with_capacity(n as usize);
-        println!("spawning {} workers", n);
-        for _ in 0..n {
-            // TODO: remove gen here, move iteration count into tile request queue
-            workers.push(Worker::new(
-                Arc::new(RwLock::new(Gen::new())),
-                Arc::clone(&queue),
-            ));
-        }
-        Self { workers }
-    }
-}
-
-impl Drop for ThreadedTileBuilder {
-    fn drop(&mut self) {
-        for w in self.workers.iter_mut() {
-            w.quit();
-        }
-    }
-}
-
 // queue: [TilePos]
 // done:  [Pos, Content]
 // TODO: Queried tiles shold be exactly those displayed. All tiles that are not
@@ -72,7 +47,6 @@ pub struct Fractal {
     pub textures: TileMap,
     pub pos: Viewport,
     pub drag: DragState,
-    pub gen: Arc<RwLock<Gen>>,
     pub atlas: Atlas,
     pub pause: bool,
     pub debug: bool,
@@ -87,13 +61,11 @@ pub struct Fractal {
 impl Fractal {
     pub fn new() -> Self {
         let map: TileMap = TileMap::new();
-        let gen = Arc::new(RwLock::new(Gen::new()));
 
         Fractal {
             textures: map,
             pos: Viewport::new(),
             drag: DragState::None,
-            gen,
             atlas: Atlas::new(TEXTURE_SIZE as u32),
             pause: false,
             debug: false,

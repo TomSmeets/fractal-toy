@@ -9,10 +9,6 @@ default-run = "linux"
 path = "src/lib.rs"
 crate_type = [ "lib" ]
 
-[[bench]]
-name = "fractal"
-harness = false
-
 [[bin]]
 name = "web"
 required-features = [ "web" ]

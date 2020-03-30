@@ -29,28 +29,6 @@ pub struct Gen {
     iterations: u32,
 }
 
-pub enum TileType {
-    /// Used mostly for debugging
-    Empty,
-    /// ```
-    /// z = z ^ 2 + c
-    /// ```
-    Mandelbrot,
-    /// Looks like a ship that is burning.
-    /// ```
-    /// z = |re(z)| - |im(z)|i
-    /// z = z^2 + c
-    /// ```
-    BurningShip,
-    /// Very interesting fractal, burning ship + mandel3
-    /// ```
-    /// z = |re(z)| - |im(z)|i
-    /// z = z^2 + c
-    /// z = z^3 + c
-    /// ```
-    ShipHybrid,
-}
-
 /// TileBuilder:  threaded, cuda, opencl
 /// TileType:     Empty, Mandel, BurningShip
 ///
@@ -206,16 +184,22 @@ fn cpx_sqr(a: V2) -> V2 {
     }
 }
 
+fn cpx_abs(a: V2) -> V2 {
+    V2 {
+        x: a.x.abs(),
+        y: -a.y.abs(),
+    }
+}
+
 // some cool algorithms
 // nice: ((|re| + |im|i)^2 + c)^3 + c
 fn mandel(max: u32, c: Vector2<f64>) -> f64 {
     let mut z = c;
     let mut n = 0;
     loop {
-        z.x = z.x.abs();
-        z.y = -z.y.abs();
+        z = cpx_abs(z);
         z = cpx_sqr(z) + c;
-        z = cpx_mul(cpx_sqr(z), z) + c;
+        z = cpx_sqr(z) + c;
 
         if n == max {
             return max as f64;
