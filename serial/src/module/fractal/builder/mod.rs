@@ -4,21 +4,33 @@
 //!
 //! TODO: This should eventually become a trait.
 //! Future implementations could be:
+//!
 //!     TODO: cuda-float
+//!
 //!     TODO: cuda-double
+//!
 //!     TODO: opencl-float
+//!
 //!     TODO: opencl-double
+//!
 //!     TODO: cpu-float
+//!
 //!     TODO: cpu-double
+//!
 //!     TODO: sse2
+//!
 //!     TODO: avx
 //!
 //! INFO:
 //!     cuda: cudaStreamQuery
+//!
 //! TODO: ablility to save and load multiple locations
+//!
 //! TODO: share saved location (via clipboard)
+//!
 //! TODO: when loading a location, we could transition to it, by first zooming
 //!       out, then zooming in to that location
+//!
 //! TODO: share sets of locations?
 //!
 //! TileBuilder:  threaded, cuda, opencl
@@ -39,13 +51,20 @@
 //! Tile size should probably be configurable by the generator backend
 //! implementations. As different backends have different optimal tile
 //! sizes. (this was attemted but it was not very fast at all, also it is very
-//! hard to use sse for this) NOTE: don't return excact pixels, but the complex
+//! hard to use sse for this)
+//!
+//! NOTE: don't return excact pixels, but the complex
 //! numbers and/or iterations, same stuff. best would be to just return array of
 //! iteration count for each pixel. this would save. argb8: 4 bytes per pixel
+//!
 //! rgb8:  3 bytes per pixel
+//!
 //! iter:  2 bytes per pixel (u16)
+//!
 //! iter:  4 bytes per pixel (f32)
+//!
 //! iter:  8 bytes per pixel (f64)
+//!
 //! so rgb is not that bad actually, we should drop the alpha component (what
 //! about alignment? profile!)
 
