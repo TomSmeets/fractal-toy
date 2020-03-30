@@ -4,6 +4,7 @@ pub mod threaded;
 
 use crate::module::fractal::tile::TilePos;
 
+#[derive(Eq, PartialEq, Copy, Clone)]
 pub enum TileType {
     /// Used mostly for debugging
     Empty,
@@ -26,6 +27,7 @@ pub enum TileType {
     ShipHybrid,
 }
 
+#[derive(Eq, PartialEq, Copy, Clone)]
 pub struct TileRequest {
     pub pos: TilePos,
     pub kind: TileType,

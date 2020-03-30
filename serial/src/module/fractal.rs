@@ -20,8 +20,8 @@ use self::{
     builder::{
         queue::{TileQueue, WorkQueue},
         threaded::ThreadedTileBuilder,
+        TileRequest, TileType,
     },
-    gen::Gen,
     tile::{TileContent, TilePos},
     viewport::Viewport,
 };
@@ -117,10 +117,14 @@ impl Fractal {
                         },
                         None => {
                             if todo.len() < todo.capacity()
-                                && !q.doing.iter().any(|x| *x == p)
-                                && !q.done.iter().any(|(y, _)| *y == p)
+                                && !q.doing.iter().any(|x| x.pos == p)
+                                && !q.done.iter().any(|(y, _)| y.pos == p)
                             {
-                                todo.push(p);
+                                todo.push(TileRequest {
+                                    pos: p,
+                                    iterations: 128,
+                                    kind: TileType::Mandelbrot,
+                                });
                             }
                         },
                     };
@@ -142,7 +146,7 @@ impl Fractal {
                         self.atlas.update(&atlas_region, &v.pixels);
                         v.region = Some(atlas_region);
                     }
-                    new.insert(k, v);
+                    new.insert(k.pos, v);
                 }
 
                 let t2 = std::mem::replace(&mut self.textures, new);

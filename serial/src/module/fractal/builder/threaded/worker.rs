@@ -1,5 +1,5 @@
 use crate::module::fractal::{
-    builder::queue::*,
+    builder::{queue::*, TileRequest},
     gen::Gen,
     tile::{TileContent, TilePos},
 };
@@ -40,11 +40,13 @@ fn worker(q: Arc<Mutex<TileQueue>>, quit: Arc<RwLock<bool>>) {
             break;
         }
 
-        let next: Option<TilePos> = q.lock().unwrap().pop_todo();
+        let next: Option<TileRequest> = q.lock().unwrap().pop_todo();
         match next {
             Some(p) => {
-                let mut t = TileContent::new();
-                t.generate(&Gen::new(), p);
+                let mut t = TileContent {
+                    pixels: super::super::cpu::build(p),
+                    region: None,
+                };
                 q.lock().unwrap().push_done(p, t);
             },
             None => {

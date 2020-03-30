@@ -1,6 +1,7 @@
+use super::TileRequest;
 use crate::module::fractal::tile::*;
 
-pub type TileQueue = WorkQueue<TilePos, TileContent>;
+pub type TileQueue = WorkQueue<TileRequest, TileContent>;
 
 // TODO: could be represented  as a single vec like this
 //  [done..,doing..,todo..]
