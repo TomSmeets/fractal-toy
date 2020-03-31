@@ -1,52 +1,109 @@
-use super::queue::*;
-use crate::module::fractal::{builder::TileRequest, tile::TileContent};
+use crate::module::fractal::{
+    builder::{queue::*, TileRequest, TileType},
+    tile::TileContent,
+};
 use ocl::{
     enums::{AddressingMode, FilterMode, ImageChannelDataType, ImageChannelOrder, MemObjectType},
     flags::CommandQueueProperties,
     Context, Device, Image, Kernel, Program, Queue, Sampler,
 };
-use std::sync::{Arc, Mutex};
+use std::{
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex,
+    },
+    thread,
+};
 
 use crate::module::fractal::TEXTURE_SIZE;
 
-static src: &'static str = r#"
-    __kernel void add(write_only image2d_t image) {
-        int2 coord = (int2)(get_global_id(0), get_global_id(1));
-        float2 p = (float2)((float) coord.x / 128.0, (float) coord.y / 128.0);
-        // abgr
-        float4 pixel = (float4)(1.0, p.x, p.y, 0.0);
-
-        float2 z = (float2)(0, 0);
-        float2 c = p*4.0f - 2.0f;
-
-        float n = 0.0f;
-        for(int i = 0; i < 1024; ++i) {
-            float2 t = z;
-            z.x = t.x*t.x - t.y*t.y;
-            z.y = 2.0f*t.x*t.y;
-            z += c;
-            n += 1.0;
-
-            if (z.x*z.x + z.y*z.y > 4.0f) {
-                pixel *= 0.0f;
-                break;
-            }
-        }
-
-        write_imagef(image, coord, pixel);
-    }
-"#;
+static SOURCE_TEMPLATE: &'static str = include_str!("kernel.cl");
 
 pub struct OCLTileBuilder {
-    context: Context,
-    device: Device,
-    cqueue: Queue,
-    program: Program,
-    queue: Arc<Mutex<TileQueue>>,
+    quit: Arc<AtomicBool>,
+    handle: Option<std::thread::JoinHandle<()>>,
 }
 
 impl OCLTileBuilder {
     pub fn new(queue: Arc<Mutex<TileQueue>>) -> Self {
+        let quit = Arc::new(AtomicBool::new(false));
+        let q2 = Arc::clone(&quit);
+        let handle = thread::spawn(|| {
+            let mut w = OCLWorker::new(q2, queue);
+            w.run();
+        });
+        OCLTileBuilder {
+            quit,
+            handle: Some(handle),
+        }
+    }
+}
+
+impl Drop for OCLTileBuilder {
+    fn drop(&mut self) {
+        self.quit.store(true, Ordering::Relaxed);
+        self.handle.take().unwrap().join().unwrap();
+    }
+}
+
+pub struct OCLWorker {
+    context: Context,
+    device: Device,
+    cqueue: Queue,
+    program: Option<Program>,
+    queue: Arc<Mutex<TileQueue>>,
+    quit: Arc<AtomicBool>,
+
+    kind: TileType,
+}
+
+impl OCLWorker {
+    pub fn compile(&mut self) -> Program {
+        let pow2 = r#"
+            tmp = z;
+            z.x = tmp.x*tmp.x - tmp.y*tmp.y + c.x;
+            z.y = 2.0*tmp.x*tmp.y + c.y;
+        "#;
+
+        let pow3 = r#"
+            tmp = z;
+            z.x = tmp.x*tmp.x*tmp.x - tmp.y*tmp.y*tmp.x - 2*tmp.x*tmp.y*tmp.y + c.x;
+            z.y = 2.0*tmp.x*tmp.x*tmp.y + tmp.x*tmp.x*tmp.y - tmp.y*tmp.y*tmp.y + c.y;
+        "#;
+
+        let abs = r#"
+            z = fabs(z);
+            z.y = -z.y;
+        "#;
+
+        let mut alg = String::new();
+
+        match self.kind {
+            TileType::Mandelbrot => {
+                alg.push_str(pow2);
+            },
+            TileType::ShipHybrid => {
+                alg.push_str(abs);
+                alg.push_str(pow2);
+                alg.push_str(pow3);
+            },
+            TileType::BurningShip => {
+                alg.push_str(abs);
+                alg.push_str(pow2);
+            },
+            TileType::Empty => {},
+        }
+
+        let new_src = SOURCE_TEMPLATE.replace("@ALGORITHM@", &alg);
+
+        Program::builder()
+            .src(new_src)
+            .devices(self.device)
+            .build(&self.context)
+            .unwrap()
+    }
+
+    pub fn new(quit: Arc<AtomicBool>, queue: Arc<Mutex<TileQueue>>) -> Self {
         let context = Context::builder()
             .devices(Device::specifier().first())
             .build()
@@ -59,22 +116,25 @@ impl OCLTileBuilder {
         )
         .unwrap();
 
-        let program = Program::builder()
-            .src(src)
-            .devices(device)
-            .build(&context)
-            .unwrap();
-
-        OCLTileBuilder {
+        OCLWorker {
+            quit,
             context,
             device,
             cqueue,
-            program,
+            program: None,
             queue,
+            kind: TileType::Empty,
         }
     }
 
-    fn process(&mut self, p: TileRequest) -> ocl::Result<TileContent> {
+    fn process(&mut self, p: TileRequest) -> Option<TileContent> {
+        if p.kind != self.kind || self.program.is_none() {
+            self.kind = p.kind;
+            self.program = Some(self.compile());
+        }
+
+        let program = self.program.as_ref().unwrap();
+
         let mut img = vec![0; TEXTURE_SIZE * TEXTURE_SIZE * 4];
         let dims = (TEXTURE_SIZE, TEXTURE_SIZE);
 
@@ -93,12 +153,18 @@ impl OCLTileBuilder {
             .build()
             .unwrap();
 
+        let [offset_x, offset_y, zoom] = p.pos.to_f64_with_padding();
+
         let kernel = Kernel::builder()
-            .program(&self.program)
+            .program(&program)
             .name("add")
             .queue(self.cqueue.clone())
             .global_work_size(&dims)
             .arg(&dst_image)
+            .arg(p.iterations as f32)
+            .arg(offset_x)
+            .arg(offset_y)
+            .arg(zoom)
             .build()
             .unwrap();
 
@@ -112,32 +178,29 @@ impl OCLTileBuilder {
             pixels: img,
             region: None,
         };
-        Ok(t)
+        Some(t)
     }
 
-    pub fn update(&mut self) {
-        let next: Option<TileRequest> = self.queue.lock().unwrap().pop_todo();
-        if let Some(p) = next {
-            let r = self.process(p).unwrap();
-            self.queue.lock().unwrap().push_done(p, r);
+    pub fn run(&mut self) {
+        loop {
+            if self.quit.load(Ordering::Relaxed) {
+                break;
+            }
+
+            let next: Option<TileRequest> = self.queue.lock().unwrap().pop_todo();
+            match next {
+                Some(p) => {
+                    if let Some(r) = self.process(p) {
+                        self.queue.lock().unwrap().push_done(p, r);
+                    }
+                },
+                None => {
+                    thread::yield_now();
+                    // yield will use 100% cpu for some reason, so we also wait a bit
+                    // TODO: use wait and notify?
+                    thread::sleep(std::time::Duration::from_millis(50));
+                },
+            }
         }
     }
 }
-
-// fn trivial() -> ocl::Result<()> {
-//
-// let buffer = pro_que.create_buffer::<f32>()?;
-//
-// let kernel = pro_que.kernel_builder("add")
-// .arg(&buffer)
-// .arg(10.0f32)
-// .build()?;
-//
-// unsafe { kernel.enq()?; }
-//
-// let mut vec = vec![0.0f32; buffer.len()];
-// buffer.read(&mut vec).enq()?;
-//
-// println!("The value at index [{}] is now '{}'!", 200007, vec[200007]);
-// Ok(())
-// }

@@ -91,7 +91,7 @@ impl Fractal {
         if self.tile_builder.is_none() {
             self.tile_builder = Some(OCLTileBuilder::new(Arc::clone(&self.queue)));
         }
-        self.tile_builder.as_mut().unwrap().update();
+        // self.tile_builder.as_mut().unwrap().update();
 
         if let DragState::From(p1) = self.drag {
             self.pos.translate(p1 - mouse_in_view);
