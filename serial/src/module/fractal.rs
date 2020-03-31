@@ -262,16 +262,18 @@ impl Fractal {
 }
 
 fn screen_to_view(window: &Window, p: V2i) -> V2 {
+    let s = window.size.x.max(window.size.y) as f64;
     V2::new(
-        p.x as f64 / window.size.x as f64,
-        1.0 - p.y as f64 / window.size.y as f64,
+        p.x as f64 / s,
+        1.0 - p.y as f64 / s,
     )
 }
 
 fn view_to_screen(window: &Window, p: V2) -> V2i {
+    let s = window.size.x.max(window.size.y) as f64;
     V2i::new(
-        (p.x * window.size.x as f64) as i32,
-        ((1.0 - p.y) * window.size.y as f64) as i32,
+        (p.x * s) as i32,
+        ((1.0 - p.y) * s) as i32,
     )
 }
 
