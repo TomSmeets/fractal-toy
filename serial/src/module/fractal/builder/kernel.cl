@@ -2,7 +2,6 @@ __kernel void add(write_only image2d_t image, float max_iter, double offset_x, d
     int2 coord = (int2)(get_global_id(0), get_global_id(1));
     double2 image_pos = (double2)((double) coord.x / 128.0, (double) coord.y / 128.0);
 
-    double2 z = (double2)(0, 0);
     double2 c = ((double2)((double) image_pos.x, (double) image_pos.y));
 
     // screen coords 0 - 1
@@ -11,17 +10,19 @@ __kernel void add(write_only image2d_t image, float max_iter, double offset_x, d
     // -1 , 1
     c = zoom * c + (double2)(offset_x, offset_y);
 
+    double2 z = c;
+
     float n = 0.0f;
     double2 tmp;
     while (n < max_iter) {
 
         @ALGORITHM@
 
-        n += 1.0f;
-
         if (z.x*z.x + z.y*z.y > 4.0) {
             break;
         }
+
+        n += 1.0f;
     }
 
     // convert to hsv
