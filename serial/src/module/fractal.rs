@@ -52,7 +52,7 @@ pub struct Fractal {
     pub debug: bool,
 
     #[serde(skip)]
-    pub tile_builder: Option<OCLTileBuilder>,
+    pub tile_builder: Option<(ThreadedTileBuilder, OCLTileBuilder)>,
 
     #[serde(skip)]
     pub queue: Arc<Mutex<TileQueue>>,
@@ -89,9 +89,8 @@ impl Fractal {
             .zoom_in(time.dt as f64 * input.dir_look.y * 3.5, V2::new(0.5, 0.5));
 
         if self.tile_builder.is_none() {
-            self.tile_builder = Some(OCLTileBuilder::new(Arc::clone(&self.queue)));
+            self.tile_builder = Some((ThreadedTileBuilder::new(Arc::clone(&self.queue)), OCLTileBuilder::new(Arc::clone(&self.queue))));
         }
-        // self.tile_builder.as_mut().unwrap().update();
 
         if let DragState::From(p1) = self.drag {
             self.pos.translate(p1 - mouse_in_view);
@@ -133,7 +132,7 @@ impl Fractal {
         if !self.pause || input.button(InputAction::F3).went_down() {
             if let Ok(mut q) = self.queue.try_lock() {
                 // iterate over all visible position and queue those tiles
-                let mut todo = Vec::with_capacity(16);
+                let mut todo = Vec::with_capacity(256);
                 let mut new = TileMap::new();
                 for p in self.pos.get_pos_all() {
                     let rq = TileRequest {
