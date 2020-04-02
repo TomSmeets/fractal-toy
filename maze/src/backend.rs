@@ -5,6 +5,8 @@ use clap::arg_enum;
 use structopt::StructOpt;
 
 pub mod minimal;
+
+#[cfg(feature = "backend-fancy")]
 pub mod term;
 
 arg_enum! {
@@ -16,7 +18,7 @@ arg_enum! {
 
 #[derive(StructOpt)]
 pub struct Config {
-    #[structopt(short, long, default_value = "Fancy")]
+    #[structopt(short, long, default_value = "minimal")]
     #[structopt(possible_values = &TermBackend::variants(), case_insensitive = true)]
     backend: TermBackend,
 
@@ -38,6 +40,10 @@ pub fn run() {
     let cfg = Config::from_args();
     match cfg.backend {
         TermBackend::Minimal => self::minimal::run(cfg),
+
+        #[cfg(feature = "backend-fancy")]
         TermBackend::Fancy => self::term::run(cfg),
+
+        b => println!("backend '{}' is unsupported :(", b),
     }
 }
