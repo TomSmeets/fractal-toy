@@ -138,6 +138,74 @@ impl Fractal {
         }
 
         if !self.pause || input.button(InputAction::F3).went_down() {
+            // it will be faster if we just iterate over two sorted lists.
+            // drop existing while existing != new
+            // if equal
+
+            // If we have two ordered lists of tile points
+            // We can iterate over both lists at the same time and produce three kinds.
+            //   drop:    elem(old) && !elem(new)
+            //   retain:  elem(old) &&  elem(new)
+            //   insert: !elem(old) &&  elem(new)
+            //
+            // to produce these lists we can do:
+            // if old.is_none => insert, new.next();
+            // if new.is_none => drop,   old.next();
+            // if new.is_none && old.is_none => break;
+            // if old < new  => remove, old.next()
+            // if old == new => retain, old.next(), new.next()
+            // if old > new  => insert, new.next(),
+            //
+            // oooooo
+            // oo......
+            // oo......
+            // oo......
+            //   ......
+            //
+            // xxxxxx
+            // xx....nn
+            // xx....nn
+            // xx....nn
+            //   nnnnnn
+
+
+            let mut old_iter = (0..4).flat_map(move |i| (0..4).map(move |j| (i, j))); // TODO: acutal implementation
+            let mut new_iter = (2..8).flat_map(move |i| (2..8).map(move |j| (i, j))); // TODO: acutal implementation
+
+            let mut old_item = old_iter.next();
+            let mut new_item = new_iter.next();
+
+            let mut items_to_remove = Vec::new();
+            let mut items_to_insert = Vec::new();
+            let mut items_to_retain = Vec::new();
+
+            loop {
+                use std::cmp::Ordering;
+
+                let ord = match (old_item, new_item) {
+                    (None,    Some(_)) => Ordering::Greater,
+                    (Some(_), None)    => Ordering::Less,
+                    (None,    None)    => break,
+                    (Some(old), Some(new)) => old.cmp(&new),
+                };
+
+                match ord {
+                    Ordering::Less => {
+                        items_to_remove.push(old_item.unwrap());
+                        old_item = old_iter.next();
+                    },
+                    Ordering::Equal => {
+                        items_to_retain.push(old_item.unwrap());
+                        old_item = old_iter.next();
+                        new_item = new_iter.next();
+                    },
+                    Ordering::Greater => {
+                        items_to_insert.push(new_item.unwrap());
+                        new_item = new_iter.next();
+                    },
+                };
+            }
+
             if let Ok(mut q) = self.queue.try_lock() {
                 // iterate over all visible position and queue those tiles
                 let mut todo = Vec::with_capacity(256);
