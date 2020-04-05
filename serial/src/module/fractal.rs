@@ -207,13 +207,11 @@ impl Fractal {
 
             if let Some(atlas_region) = &v.region {
                 // TODO: make rendering seperate from sdl
-                sdl.canvas
-                    .copy(
-                        &self.atlas.texture[atlas_region.index.z as usize],
-                        Some(atlas_region.rect_padded().into_sdl()),
-                        Some(r),
-                    )
-                    .unwrap();
+                sdl.canvas_copy(
+                    &self.atlas.texture[atlas_region.index.z as usize],
+                    Some(atlas_region.rect_padded().into_sdl()),
+                    Some(r),
+                );
             } else {
                 panic!("withot region!?");
             }
@@ -224,9 +222,7 @@ impl Fractal {
             // TODO: show in ui window
             let w = window.size.x / self.atlas.texture.len().max(4) as u32;
             for (i, t) in self.atlas.texture.iter().enumerate() {
-                sdl.canvas
-                    .copy(t, None, Some(Rect::new(i as i32 * w as i32, 0, w, w)))
-                    .unwrap();
+                sdl.canvas_copy(t, None, Some(Rect::new(i as i32 * w as i32, 0, w, w)));
             }
         }
 

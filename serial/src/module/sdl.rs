@@ -8,13 +8,12 @@ use sdl2::{
 };
 
 pub struct Sdl {
-    pub ctx: sdl2::Sdl,
-    pub video: sdl2::VideoSubsystem,
-    pub event: sdl2::EventPump,
-    pub canvas: Canvas<Window>,
+    ctx: sdl2::Sdl,
+    video: sdl2::VideoSubsystem,
+    event: sdl2::EventPump,
+    canvas: Canvas<Window>,
     pub events: Vec<sdl2::event::Event>,
-
-    pub font: Font<'static>,
+    font: Font<'static>,
 }
 
 static FONT_DATA: &[u8] = include_bytes!(concat!(env!("FONT_DEJAVU"), "/DejaVuSans.ttf"));
@@ -127,6 +126,26 @@ impl Sdl {
         self.events = self.event.poll_iter().collect();
         self.canvas.set_draw_color(Color::RGB(255, 0, 255));
         self.canvas.clear();
+    }
+
+    pub fn canvas_copy(
+        &mut self,
+        texture: &sdl2::render::Texture,
+        src: Option<Rect>,
+        dst: Option<Rect>,
+    ) {
+        self.canvas.copy(texture, src, dst).unwrap();
+    }
+
+    pub fn output_size(&self) -> (u32, u32) {
+        self.canvas.output_size().unwrap()
+    }
+
+    pub fn create_texture_static_rgba8(&mut self, w: u32, h: u32) -> sdl2::render::Texture {
+        self.canvas
+            .texture_creator()
+            .create_texture_static(PixelFormatEnum::RGBA8888, w, h)
+            .unwrap()
     }
 }
 

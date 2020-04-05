@@ -30,15 +30,7 @@ impl Atlas {
     pub fn alloc_page(&mut self, sdl: &mut Sdl) {
         let page = self.texture.len();
 
-        let texture = sdl
-            .canvas
-            .texture_creator()
-            .create_texture_static(
-                PixelFormatEnum::RGBA8888,
-                self.size * self.res,
-                self.size * self.res,
-            )
-            .unwrap();
+        let texture = sdl.create_texture_static_rgba8(self.size * self.res, self.size * self.res);
 
         self.texture.push(texture);
 
