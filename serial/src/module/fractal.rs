@@ -33,6 +33,7 @@ pub enum DragState {
     From(V2),
 }
 
+// pos -> pixels | atlas
 type TileMap = BTreeMap<TileRequest, TileContent>;
 
 // queue: [TilePos]
@@ -50,6 +51,7 @@ pub struct Fractal {
     pub pause: bool,
     pub debug: bool,
 
+    // TODO: move out into generic `tile builder` containing all implementations
     #[serde(skip)]
     pub tile_builder: Option<(ThreadedTileBuilder)>,
 
@@ -79,12 +81,20 @@ impl Fractal {
         }
     }
 
+    pub fn zoom(&mut self, amount: f32, position: Option<V2>) {
+        let position = position.unwrap_or_else(|| V2::new(0.5, 0.5));
+        self.pos.zoom_in(amount as f64, position);
+    }
+
+    pub fn translate(&mut self, offset: V2) {
+        self.pos.translate(offset);
+    }
+
     pub fn update(&mut self, time: &Time, sdl: &mut Sdl, window: &Window, input: &Input) {
         let mouse_in_view = screen_to_view(window, input.mouse);
-        self.pos.zoom_in(0.3 * input.scroll as f64, mouse_in_view);
-        self.pos.translate(time.dt as f64 * input.dir_move * 2.0);
-        self.pos
-            .zoom_in(time.dt as f64 * input.dir_look.y * 3.5, V2::new(0.5, 0.5));
+        self.zoom(0.3 * input.scroll as f32, Some(mouse_in_view));
+        self.translate(time.dt as f64 * input.dir_move * 2.0);
+        self.zoom(time.dt * input.dir_look.y as f32 * 3.5, None);
 
         if self.tile_builder.is_none() {
             self.tile_builder = Some(ThreadedTileBuilder::new(Arc::clone(&self.queue)));
