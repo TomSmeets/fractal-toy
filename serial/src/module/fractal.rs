@@ -168,7 +168,6 @@ impl Fractal {
             // xx....nn
             //   nnnnnn
 
-
             let mut old_iter = (0..4).flat_map(move |i| (0..4).map(move |j| (i, j))); // TODO: acutal implementation
             let mut new_iter = (2..8).flat_map(move |i| (2..8).map(move |j| (i, j))); // TODO: acutal implementation
 
@@ -183,9 +182,9 @@ impl Fractal {
                 use std::cmp::Ordering;
 
                 let ord = match (old_item, new_item) {
-                    (None,    Some(_)) => Ordering::Greater,
-                    (Some(_), None)    => Ordering::Less,
-                    (None,    None)    => break,
+                    (None, Some(_)) => Ordering::Greater,
+                    (Some(_), None) => Ordering::Less,
+                    (None, None) => break,
                     (Some(old), Some(new)) => old.cmp(&new),
                 };
 
