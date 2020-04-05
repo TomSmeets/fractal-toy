@@ -37,8 +37,8 @@ type TileMap = BTreeMap<TileRequest, TileContent>;
 
 // queue: [TilePos]
 // done:  [Pos, Content]
-// TODO: Queried tiles shold be exactly those displayed. All tiles that are not
-// directly Queried should be removed. what datastructure is best for this?
+// TODO: Queried tiles should be exactly those displayed. All tiles that are not
+// directly Queried should be removed. what data structure is best for this?
 // multiple gen types, like threaded gen, etc
 #[derive(Serialize, Deserialize)]
 pub struct Fractal {
@@ -82,15 +82,12 @@ impl Fractal {
     pub fn update(&mut self, time: &Time, sdl: &mut Sdl, window: &Window, input: &Input) {
         let mouse_in_view = screen_to_view(window, input.mouse);
         self.pos.zoom_in(0.3 * input.scroll as f64, mouse_in_view);
-
         self.pos.translate(time.dt as f64 * input.dir_move * 2.0);
         self.pos
             .zoom_in(time.dt as f64 * input.dir_look.y * 3.5, V2::new(0.5, 0.5));
 
         if self.tile_builder.is_none() {
-            self.tile_builder = Some(
-                ThreadedTileBuilder::new(Arc::clone(&self.queue))
-            );
+            self.tile_builder = Some(ThreadedTileBuilder::new(Arc::clone(&self.queue)));
         }
 
         if let DragState::From(p1) = self.drag {
@@ -103,7 +100,7 @@ impl Fractal {
             DragState::None
         };
 
-        // TODO: int the future we want some kind of ui, or cli interface
+        // TODO: in the future we want some kind of ui, or cli interface
         if input.button(InputAction::F1).went_down() {
             self.pause = !self.pause;
         }
@@ -206,14 +203,14 @@ impl Fractal {
             let r = self.pos_to_rect(window, &p.pos);
 
             if let Some(atlas_region) = &v.region {
-                // TODO: make rendering seperate from sdl
+                // TODO: make rendering separate from sdl
                 sdl.canvas_copy(
                     &self.atlas.texture[atlas_region.index.z as usize],
                     Some(atlas_region.rect_padded().into_sdl()),
                     Some(r),
                 );
             } else {
-                panic!("withot region!?");
+                panic!("without region!?");
             }
         }
 
@@ -257,18 +254,12 @@ impl Fractal {
 
 fn screen_to_view(window: &Window, p: V2i) -> V2 {
     let s = window.size.x.max(window.size.y) as f64;
-    V2::new(
-        p.x as f64 / s,
-        1.0 - p.y as f64 / s,
-    )
+    V2::new(p.x as f64 / s, 1.0 - p.y as f64 / s)
 }
 
 fn view_to_screen(window: &Window, p: V2) -> V2i {
     let s = window.size.x.max(window.size.y) as f64;
-    V2i::new(
-        (p.x * s) as i32,
-        ((1.0 - p.y) * s) as i32,
-    )
+    V2i::new((p.x * s) as i32, ((1.0 - p.y) * s) as i32)
 }
 
 fn mk_rect(a: V2i, b: V2i) -> Rect {
