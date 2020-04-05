@@ -69,7 +69,7 @@
 //! about alignment? profile!)
 
 pub mod cpu;
-pub mod ocl;
+// pub mod ocl;
 pub mod queue;
 pub mod threaded;
 

@@ -28,7 +28,7 @@ sdl2       = { version = "0.33", features = [ "unsafe_textures" ] }
 cgmath     = { version = "0.17", features = [ "serde" ] }
 rand       = "0.7"
 rusttype  = "0.8"
-ocl="0.19"
+# ocl="0.19"
 # bincode    = "1.0"
 # num        = "0.2"
 # rug        = "1.7.0"
