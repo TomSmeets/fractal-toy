@@ -8,8 +8,17 @@ use sdl2::{
 };
 
 pub struct Sdl {
+    /// ~~SDL_Quit is called when dropped, so it has to be kept alive~~
+    /// Never mind, that is not true, the context is only dropped when all SDL
+    /// elements are dropped. So it is not necessary to keep the context or
+    /// subsystem in memory. I will however keep these fields. as to make it
+    /// explicit that we are using this.
+    #[allow(dead_code)]
     ctx: sdl2::Sdl,
+
+    #[allow(dead_code)]
     video: sdl2::VideoSubsystem,
+
     event: sdl2::EventPump,
     canvas: Canvas<Window>,
     pub events: Vec<sdl2::event::Event>,

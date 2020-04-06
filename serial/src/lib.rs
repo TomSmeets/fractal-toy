@@ -2,6 +2,7 @@
 // TODO: compute tiles in background
 
 pub mod game;
+pub mod iter;
 pub mod math;
 pub mod module;
 pub mod state;

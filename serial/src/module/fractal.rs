@@ -1,14 +1,10 @@
-use crate::{
-    math::*,
-    module::{input::InputAction, Input, Sdl, Time, Window},
-};
+use crate::iter::compare::{CompareIter, ComparedValue};
+use crate::math::*;
+use crate::module::{input::InputAction, Input, Sdl, Time, Window};
 use sdl2::rect::Rect;
 use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
-use std::{
-    collections::BTreeMap,
-    sync::{Arc, Mutex, RwLock},
-};
+use std::collections::BTreeMap;
+use std::sync::{Arc, Mutex};
 
 pub mod atlas;
 pub mod builder;
@@ -34,71 +30,6 @@ pub enum DragState {
     From(V2),
 }
 
-struct SortedIter<I> {
-    itr: I,
-}
-
-enum ComparedValue<L, R> {
-    Left(L),
-    Right(R),
-    Both(L, R),
-}
-
-use std::iter::Peekable;
-
-struct CompareIter<I, J, FCmp>
-where
-    I: Iterator,
-    J: Iterator,
-    FCmp: FnMut(&I::Item, &J::Item) -> Ordering,
-{
-    left: Peekable<I>,
-    right: Peekable<J>,
-    fcmp: FCmp,
-}
-
-impl<I, J, FCmp> Iterator for CompareIter<I, J, FCmp>
-where
-    I: Iterator,
-    J: Iterator,
-    FCmp: FnMut(&I::Item, &J::Item) -> Ordering,
-{
-    type Item = ComparedValue<I::Item, J::Item>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let ord = match (self.left.peek(), self.right.peek()) {
-            (None, Some(_)) => Ordering::Greater,
-            (Some(_), None) => Ordering::Less,
-            (None, None) => return None,
-            (Some(old), Some(new)) => (self.fcmp)(old, new),
-        };
-
-        Some(match ord {
-            Ordering::Less => ComparedValue::Left(self.left.next().unwrap()),
-            Ordering::Equal => {
-                ComparedValue::Both(self.left.next().unwrap(), self.right.next().unwrap())
-            },
-            Ordering::Greater => ComparedValue::Right(self.right.next().unwrap()),
-        })
-    }
-}
-
-fn compare_sorted_iters<I, J, FC, F>(mut old_iter: I, mut new_iter: J, mut cmp: FC, mut f: F)
-where
-    I: Iterator,
-    J: Iterator,
-    F: FnMut(ComparedValue<I::Item, J::Item>),
-    FC: FnMut(&I::Item, &J::Item) -> Ordering,
-{
-}
-
-impl<I, K, V> SortedIter<I>
-where
-    I: Iterator<Item = (K, V)>,
-    K: Ord,
-{
-}
-
 // pos -> pixels | atlas
 type TileMap = BTreeMap<TileRequest, TileContent>;
 
@@ -119,7 +50,7 @@ pub struct Fractal {
 
     // TODO: move out into generic `tile builder` containing all implementations
     #[serde(skip)]
-    pub tile_builder: Option<(ThreadedTileBuilder)>,
+    pub tile_builder: Option<ThreadedTileBuilder>,
 
     #[serde(skip)]
     pub queue: Arc<Mutex<TileQueue>>,
@@ -244,18 +175,11 @@ impl Fractal {
                     kind: self.kind,
                 });
 
-                // items that finished computing
-                //            let mut done_iter = ...;
-
                 let mut items_to_remove = Vec::new();
                 let mut items_to_insert = Vec::new();
                 let mut items_to_retain = Vec::new();
 
-                let iter = CompareIter {
-                    left: old_iter.peekable(),
-                    right: new_iter.peekable(),
-                    fcmp: |l, r| l.0.cmp(r),
-                };
+                let iter = CompareIter::new(old_iter, new_iter, |l, r| l.0.cmp(r));
 
                 for i in iter {
                     match i {
