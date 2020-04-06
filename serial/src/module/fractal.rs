@@ -11,23 +11,19 @@ pub mod builder;
 pub mod tile;
 pub mod viewport;
 
-use self::{
-    atlas::Atlas,
-    builder::{
-        queue::{TileQueue, WorkQueue},
-        threaded::ThreadedTileBuilder,
-        TileRequest, TileType,
-    },
-    tile::{TileContent, TilePos},
-    viewport::Viewport,
-};
+use self::atlas::Atlas;
+use self::builder::queue::{TileQueue, WorkQueue};
+use self::builder::threaded::ThreadedTileBuilder;
+use self::builder::{TileRequest, TileType};
+use self::tile::{TileContent, TilePos};
+use self::viewport::Viewport;
 
 const TEXTURE_SIZE: usize = 64 * 2;
 
 #[derive(Serialize, Deserialize)]
 pub enum DragState {
     None,
-    From(V2),
+    From(Vector2<i32>),
 }
 
 // pos -> pixels | atlas
@@ -57,6 +53,8 @@ pub struct Fractal {
 
     pub iter: i32,
     pub kind: TileType,
+
+    pub frame_counter: u32,
 }
 
 impl Fractal {
@@ -65,7 +63,7 @@ impl Fractal {
 
         Fractal {
             textures: map,
-            pos: Viewport::new(),
+            pos: Viewport::new(Vector2::new(800, 600)),
             drag: DragState::None,
             atlas: Atlas::new(TEXTURE_SIZE as u32),
             pause: false,
@@ -75,34 +73,35 @@ impl Fractal {
 
             iter: 64,
             kind: TileType::Mandelbrot,
+            frame_counter: 0,
         }
     }
 
-    pub fn zoom(&mut self, amount: f32, position: Option<V2>) {
-        let position = position.unwrap_or_else(|| V2::new(0.5, 0.5));
-        self.pos.zoom_in(amount as f64, position);
-    }
-
-    pub fn translate(&mut self, offset: V2) {
-        self.pos.translate(offset);
-    }
-
     pub fn update(&mut self, time: &Time, sdl: &mut Sdl, window: &Window, input: &Input) {
-        let mouse_in_view = screen_to_view(window, input.mouse);
-        self.zoom(0.3 * input.scroll as f32, Some(mouse_in_view));
-        self.translate(time.dt as f64 * input.dir_move * 2.0);
-        self.zoom(time.dt * input.dir_look.y as f32 * 3.5, None);
+        self.frame_counter += 1;
+
+        let show_info = self.frame_counter % 60 == 0;
+
+        self.pos.resize(window.size);
+
+        self.pos.zoom_in_at(0.3 * input.scroll as f64, input.mouse);
+        self.pos.translate({
+            let mut p = time.dt as f64 * input.dir_move * 2.0 * self.pos.size_in_pixels.x;
+            p.y *= -1.0;
+            to_v2i(p)
+        });
+        self.pos.zoom_in(time.dt as f64 * input.dir_look.y * 3.5);
 
         if self.tile_builder.is_none() {
             self.tile_builder = Some(ThreadedTileBuilder::new(Arc::clone(&self.queue)));
         }
 
         if let DragState::From(p1) = self.drag {
-            self.pos.translate(p1 - mouse_in_view);
+            self.pos.translate(p1 - input.mouse);
         }
 
         self.drag = if input.mouse_down.is_down {
-            DragState::From(mouse_in_view)
+            DragState::From(input.mouse)
         } else {
             DragState::None
         };
@@ -134,7 +133,8 @@ impl Fractal {
             }
         }
 
-        if !self.pause || input.button(InputAction::F3).went_down() {
+        // Tis doesn not have to happen every frame
+        if !self.pause && (self.frame_counter % 10 == 0) {
             // it will be faster if we just iterate over two sorted lists.
             // drop existing while existing != new
             // if equal
@@ -190,36 +190,50 @@ impl Fractal {
                 }
 
                 // iterate over all visible position and queue those tiles
+                //
+                if show_info {
+                    println!("--- queue ---");
+                    println!("remove:   {:?}", items_to_remove.len());
+                    println!("retain:   {:?}", items_to_retain.len());
+                    println!("todo:     {:?}", items_to_insert.len());
+                    println!("todo_old: {:?}", q.todo.len());
+                    println!("doing:    {:?}", q.doing.len());
+                    println!("done:     {:?}", q.done.len());
+                }
+
                 let mut todo = items_to_insert;
                 todo.reverse();
-                println!("--- queue ---");
-                println!("todo_old: {:?}", q.todo.len());
-                println!("todo_new: {:?}", todo.len());
-                println!("doing: {:?}", q.doing.len());
-                println!("done: {:?}", q.done.len());
-
                 q.todo = todo;
 
                 let mut new = TileMap::new();
                 for (p, t) in items_to_retain.into_iter() {
                     new.insert(p, t);
                 }
+
                 for (k, mut v) in q.done.drain(..) {
-                    if v.region.is_none() {
-                        let atlas_region = self.atlas.alloc(sdl);
-                        self.atlas.update(&atlas_region, &v.pixels);
-                        v.region = Some(atlas_region);
+                    assert!(v.region.is_none());
+
+                    let atlas_region = self.atlas.alloc(sdl);
+                    self.atlas.update(&atlas_region, &v.pixels);
+                    v.region = Some(atlas_region);
+
+                    // for some reason this happens
+                    // TODO: fix?
+                    let result = new.insert(k, v);
+                    if let Some(r) = result {
+                        items_to_remove.push((k, r));
                     }
-                    new.insert(k, v);
                 }
 
-                let t2 = std::mem::replace(&mut self.textures, new);
-                println!("removed {}", t2.len());
+                // println!("removed {}", items_to_remove.len());
                 for (_, t) in items_to_remove.into_iter() {
                     if let Some(r) = t.region {
                         self.atlas.remove(r);
                     }
                 }
+
+                assert!(self.textures.len() == 0);
+                self.textures = new;
             }
 
             // if input.button(InputAction::Y).went_down() {
@@ -234,12 +248,12 @@ impl Fractal {
 
             // remove tiles that we did not encounter
             // self.textures.retain(|_, t| !t.old);
-            println!("count: {}", self.textures.len());
+            // println!("count: {}", self.textures.len());
         }
 
         // fast stuff
         for (p, v) in self.textures.iter() {
-            let r = self.pos_to_rect(window, &p.pos);
+            let r = self.pos_to_rect(&p.pos);
 
             if let Some(atlas_region) = &v.region {
                 // TODO: make rendering separate from sdl
@@ -261,44 +275,16 @@ impl Fractal {
                 sdl.canvas_copy(t, None, Some(Rect::new(i as i32 * w as i32, 0, w, w)));
             }
         }
-
-        if input.button(InputAction::F1).went_down() {
-            println!("---- INFO ----");
-            self.info(input, window);
-        }
     }
 
-    fn pos_to_rect(&self, window: &Window, p: &TilePos) -> Rect {
+    fn pos_to_rect(&self, p: &TilePos) -> Rect {
         let [x, y, z] = p.to_f64();
-        let p = V2::new(x as f64, y as f64);
-        let w = p + V2::new(z as f64, z as f64);
-        let p = self.pos.world_to_view(p);
-        let p = view_to_screen(window, p);
-        let w = self.pos.world_to_view(w);
-        let w = view_to_screen(window, w);
-        mk_rect(p, w)
+        let min = V2::new(x, y);
+        let max = min + V2::new(z, z);
+        let min = self.pos.world_to_screen(min);
+        let max = self.pos.world_to_screen(max);
+        mk_rect(min, max)
     }
-
-    pub fn info(&self, input: &Input, window: &Window) {
-        let mouse_view = screen_to_view(window, input.mouse);
-        let mouse_world = self.pos.view_to_world(mouse_view);
-        let mouse_view = self.pos.world_to_view(mouse_world);
-        let mouse_screen = view_to_screen(window, mouse_view);
-        println!("screen  {:6.2} {:6.2}", input.mouse.x, input.mouse.y);
-        println!("view    {:6.2} {:6.2}", mouse_view.x, mouse_view.y);
-        println!("world   {:6.2} {:6.2}", mouse_world.x, mouse_world.y);
-        println!("screen2 {:6.2} {:6.2}", mouse_screen.x, mouse_screen.y);
-    }
-}
-
-fn screen_to_view(window: &Window, p: V2i) -> V2 {
-    let s = window.size.x.max(window.size.y) as f64;
-    V2::new(p.x as f64 / s, 1.0 - p.y as f64 / s)
-}
-
-fn view_to_screen(window: &Window, p: V2) -> V2i {
-    let s = window.size.x.max(window.size.y) as f64;
-    V2i::new((p.x * s) as i32, ((1.0 - p.y) * s) as i32)
 }
 
 fn mk_rect(a: V2i, b: V2i) -> Rect {

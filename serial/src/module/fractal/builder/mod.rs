@@ -5,21 +5,21 @@
 //! TODO: This should eventually become a trait.
 //! Future implementations could be:
 //!
-//!     TODO: cuda-float
+//! TODO: cuda-float
 //!
-//!     TODO: cuda-double
+//! TODO: cuda-double
 //!
-//!     TODO: opencl-float
+//! TODO: opencl-float
 //!
-//!     TODO: opencl-double
+//! TODO: opencl-double
 //!
-//!     TODO: cpu-float
+//! TODO: cpu-float
 //!
-//!     TODO: cpu-double
+//! TODO: cpu-double
 //!
-//!     TODO: sse2
+//! TODO: sse2
 //!
-//!     TODO: avx
+//! TODO: avx
 //!
 //! INFO:
 //!     cuda: cudaStreamQuery
