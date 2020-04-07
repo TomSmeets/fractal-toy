@@ -12,20 +12,24 @@ pub fn build(rq: TileRequest) -> Vec<u8> {
                 for x in 0..TEXTURE_SIZE {
                     let i = y * TEXTURE_SIZE + x;
                     if x <= 4 || y <= 4 || x >= TEXTURE_SIZE - 5 || y >= TEXTURE_SIZE - 5 {
-                        pixels[i * 4 + 0] = 255;
-                        pixels[i * 4 + 1] = 64;
-                        pixels[i * 4 + 2] = 64;
-                        pixels[i * 4 + 3] = 64;
+                        unsafe {
+                            *pixels.get_unchecked_mut(i * 4 + 0) = 255;
+                            *pixels.get_unchecked_mut(i * 4 + 1) = 64;
+                            *pixels.get_unchecked_mut(i * 4 + 2) = 64;
+                            *pixels.get_unchecked_mut(i * 4 + 3) = 64;
+                        }
                     } else {
                         let dx = x as i32 * 2 - TEXTURE_SIZE as i32;
                         let dy = y as i32 * 2 - TEXTURE_SIZE as i32;
                         let r = dx * dx + dy * dy;
                         let l = TEXTURE_SIZE as i32;
                         let c = if r < l * l { 255 } else { 0 };
-                        pixels[i * 4 + 0] = 255;
-                        pixels[i * 4 + 1] = c as u8;
-                        pixels[i * 4 + 2] = (x * c / TEXTURE_SIZE) as u8;
-                        pixels[i * 4 + 3] = (y * c / TEXTURE_SIZE) as u8;
+                        unsafe {
+                            *pixels.get_unchecked_mut(i * 4 + 0) = 255;
+                            *pixels.get_unchecked_mut(i * 4 + 1) = c as u8;
+                            *pixels.get_unchecked_mut(i * 4 + 2) = (x * c / TEXTURE_SIZE) as u8;
+                            *pixels.get_unchecked_mut(i * 4 + 3) = (y * c / TEXTURE_SIZE) as u8;
+                        }
                     }
                 }
             }
@@ -82,10 +86,12 @@ fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(rq: TileRequest, pixels: &mut [u8], f
 
             let rgb = hsv2rgb(itr as f64 / 32.0, v, v);
             let idx = x + y * TEXTURE_SIZE;
-            pixels[idx * 4 + 0] = 255;
-            pixels[idx * 4 + 1] = rgb[0];
-            pixels[idx * 4 + 2] = rgb[1];
-            pixels[idx * 4 + 3] = rgb[2];
+            unsafe {
+                *pixels.get_unchecked_mut(idx * 4 + 0) = 255;
+                *pixels.get_unchecked_mut(idx * 4 + 1) = rgb[0];
+                *pixels.get_unchecked_mut(idx * 4 + 2) = rgb[1];
+                *pixels.get_unchecked_mut(idx * 4 + 3) = rgb[2];
+            }
         }
     }
 }

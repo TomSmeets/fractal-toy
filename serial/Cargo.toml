@@ -9,13 +9,8 @@ default-run = "dev"
 path = "src/lib.rs"
 crate_type = [ "lib" ]
 
-[[bin]]
-name = "web"
-required-features = [ "web" ]
-
 [features]
 default = [ "ocl" ]
-web = []
 static = [ "sdl2/static-link", "sdl2/bundled" ]
 
 # TODO: it might be time to move away from sdl2
