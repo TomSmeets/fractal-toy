@@ -3,7 +3,6 @@ use crate::math::*;
 use crate::module::{input::InputAction, Input, Sdl, Time, Window};
 use sdl2::rect::Rect;
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
 pub mod atlas;
@@ -27,8 +26,6 @@ pub enum DragState {
 }
 
 // pos -> pixels | atlas
-type TileMap = BTreeMap<TileRequest, TileContent>;
-
 // queue: [TilePos]
 // done:  [Pos, Content]
 // TODO: Queried tiles should be exactly those displayed. All tiles that are not
@@ -37,7 +34,7 @@ type TileMap = BTreeMap<TileRequest, TileContent>;
 #[derive(Serialize, Deserialize)]
 pub struct Fractal {
     #[serde(skip)]
-    pub textures: TileMap,
+    pub textures: Vec<(TileRequest, TileContent)>,
     pub pos: Viewport,
     pub drag: DragState,
     pub atlas: Atlas,
@@ -57,9 +54,6 @@ pub struct Fractal {
     pub frame_counter: u32,
 
     #[serde(skip)]
-    items_to_remove: Vec<(TileRequest, TileContent)>,
-
-    #[serde(skip)]
     items_to_insert: Vec<TileRequest>,
 
     #[serde(skip)]
@@ -68,10 +62,8 @@ pub struct Fractal {
 
 impl Fractal {
     pub fn new() -> Self {
-        let map: TileMap = TileMap::new();
-
         Fractal {
-            textures: map,
+            textures: Vec::new(),
             pos: Viewport::new(Vector2::new(800, 600)),
             drag: DragState::None,
             atlas: Atlas::new(TEXTURE_SIZE as u32),
@@ -84,7 +76,6 @@ impl Fractal {
             kind: TileType::Mandelbrot,
             frame_counter: 0,
 
-            items_to_remove: Vec::new(),
             items_to_insert: Vec::new(),
             items_to_retain: Vec::new(),
         }
@@ -176,9 +167,8 @@ impl Fractal {
                 // xx....nn
                 //   nnnnnn
 
-                let t2 = std::mem::replace(&mut self.textures, TileMap::new());
                 // items we rendered last frame
-                let old_iter = t2.into_iter();
+                let old_iter = self.textures.drain(..);
                 // items we should render this frame
                 let iter = self.iter;
                 let kind = self.kind;
@@ -188,7 +178,6 @@ impl Fractal {
                     kind,
                 });
 
-                assert!(self.items_to_remove.is_empty());
                 assert!(self.items_to_insert.is_empty());
                 assert!(self.items_to_retain.is_empty());
 
@@ -196,33 +185,40 @@ impl Fractal {
 
                 for i in iter {
                     match i {
-                        ComparedValue::Left(l) => self.items_to_remove.push(l), // only in old_iter
+                        ComparedValue::Left((_, t)) => {
+                            // only in old_iter, remove value
+                            if let Some(r) = t.region {
+                                self.atlas.remove(r);
+                            }
+                        },
                         ComparedValue::Right(r) => {
+                            // Only in new_iter: enqueue value
+                            // TODO: subtract sorted iters instead of this if
                             if !q.doing.contains(&r) && !q.done.iter().any(|x| x.0 == r) {
                                 self.items_to_insert.push(r)
                             }
-                        }, // only in new_iter
-                        ComparedValue::Both(l, _) => self.items_to_retain.push(l), // old and new
-                    };
+                        },
+                        ComparedValue::Both(l, _) => {
+                            // this value should be retained, as it is in new_iter and old_iter
+                            self.items_to_retain.push(l)
+                        },
+                    }
                 }
 
                 println!("--- queue ---");
-                println!("remove:   {:?}", self.items_to_remove.len());
                 println!("retain:   {:?}", self.items_to_retain.len());
                 println!("todo:     {:?}", self.items_to_insert.len());
                 println!("todo_old: {:?}", q.todo.len());
                 println!("doing:    {:?}", q.doing.len());
                 println!("done:     {:?}", q.done.len());
 
+                // swap new and old todos
                 self.items_to_insert.reverse();
                 std::mem::swap(&mut q.todo, &mut self.items_to_insert);
                 self.items_to_insert.clear();
 
-                let mut new = TileMap::new();
-                for (p, t) in self.items_to_retain.drain(..) {
-                    new.insert(p, t);
-                }
-
+                // TODO: add sorted done at beginning when iterating
+                // q.done.sort_unstable_by(|(r1, _), (r2, _)| r1.cmp(r2));
                 for (k, mut v) in q.done.drain(..) {
                     assert!(v.region.is_none());
 
@@ -230,21 +226,15 @@ impl Fractal {
                     self.atlas.update(&atlas_region, &v.pixels);
                     v.region = Some(atlas_region);
 
-                    // for some reason this happens
-                    // TODO: fix?
-                    let result = new.insert(k, v);
-                    assert!(result.is_none());
+                    // TODO: what is faster sort or iter?
+                    self.items_to_retain.push((k, v));
                 }
 
-                // println!("removed {}", items_to_remove.len());
-                for (_, t) in self.items_to_remove.drain(..) {
-                    if let Some(r) = t.region {
-                        self.atlas.remove(r);
-                    }
-                }
-
-                assert!(self.textures.is_empty());
-                self.textures = new;
+                // This should use timsort and should be pretty fast for this usecase
+                // Note that in this spesific case, the normal sort will probably be faster than
+                // the unstable sort TODO: profile :)
+                self.items_to_retain.sort_by(|(r1, _), (r2, _)| r1.cmp(r2));
+                std::mem::swap(&mut self.items_to_retain, &mut self.textures);
             }
 
             // if input.button(InputAction::Y).went_down() {
