@@ -28,8 +28,8 @@ impl Rect {
 impl Default for Rect {
     fn default() -> Self {
         Rect {
-            pos: V2i::new(0, 0),
-            size: V2i::new(0, 0),
+            pos: V2i::zero(),
+            size: V2i::zero(),
         }
     }
 }

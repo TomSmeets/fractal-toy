@@ -73,8 +73,11 @@ pub mod cpu;
 pub mod queue;
 pub mod threaded;
 
+use self::queue::TileQueue;
+use self::threaded::ThreadedTileBuilder;
 use crate::module::fractal::tile::TilePos;
 use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
 
 #[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum TileType {
@@ -104,4 +107,16 @@ pub struct TileRequest {
     pub pos: TilePos,
     pub kind: TileType,
     pub iterations: i32,
+}
+
+pub struct TileBuilder {
+    threaded: ThreadedTileBuilder,
+}
+
+impl TileBuilder {
+    pub fn new(queue: Arc<Mutex<TileQueue>>) -> Self {
+        TileBuilder {
+            threaded: ThreadedTileBuilder::new(queue),
+        }
+    }
 }

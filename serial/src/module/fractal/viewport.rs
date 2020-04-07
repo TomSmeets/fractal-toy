@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub struct Viewport {
     pub zoom: f64,
-    pub offset: Vector2<f64>,
-    pub size_in_pixels: Vector2<f64>,
+    pub offset: V2,
+    pub size_in_pixels: V2,
 }
 
 impl Viewport {
@@ -23,7 +23,7 @@ impl Viewport {
         self.size_in_pixels = to_v2(size_in_pixels);
     }
 
-    pub fn world_to_screen(&self, mut p: V2) -> Vector2<i32> {
+    pub fn world_to_screen(&self, mut p: V2) -> V2i {
         // offset is in world space
         p -= self.offset;
 
@@ -40,7 +40,7 @@ impl Viewport {
         Vector2::new(p.x as i32, p.y as i32)
     }
 
-    pub fn screen_to_world(&self, p: Vector2<i32>) -> V2 {
+    pub fn screen_to_world(&self, p: V2i) -> V2 {
         let mut p = V2::new(p.x as f64, p.y as f64);
 
         // make center of screen 0,0
@@ -61,7 +61,7 @@ impl Viewport {
         p
     }
 
-    pub fn translate(&mut self, offset: Vector2<i32>) {
+    pub fn translate(&mut self, offset: V2i) {
         let mut offset = to_v2(offset);
         offset.y *= -1.0;
         offset *= self.pixel_scale();
@@ -70,7 +70,7 @@ impl Viewport {
         self.offset.y = self.offset.y.min(3.0).max(-3.0);
     }
 
-    pub fn zoom_in_at(&mut self, amount: f64, screen_pos: Vector2<i32>) {
+    pub fn zoom_in_at(&mut self, amount: f64, screen_pos: V2i) {
         if amount * amount < 0.001 {
             return;
         }

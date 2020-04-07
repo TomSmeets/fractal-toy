@@ -13,7 +13,7 @@ pub mod viewport;
 
 use self::atlas::Atlas;
 use self::builder::queue::{TileQueue, WorkQueue};
-use self::builder::threaded::ThreadedTileBuilder;
+use self::builder::TileBuilder;
 use self::builder::{TileRequest, TileType};
 use self::tile::{TileContent, TilePos};
 use self::viewport::Viewport;
@@ -23,7 +23,7 @@ const TEXTURE_SIZE: usize = 64 * 2;
 #[derive(Serialize, Deserialize)]
 pub enum DragState {
     None,
-    From(Vector2<i32>),
+    From(V2i),
 }
 
 // pos -> pixels | atlas
@@ -46,7 +46,7 @@ pub struct Fractal {
 
     // TODO: move out into generic `tile builder` containing all implementations
     #[serde(skip)]
-    pub tile_builder: Option<ThreadedTileBuilder>,
+    pub tile_builder: Option<TileBuilder>,
 
     #[serde(skip)]
     pub queue: Arc<Mutex<TileQueue>>,
@@ -104,7 +104,7 @@ impl Fractal {
         self.pos.zoom_in(time.dt as f64 * input.dir_look.y * 3.5);
 
         if self.tile_builder.is_none() {
-            self.tile_builder = Some(ThreadedTileBuilder::new(Arc::clone(&self.queue)));
+            self.tile_builder = Some(TileBuilder::new(Arc::clone(&self.queue)));
         }
 
         if let DragState::From(p1) = self.drag {

@@ -117,7 +117,7 @@ fn cpx_abs(a: V2) -> V2 {
 
 // some cool algorithms
 // nice: ((|re| + |im|i)^2 + c)^3 + c
-fn mandel<F: Fn(V2, V2) -> V2>(max: u32, c: Vector2<f64>, f: F) -> f64 {
+fn mandel<F: Fn(V2, V2) -> V2>(max: u32, c: V2, f: F) -> f64 {
     let mut z = c;
     let mut n = 0;
     loop {
