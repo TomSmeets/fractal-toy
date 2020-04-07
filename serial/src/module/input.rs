@@ -46,19 +46,25 @@ pub struct Button {
     pub was_down: bool,
 }
 
+impl Default for Button {
+    fn default() -> Self {
+        Button::new()
+    }
+}
+
 impl Button {
-    pub fn new() -> Button {
+    pub fn new() -> Self {
         Button {
             is_down: false,
             was_down: false,
         }
     }
 
-    pub fn went_down(&self) -> bool {
+    pub fn went_down(self) -> bool {
         self.is_down && !self.was_down
     }
 
-    pub fn went_up(&self) -> bool {
+    pub fn went_up(self) -> bool {
         !self.is_down && self.was_down
     }
 
@@ -76,7 +82,7 @@ pub struct Input {
     pub dir_move: V2,
     pub dir_look: V2,
 
-    action: [Button; (InputAction::Count as usize)],
+    action: [Button; InputAction::Count as usize],
 }
 
 impl Default for Input {

@@ -1,5 +1,6 @@
-use crate::{math::*, module::Sdl};
-use sdl2::{pixels::PixelFormatEnum, render::Texture};
+use crate::math::*;
+use crate::module::Sdl;
+use sdl2::render::Texture;
 use serde::{Deserialize, Serialize};
 
 pub const PADDING: u32 = 1;
@@ -59,7 +60,7 @@ impl Atlas {
     pub fn update(&mut self, r: &AtlasRegion, pixels: &[u8]) {
         let r1 = r.rect();
         let t = &mut self.texture[r.index.z as usize];
-        t.update(Some(r1.into_sdl()), pixels, 4 * self.res as usize)
+        t.update(Some(r1.to_sdl()), pixels, 4 * self.res as usize)
             .unwrap();
     }
 

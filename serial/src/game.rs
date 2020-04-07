@@ -1,4 +1,3 @@
-use crate::math::*;
 use crate::module::{input::InputAction, Fractal, Input, Sdl, Time, Window};
 use serde::{Deserialize, Serialize};
 

@@ -93,8 +93,6 @@ impl Fractal {
     pub fn update(&mut self, time: &Time, sdl: &mut Sdl, window: &Window, input: &Input) {
         self.frame_counter += 1;
 
-        let show_info = self.frame_counter % 60 == 0;
-
         self.pos.resize(window.size);
 
         self.pos.zoom_in_at(0.3 * input.scroll as f64, input.mouse);
@@ -272,7 +270,7 @@ impl Fractal {
                 // TODO: make rendering separate from sdl
                 sdl.canvas_copy(
                     &self.atlas.texture[atlas_region.index.z as usize],
-                    Some(atlas_region.rect_padded().into_sdl()),
+                    Some(atlas_region.rect_padded().to_sdl()),
                     Some(r),
                 );
             } else {

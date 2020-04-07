@@ -15,7 +15,7 @@ impl Rect {
             && p.y < self.pos.y + self.size.y
     }
 
-    pub fn into_sdl(&self) -> sdl2::rect::Rect {
+    pub fn to_sdl(&self) -> sdl2::rect::Rect {
         sdl2::rect::Rect::new(
             self.pos.x,
             self.pos.y,
