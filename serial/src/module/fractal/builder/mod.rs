@@ -69,9 +69,14 @@
 //! about alignment? profile!)
 
 pub mod cpu;
-// pub mod ocl;
 pub mod queue;
 pub mod threaded;
+
+#[cfg(feature = "ocl")]
+pub mod ocl;
+
+#[cfg(feature = "ocl")]
+use self::ocl::OCLTileBuilder;
 
 use self::queue::TileQueue;
 use self::threaded::ThreadedTileBuilder;
@@ -110,13 +115,21 @@ pub struct TileRequest {
 }
 
 pub struct TileBuilder {
+    #[allow(dead_code)]
     threaded: ThreadedTileBuilder,
+
+    #[cfg(feature = "ocl")]
+    #[allow(dead_code)]
+    ocl: OCLTileBuilder,
 }
 
 impl TileBuilder {
     pub fn new(queue: Arc<Mutex<TileQueue>>) -> Self {
         TileBuilder {
-            threaded: ThreadedTileBuilder::new(queue),
+            threaded: ThreadedTileBuilder::new(Arc::clone(&queue)),
+
+            #[cfg(feature = "ocl")]
+            ocl: OCLTileBuilder::new(Arc::clone(&queue)),
         }
     }
 }

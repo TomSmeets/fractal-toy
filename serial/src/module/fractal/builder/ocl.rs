@@ -1,23 +1,14 @@
-use crate::module::fractal::{
-    builder::{queue::*, TileRequest, TileType},
-    tile::TileContent,
-};
-use ocl::{
-    enums::{AddressingMode, FilterMode, ImageChannelDataType, ImageChannelOrder, MemObjectType},
-    flags::CommandQueueProperties,
-    Context, Device, Image, Kernel, Program, Queue, Sampler,
-};
-use std::{
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc, Mutex,
-    },
-    thread,
-};
-
+use crate::module::fractal::builder::{queue::*, TileRequest, TileType};
+use crate::module::fractal::tile::TileContent;
 use crate::module::fractal::TEXTURE_SIZE;
+use ocl::enums::{ImageChannelDataType, ImageChannelOrder, MemObjectType};
+use ocl::flags::CommandQueueProperties;
+use ocl::{Context, Device, Image, Kernel, Program, Queue};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+use std::thread;
 
-static SOURCE_TEMPLATE: &'static str = include_str!("kernel.cl");
+static SOURCE_TEMPLATE: &str = include_str!("kernel.cl");
 
 pub struct OCLTileBuilder {
     quit: Arc<AtomicBool>,
