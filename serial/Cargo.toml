@@ -3,7 +3,7 @@ name = "serial"
 version = "0.1.0"
 authors = ["TomSmeets <tom@tsmeets.nl>"]
 edition = "2018"
-default-run = "linux"
+default-run = "dev"
 
 [lib]
 path = "src/lib.rs"

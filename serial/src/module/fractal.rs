@@ -134,7 +134,7 @@ impl Fractal {
         }
 
         // Tis doesn not have to happen every frame
-        if !self.pause && (self.frame_counter % 10 == 0) {
+        if !self.pause && (self.frame_counter % 5 == 0) {
             // it will be faster if we just iterate over two sorted lists.
             // drop existing while existing != new
             // if equal
@@ -184,22 +184,22 @@ impl Fractal {
                 for i in iter {
                     match i {
                         ComparedValue::Left(l) => items_to_remove.push(l), // only in old_iter
-                        ComparedValue::Right(r) => if !q.doing.contains(&r) && !q.done.iter().any(|x| x.0 == r) { items_to_insert.push(r) }, // only in new_iter
+                        ComparedValue::Right(r) => {
+                            if !q.doing.contains(&r) && !q.done.iter().any(|x| x.0 == r) {
+                                items_to_insert.push(r)
+                            }
+                        }, // only in new_iter
                         ComparedValue::Both(l, _) => items_to_retain.push(l), // old and new
                     };
                 }
 
-                // iterate over all visible position and queue those tiles
-                //
-                if show_info {
-                    println!("--- queue ---");
-                    println!("remove:   {:?}", items_to_remove.len());
-                    println!("retain:   {:?}", items_to_retain.len());
-                    println!("todo:     {:?}", items_to_insert.len());
-                    println!("todo_old: {:?}", q.todo.len());
-                    println!("doing:    {:?}", q.doing.len());
-                    println!("done:     {:?}", q.done.len());
-                }
+                println!("--- queue ---");
+                println!("remove:   {:?}", items_to_remove.len());
+                println!("retain:   {:?}", items_to_retain.len());
+                println!("todo:     {:?}", items_to_insert.len());
+                println!("todo_old: {:?}", q.todo.len());
+                println!("doing:    {:?}", q.doing.len());
+                println!("done:     {:?}", q.done.len());
 
                 let mut todo = items_to_insert;
                 todo.reverse();
