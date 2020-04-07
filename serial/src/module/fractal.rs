@@ -184,7 +184,7 @@ impl Fractal {
                 for i in iter {
                     match i {
                         ComparedValue::Left(l) => items_to_remove.push(l), // only in old_iter
-                        ComparedValue::Right(r) => items_to_insert.push(r), // only in new_iter
+                        ComparedValue::Right(r) => if !q.doing.contains(&r) && !q.done.iter().any(|x| x.0 == r) { items_to_insert.push(r) }, // only in new_iter
                         ComparedValue::Both(l, _) => items_to_retain.push(l), // old and new
                     };
                 }
@@ -220,9 +220,7 @@ impl Fractal {
                     // for some reason this happens
                     // TODO: fix?
                     let result = new.insert(k, v);
-                    if let Some(r) = result {
-                        items_to_remove.push((k, r));
-                    }
+                    assert!(result.is_none());
                 }
 
                 // println!("removed {}", items_to_remove.len());
@@ -232,7 +230,7 @@ impl Fractal {
                     }
                 }
 
-                assert!(self.textures.len() == 0);
+                assert!(self.textures.is_empty());
                 self.textures = new;
             }
 
