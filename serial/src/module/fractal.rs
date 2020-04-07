@@ -55,6 +55,15 @@ pub struct Fractal {
     pub kind: TileType,
 
     pub frame_counter: u32,
+
+    #[serde(skip)]
+    items_to_remove: Vec<(TileRequest, TileContent)>,
+
+    #[serde(skip)]
+    items_to_insert: Vec<TileRequest>,
+
+    #[serde(skip)]
+    items_to_retain: Vec<(TileRequest, TileContent)>,
 }
 
 impl Fractal {
@@ -74,6 +83,10 @@ impl Fractal {
             iter: 64,
             kind: TileType::Mandelbrot,
             frame_counter: 0,
+
+            items_to_remove: Vec::new(),
+            items_to_insert: Vec::new(),
+            items_to_retain: Vec::new(),
         }
     }
 
@@ -134,7 +147,7 @@ impl Fractal {
         }
 
         // Tis doesn not have to happen every frame
-        if !self.pause && (self.frame_counter % 5 == 0) {
+        if !self.pause {
             // it will be faster if we just iterate over two sorted lists.
             // drop existing while existing != new
             // if equal
@@ -169,44 +182,46 @@ impl Fractal {
                 // items we rendered last frame
                 let old_iter = t2.into_iter();
                 // items we should render this frame
+                let iter = self.iter;
+                let kind = self.kind;
                 let new_iter = self.pos.get_pos_all().map(|pos| TileRequest {
                     pos,
-                    iterations: self.iter,
-                    kind: self.kind,
+                    iterations: iter,
+                    kind,
                 });
 
-                let mut items_to_remove = Vec::new();
-                let mut items_to_insert = Vec::new();
-                let mut items_to_retain = Vec::new();
+                assert!(self.items_to_remove.is_empty());
+                assert!(self.items_to_insert.is_empty());
+                assert!(self.items_to_retain.is_empty());
 
                 let iter = CompareIter::new(old_iter, new_iter, |l, r| l.0.cmp(r));
 
                 for i in iter {
                     match i {
-                        ComparedValue::Left(l) => items_to_remove.push(l), // only in old_iter
+                        ComparedValue::Left(l) => self.items_to_remove.push(l), // only in old_iter
                         ComparedValue::Right(r) => {
                             if !q.doing.contains(&r) && !q.done.iter().any(|x| x.0 == r) {
-                                items_to_insert.push(r)
+                                self.items_to_insert.push(r)
                             }
                         }, // only in new_iter
-                        ComparedValue::Both(l, _) => items_to_retain.push(l), // old and new
+                        ComparedValue::Both(l, _) => self.items_to_retain.push(l), // old and new
                     };
                 }
 
                 println!("--- queue ---");
-                println!("remove:   {:?}", items_to_remove.len());
-                println!("retain:   {:?}", items_to_retain.len());
-                println!("todo:     {:?}", items_to_insert.len());
+                println!("remove:   {:?}", self.items_to_remove.len());
+                println!("retain:   {:?}", self.items_to_retain.len());
+                println!("todo:     {:?}", self.items_to_insert.len());
                 println!("todo_old: {:?}", q.todo.len());
                 println!("doing:    {:?}", q.doing.len());
                 println!("done:     {:?}", q.done.len());
 
-                let mut todo = items_to_insert;
-                todo.reverse();
-                q.todo = todo;
+                self.items_to_insert.reverse();
+                std::mem::swap(&mut q.todo, &mut self.items_to_insert);
+                self.items_to_insert.clear();
 
                 let mut new = TileMap::new();
-                for (p, t) in items_to_retain.into_iter() {
+                for (p, t) in self.items_to_retain.drain(..) {
                     new.insert(p, t);
                 }
 
@@ -224,7 +239,7 @@ impl Fractal {
                 }
 
                 // println!("removed {}", items_to_remove.len());
-                for (_, t) in items_to_remove.into_iter() {
+                for (_, t) in self.items_to_remove.drain(..) {
                     if let Some(r) = t.region {
                         self.atlas.remove(r);
                     }

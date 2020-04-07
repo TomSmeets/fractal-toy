@@ -133,7 +133,7 @@ impl Sdl {
     pub fn update(&mut self) {
         self.canvas.present();
         self.events = self.event.poll_iter().collect();
-        self.canvas.set_draw_color(Color::RGB(255, 0, 255));
+        self.canvas.set_draw_color(Color::RGB(0, 0, 0));
         self.canvas.clear();
     }
 
