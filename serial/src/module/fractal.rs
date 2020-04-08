@@ -11,10 +11,11 @@ pub mod tile;
 pub mod viewport;
 
 use self::atlas::Atlas;
+use self::atlas::AtlasRegion;
 use self::builder::queue::{TileQueue, WorkQueue};
 use self::builder::TileBuilder;
 use self::builder::{TileRequest, TileType};
-use self::tile::{TileContent, TilePos};
+use self::tile::TilePos;
 use self::viewport::Viewport;
 
 const TEXTURE_SIZE: usize = 64 * 2;
@@ -34,7 +35,7 @@ pub enum DragState {
 #[derive(Serialize, Deserialize)]
 pub struct Fractal {
     #[serde(skip)]
-    pub textures: Vec<(TileRequest, TileContent)>,
+    pub textures: Vec<(TileRequest, AtlasRegion)>,
     pub pos: Viewport,
     pub drag: DragState,
     pub atlas: Atlas,
@@ -57,7 +58,7 @@ pub struct Fractal {
     items_to_insert: Vec<TileRequest>,
 
     #[serde(skip)]
-    items_to_retain: Vec<(TileRequest, TileContent)>,
+    items_to_retain: Vec<(TileRequest, AtlasRegion)>,
 }
 
 impl Fractal {
@@ -187,9 +188,7 @@ impl Fractal {
                     match i {
                         ComparedValue::Left((_, t)) => {
                             // only in old_iter, remove value
-                            if let Some(r) = t.region {
-                                self.atlas.remove(r);
-                            }
+                            self.atlas.remove(t);
                         },
                         ComparedValue::Right(r) => {
                             // Only in new_iter: enqueue value
@@ -219,15 +218,12 @@ impl Fractal {
 
                 // TODO: add sorted done at beginning when iterating
                 // q.done.sort_unstable_by(|(r1, _), (r2, _)| r1.cmp(r2));
-                for (k, mut v) in q.done.drain(..) {
-                    assert!(v.region.is_none());
-
+                for (k, v) in q.done.drain(..) {
                     let atlas_region = self.atlas.alloc(sdl);
                     self.atlas.update(&atlas_region, &v.pixels);
-                    v.region = Some(atlas_region);
 
                     // TODO: what is faster sort or iter?
-                    self.items_to_retain.push((k, v));
+                    self.items_to_retain.push((k, atlas_region));
                 }
 
                 // This should use timsort and should be pretty fast for this usecase
@@ -253,19 +249,15 @@ impl Fractal {
         }
 
         // fast stuff
-        for (p, v) in self.textures.iter() {
+        for (p, atlas_region) in self.textures.iter() {
             let r = self.pos_to_rect(&p.pos);
 
-            if let Some(atlas_region) = &v.region {
-                // TODO: make rendering separate from sdl
-                sdl.canvas_copy(
-                    &self.atlas.texture[atlas_region.index.z as usize],
-                    Some(atlas_region.rect_padded().to_sdl()),
-                    Some(r),
-                );
-            } else {
-                panic!("without region!?");
-            }
+            // TODO: make rendering separate from sdl
+            sdl.canvas_copy(
+                &self.atlas.texture[atlas_region.index.z as usize],
+                Some(atlas_region.rect_padded().to_sdl()),
+                Some(r),
+            );
         }
 
         if self.debug {

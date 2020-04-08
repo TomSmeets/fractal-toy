@@ -45,10 +45,7 @@ fn worker(q: Arc<Mutex<TileQueue>>, quit: Arc<AtomicBool>) {
         let next: Option<TileRequest> = q.lock().unwrap().pop_todo();
         match next {
             Some(p) => {
-                let t = TileContent {
-                    pixels: super::super::cpu::build(p),
-                    region: None,
-                };
+                let t = TileContent::new(super::super::cpu::build(p));
                 q.lock().unwrap().push_done(p, t);
             },
             None => {

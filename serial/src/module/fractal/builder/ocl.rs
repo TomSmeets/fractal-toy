@@ -165,10 +165,7 @@ impl OCLWorker {
 
         dst_image.read(&mut img).enq().unwrap();
 
-        let t = TileContent {
-            pixels: img,
-            region: None,
-        };
+        let t = TileContent::new(img);
         Some(t)
     }
 
