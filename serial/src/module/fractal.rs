@@ -34,25 +34,22 @@ pub enum DragState {
 // multiple gen types, like threaded gen, etc
 #[derive(Serialize, Deserialize)]
 pub struct Fractal {
+    pos: Viewport,
+    atlas: Atlas,
     #[serde(skip)]
-    pub textures: Vec<(TileRequest, AtlasRegion)>,
-    pub pos: Viewport,
-    pub drag: DragState,
-    pub atlas: Atlas,
-    pub pause: bool,
-    pub debug: bool,
-
-    // TODO: move out into generic `tile builder` containing all implementations
+    textures: Vec<(TileRequest, AtlasRegion)>,
     #[serde(skip)]
-    pub tile_builder: Option<TileBuilder>,
-
+    queue: Arc<Mutex<TileQueue>>,
     #[serde(skip)]
-    pub queue: Arc<Mutex<TileQueue>>,
+    tile_builder: Option<TileBuilder>,
 
     pub iter: i32,
     pub kind: TileType,
 
-    pub frame_counter: u32,
+    pub pause: bool,
+    pub debug: bool,
+    drag: DragState,
+    frame_counter: u32,
 
     #[serde(skip)]
     items_to_insert: Vec<TileRequest>,
