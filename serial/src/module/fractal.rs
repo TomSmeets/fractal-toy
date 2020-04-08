@@ -116,12 +116,12 @@ impl Fractal {
         }
 
         if input.button(InputAction::F3).went_down() {
-            self.iter += 10;
+            self.iter += 40;
         }
 
         if input.button(InputAction::F4).went_down() {
-            self.iter -= 10;
-            self.iter = self.iter.max(0);
+            self.iter -= 40;
+            self.iter = self.iter.max(3);
         }
 
         if input.button(InputAction::F7).went_down() {
@@ -284,8 +284,8 @@ fn mk_rect(a: V2i, b: V2i) -> Rect {
     let max_x = a.x.max(b.x);
     let max_y = a.y.max(b.y);
 
-    let width = max_x - min_x;
-    let height = max_y - min_y;
+    let width  = max_x.wrapping_sub(min_x);
+    let height = max_y.wrapping_sub(min_y);
 
     Rect::new(min_x, min_y, width as u32, height as u32)
 }
