@@ -10,7 +10,7 @@ __kernel void add(write_only image2d_t image, float max_iter, double offset_x, d
     // -1 , 1
     c = zoom * c + (double2)(offset_x, offset_y);
 
-    double2 z = c;
+    double2 z = (double2)(0.0, 0.0);
 
     float n = 0.0f;
     double2 tmp;
@@ -18,15 +18,17 @@ __kernel void add(write_only image2d_t image, float max_iter, double offset_x, d
 
         @ALGORITHM@
 
-        if (z.x*z.x + z.y*z.y > 4.0) {
+        if (z.x*z.x + z.y*z.y > 64.0*64.0) {
             break;
         }
 
-        n += 1.0f;
+        n += @INC@;
     }
 
+    n += - log2(log2(z.x*z.x+z.y*z.y)) + 4.0;
+
     // convert to hsv
-    float hue = n / 32.0;
+    float hue = n / 64.0;
     float v   = n / max_iter;
     v *= v;
     v = 1.0f - v;

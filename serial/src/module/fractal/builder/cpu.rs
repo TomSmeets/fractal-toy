@@ -35,23 +35,23 @@ pub fn build(rq: TileRequest) -> Vec<u8> {
             }
         },
         TileType::Mandelbrot => {
-            draw_mandel(rq, &mut pixels, |mut z, c| {
+            draw_mandel(1.0, rq, &mut pixels, |mut z, c| {
                 z = cpx_sqr(z) + c;
                 z
             });
         },
         TileType::BurningShip => {
-            draw_mandel(rq, &mut pixels, |mut z, c| {
+            draw_mandel(1.0, rq, &mut pixels, |mut z, c| {
                 z = cpx_abs(z);
                 z = cpx_sqr(z) + c;
                 z
             });
         },
         TileType::ShipHybrid => {
-            draw_mandel(rq, &mut pixels, |mut z, c| {
+            draw_mandel(2.5, rq, &mut pixels, |mut z, c| {
+                z = cpx_cube(z) + c;
                 z = cpx_abs(z);
                 z = cpx_sqr(z) + c;
-                z = cpx_cube(z) + c;
                 z
             });
         },
@@ -59,7 +59,7 @@ pub fn build(rq: TileRequest) -> Vec<u8> {
     pixels
 }
 
-fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(rq: TileRequest, pixels: &mut [u8], f: F) {
+fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(inc: f64, rq: TileRequest, pixels: &mut [u8], f: F) {
     let [offset_x, offset_y, zoom] = rq.pos.to_f64_with_padding();
     let offset = Vector2::new(offset_x, offset_y);
 
@@ -78,13 +78,13 @@ fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(rq: TileRequest, pixels: &mut [u8], f
             // -1 , 1
             c0 = zoom * c0 + offset;
 
-            let itr = mandel(iterations, c0, f);
+            let itr = mandel(inc, iterations, c0, f);
 
             let mut v = itr * inv_iter;
             v *= v;
             v = 1. - v;
 
-            let rgb = hsv2rgb(itr as f64 / 32.0, v, v);
+            let rgb = hsv2rgb(itr as f64 / 64.0, v, v);
             let idx = x + y * TEXTURE_SIZE;
             unsafe {
                 *pixels.get_unchecked_mut(idx * 4 + 0) = 255;
@@ -123,20 +123,23 @@ fn cpx_abs(a: V2) -> V2 {
 
 // some cool algorithms
 // nice: ((|re| + |im|i)^2 + c)^3 + c
-fn mandel<F: Fn(V2, V2) -> V2>(max: u32, c: V2, f: F) -> f64 {
-    let mut z = c;
-    let mut n = 0;
+fn mandel<F: Fn(V2, V2) -> V2>(inc: f64, max: u32, c: V2, f: F) -> f64 {
+    let mut z = V2::zero();
+    let mut n = 0.0;
+    let max = max as f64;
     loop {
         z = f(z, c);
-        if n == max {
-            return max as f64;
+
+        if n >= max {
+            return max;
         }
 
-        if z.x * z.x + z.y * z.y > 4.0 {
-            return n as f64;
+        if z.x * z.x + z.y * z.y > 64.0 * 64.0 {
+            // mandel
+            return n as f64 - (z.x * z.x + z.y * z.y).log2().log2() + 4.0;
         }
 
-        n += 1;
+        n += inc;
     }
 }
 

@@ -68,15 +68,17 @@ impl OCLWorker {
         "#;
 
         let mut alg = String::new();
+        let mut inc = "1.0";
 
         match self.kind {
             TileType::Mandelbrot => {
                 alg.push_str(pow2);
             },
             TileType::ShipHybrid => {
+                alg.push_str(pow3);
                 alg.push_str(abs);
                 alg.push_str(pow2);
-                alg.push_str(pow3);
+                inc = "2.5";
             },
             TileType::BurningShip => {
                 alg.push_str(abs);
@@ -85,7 +87,9 @@ impl OCLWorker {
             TileType::Empty => {},
         }
 
-        let new_src = SOURCE_TEMPLATE.replace("@ALGORITHM@", &alg);
+        let new_src = SOURCE_TEMPLATE
+            .replace("@ALGORITHM@", &alg)
+            .replace("@INC@", inc);
 
         Program::builder()
             .src(new_src)
