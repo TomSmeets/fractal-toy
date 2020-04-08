@@ -79,6 +79,103 @@ impl Fractal {
         }
     }
 
+    pub fn update_tiles(&mut self, sdl: &mut Sdl) {
+        let mut q = match self.queue.try_lock() {
+            Err(_) => return,
+            Ok(q) => q,
+        };
+
+        // If we have two ordered lists of tile points
+        // We can iterate over both lists at the same time and produce three kinds.
+        //   drop:    elem(old) && !elem(new)
+        //   retain:  elem(old) &&  elem(new)
+        //   insert: !elem(old) &&  elem(new)
+        //
+        // to produce these lists we can do:
+        // if old.is_none => insert, new.next();
+        // if new.is_none => drop,   old.next();
+        // if new.is_none && old.is_none => break;
+        // if old < new  => remove, old.next()
+        // if old == new => retain, old.next(), new.next()
+        // if old > new  => insert, new.next(),
+        //
+        // oooooo
+        // oo......
+        // oo......
+        // oo......
+        //   ......
+        //
+        // xxxxxx
+        // xx....nn
+        // xx....nn
+        // xx....nn
+        //   nnnnnn
+
+        // items we rendered last frame
+        let old_iter = self.textures.drain(..);
+        // items we should render this frame
+        let iter = self.iter;
+        let kind = self.kind;
+        let new_iter = self.pos.get_pos_all().map(|pos| TileRequest {
+            pos,
+            iterations: iter,
+            kind,
+        });
+
+        assert!(self.items_to_insert.is_empty());
+        assert!(self.items_to_retain.is_empty());
+
+        let iter = CompareIter::new(old_iter, new_iter, |l, r| l.0.cmp(r));
+
+        for i in iter {
+            match i {
+                ComparedValue::Left((_, t)) => {
+                    // only in old_iter, remove value
+                    self.atlas.remove(t);
+                },
+                ComparedValue::Right(r) => {
+                    // Only in new_iter: enqueue value
+                    // TODO: subtract sorted iters instead of this if
+                    if !q.doing.contains(&r) && !q.done.iter().any(|x| x.0 == r) {
+                        self.items_to_insert.push(r)
+                    }
+                },
+                ComparedValue::Both(l, _) => {
+                    // this value should be retained, as it is in new_iter and old_iter
+                    self.items_to_retain.push(l)
+                },
+            }
+        }
+
+        println!("--- queue ---");
+        println!("retain:   {:?}", self.items_to_retain.len());
+        println!("todo:     {:?}", self.items_to_insert.len());
+        println!("todo_old: {:?}", q.todo.len());
+        println!("doing:    {:?}", q.doing.len());
+        println!("done:     {:?}", q.done.len());
+
+        // swap new and old todos
+        self.items_to_insert.reverse();
+        std::mem::swap(&mut q.todo, &mut self.items_to_insert);
+        self.items_to_insert.clear();
+
+        // TODO: add sorted done at beginning when iterating
+        // q.done.sort_unstable_by(|(r1, _), (r2, _)| r1.cmp(r2));
+        for (k, v) in q.done.drain(..) {
+            let atlas_region = self.atlas.alloc(sdl);
+            self.atlas.update(&atlas_region, &v.pixels);
+
+            // TODO: what is faster sort or iter?
+            self.items_to_retain.push((k, atlas_region));
+        }
+
+        // This should use timsort and should be pretty fast for this usecase
+        // Note that in this spesific case, the normal sort will probably be faster than
+        // the unstable sort TODO: profile :)
+        self.items_to_retain.sort_by(|(r1, _), (r2, _)| r1.cmp(r2));
+        std::mem::swap(&mut self.items_to_retain, &mut self.textures);
+    }
+
     pub fn update(&mut self, time: &Time, sdl: &mut Sdl, window: &Window, input: &Input) {
         self.frame_counter += 1;
 
@@ -133,122 +230,13 @@ impl Fractal {
             }
         }
 
-        // Tis doesn not have to happen every frame
         if !self.pause {
-            // it will be faster if we just iterate over two sorted lists.
-            // drop existing while existing != new
-            // if equal
-            if let Ok(mut q) = self.queue.try_lock() {
-                // If we have two ordered lists of tile points
-                // We can iterate over both lists at the same time and produce three kinds.
-                //   drop:    elem(old) && !elem(new)
-                //   retain:  elem(old) &&  elem(new)
-                //   insert: !elem(old) &&  elem(new)
-                //
-                // to produce these lists we can do:
-                // if old.is_none => insert, new.next();
-                // if new.is_none => drop,   old.next();
-                // if new.is_none && old.is_none => break;
-                // if old < new  => remove, old.next()
-                // if old == new => retain, old.next(), new.next()
-                // if old > new  => insert, new.next(),
-                //
-                // oooooo
-                // oo......
-                // oo......
-                // oo......
-                //   ......
-                //
-                // xxxxxx
-                // xx....nn
-                // xx....nn
-                // xx....nn
-                //   nnnnnn
-
-                // items we rendered last frame
-                let old_iter = self.textures.drain(..);
-                // items we should render this frame
-                let iter = self.iter;
-                let kind = self.kind;
-                let new_iter = self.pos.get_pos_all().map(|pos| TileRequest {
-                    pos,
-                    iterations: iter,
-                    kind,
-                });
-
-                assert!(self.items_to_insert.is_empty());
-                assert!(self.items_to_retain.is_empty());
-
-                let iter = CompareIter::new(old_iter, new_iter, |l, r| l.0.cmp(r));
-
-                for i in iter {
-                    match i {
-                        ComparedValue::Left((_, t)) => {
-                            // only in old_iter, remove value
-                            self.atlas.remove(t);
-                        },
-                        ComparedValue::Right(r) => {
-                            // Only in new_iter: enqueue value
-                            // TODO: subtract sorted iters instead of this if
-                            if !q.doing.contains(&r) && !q.done.iter().any(|x| x.0 == r) {
-                                self.items_to_insert.push(r)
-                            }
-                        },
-                        ComparedValue::Both(l, _) => {
-                            // this value should be retained, as it is in new_iter and old_iter
-                            self.items_to_retain.push(l)
-                        },
-                    }
-                }
-
-                println!("--- queue ---");
-                println!("retain:   {:?}", self.items_to_retain.len());
-                println!("todo:     {:?}", self.items_to_insert.len());
-                println!("todo_old: {:?}", q.todo.len());
-                println!("doing:    {:?}", q.doing.len());
-                println!("done:     {:?}", q.done.len());
-
-                // swap new and old todos
-                self.items_to_insert.reverse();
-                std::mem::swap(&mut q.todo, &mut self.items_to_insert);
-                self.items_to_insert.clear();
-
-                // TODO: add sorted done at beginning when iterating
-                // q.done.sort_unstable_by(|(r1, _), (r2, _)| r1.cmp(r2));
-                for (k, v) in q.done.drain(..) {
-                    let atlas_region = self.atlas.alloc(sdl);
-                    self.atlas.update(&atlas_region, &v.pixels);
-
-                    // TODO: what is faster sort or iter?
-                    self.items_to_retain.push((k, atlas_region));
-                }
-
-                // This should use timsort and should be pretty fast for this usecase
-                // Note that in this spesific case, the normal sort will probably be faster than
-                // the unstable sort TODO: profile :)
-                self.items_to_retain.sort_by(|(r1, _), (r2, _)| r1.cmp(r2));
-                std::mem::swap(&mut self.items_to_retain, &mut self.textures);
-            }
-
-            // if input.button(InputAction::Y).went_down() {
-            //     for (_, t) in self.textures.iter_mut() {
-            //         t.old = true;
-            //         if let Some(r) = t.region.take() {
-            //             self.atlas.remove(r);
-            //         }
-            //     }
-            //     self.atlas = Atlas::new(self.atlas.res);
-            // }
-
-            // remove tiles that we did not encounter
-            // self.textures.retain(|_, t| !t.old);
-            // println!("count: {}", self.textures.len());
+            self.update_tiles(sdl);
         }
 
-        // fast stuff
+        // draw stuff
         for (p, atlas_region) in self.textures.iter() {
             let r = self.pos_to_rect(&p.pos);
-
             // TODO: make rendering separate from sdl
             sdl.canvas_copy(
                 &self.atlas.texture[atlas_region.index.z as usize],
