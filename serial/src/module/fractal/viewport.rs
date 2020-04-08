@@ -119,14 +119,14 @@ impl Viewport {
         let px_size = self.pixel_scale();
         let tile_size = px_size * TEXTURE_SIZE as f64;
         let z_max = -tile_size.log2();
-        let z_max = z_max.max(0.0).ceil() as i8;
+        let z_max = z_max.max(0.0).ceil() as i32;
         let z_min = (z_max - 8).max(0);
 
         let pad = 1; // extra padding in poportion to tile size
         let off = self.offset;
         let s = 0.5 * px_size * self.size_in_pixels;
 
-        (z_min..z_max + 1).flat_map(move |z| {
+        (z_min as u8 ..z_max as u8  + 1).flat_map(move |z| {
             let min = TilePos::from_f64(off - s, z);
             let max = TilePos::from_f64(off + s, z);
             (min.x - pad..max.x + pad + 1)
