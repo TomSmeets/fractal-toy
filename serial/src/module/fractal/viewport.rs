@@ -126,7 +126,7 @@ impl Viewport {
         let off = self.offset;
         let s = 0.5 * px_size * self.size_in_pixels;
 
-        (z_min as u8 ..z_max as u8  + 1).flat_map(move |z| {
+        (z_min as u8..z_max as u8 + 1).flat_map(move |z| {
             let min = TilePos::from_f64(off - s, z);
             let max = TilePos::from_f64(off + s, z);
             (min.x - pad..max.x + pad + 1)
