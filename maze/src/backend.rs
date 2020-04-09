@@ -9,10 +9,13 @@ pub mod minimal;
 #[cfg(feature = "backend-fancy")]
 pub mod term;
 
+pub mod gl;
+
 arg_enum! {
     pub enum TermBackend {
         Fancy,
         Minimal,
+        GL,
     }
 }
 
@@ -43,6 +46,8 @@ pub fn run() {
 
         #[cfg(feature = "backend-fancy")]
         TermBackend::Fancy => self::term::run(cfg),
+
+        TermBackend::GL => self::gl::run(cfg),
 
         b => println!("backend '{}' is unsupported :(", b),
     }
