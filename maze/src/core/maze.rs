@@ -14,6 +14,10 @@ impl Maze {
         }
     }
 
+    pub fn size(&self) -> [i32; 2] {
+        [self.data.size_x, self.data.size_y]
+    }
+
     pub fn at(&self, p: (i32, i32)) -> Tile {
         self.data.at(p).map(|x| *x).unwrap_or(Tile::Undefined)
     }

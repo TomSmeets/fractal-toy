@@ -21,7 +21,7 @@ arg_enum! {
 
 #[derive(StructOpt)]
 pub struct Config {
-    #[structopt(short, long, default_value = "minimal")]
+    #[structopt(short, long, default_value = "gl")]
     #[structopt(possible_values = &TermBackend::variants(), case_insensitive = true)]
     backend: TermBackend,
 
