@@ -1,2 +1,0 @@
-For platform: winit + gl kind of works for wasm32, but it is alos kind of hard.
-concolusion: make own platform abastrication for py spesific purpose

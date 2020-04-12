@@ -1,2 +1,0 @@
-[target.emscripten]
-link-args = ["-s", "USE_SDL=2", "-s", "DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0"]
