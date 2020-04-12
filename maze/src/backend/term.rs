@@ -29,7 +29,7 @@ pub fn run(cfg: Config) {
         out.flush().unwrap();
         show(&gen.maze, out);
         write!(out, "{}", color::Bg(color::Blue)).unwrap();
-        for (x, y) in gen.queue.iter() {
+        for ((x, y), _) in gen.queue.iter() {
             write!(
                 out,
                 "{}  ",

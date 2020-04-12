@@ -88,7 +88,7 @@ pub fn run(cfg: Config) {
                 }
             }
 
-            for &(i, j) in gen.queue.iter() {
+            for &((i, j), _) in gen.queue.iter() {
                 let x = i as f32 * w;
                 let y = j as f32 * h;
                 imm.rect([x, y, w, h], [0.0, 0.0, 1.0]);
