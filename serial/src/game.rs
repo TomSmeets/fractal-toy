@@ -5,7 +5,6 @@ use crate::math::*;
 use crate::module::fractal::atlas::Atlas;
 use crate::module::fractal::atlas::AtlasRegion;
 use crate::module::fractal::atlas::AtlasTextureCreator;
-use crate::module::fractal::atlas::TileTextureProvider;
 
 // TODO: implemnt save and load, this will handle some types that dont work with
 // reload. For example the btreemap
@@ -19,6 +18,8 @@ pub struct State {
     pub input: Input,
 
     fractal: Fractal<AtlasRegion>,
+
+    #[serde(skip)]
     atlas: Atlas,
 }
 
@@ -47,7 +48,7 @@ impl State {
             window,
             input,
             fractal,
-            atlas: Atlas::new(crate::module::fractal::TEXTURE_SIZE as u32),
+            atlas: Atlas::new(),
         }
     }
 

@@ -5,20 +5,16 @@ use serde::{Deserialize, Serialize};
 
 pub const PADDING: u32 = 1;
 
-#[derive(Serialize, Deserialize)]
 pub struct Atlas {
     pub size: u32,
     pub res: u32,
-
-    #[serde(skip)]
     pub free: Vec<Vector3<u32>>,
-
-    #[serde(skip)]
     pub texture: Vec<Texture>,
 }
 
 impl Atlas {
-    pub fn new(res: u32) -> Atlas {
+    pub fn new() -> Atlas {
+        let res = super::TEXTURE_SIZE as u32;
         let size = 64 * 64 / res;
         Atlas {
             free: Vec::new(),
@@ -67,6 +63,12 @@ impl Atlas {
     pub fn remove(&mut self, mut r: AtlasRegion) {
         self.free.push(r.index);
         r.free = true;
+    }
+}
+
+impl Default for Atlas {
+    fn default() -> Self {
+        Atlas::new()
     }
 }
 
