@@ -88,6 +88,10 @@ impl OCLWorker {
         }
 
         let new_src = SOURCE_TEMPLATE
+            .replace(
+                "@TEXTURE_SIZE@",
+                &format!("{}.0", super::super::TEXTURE_SIZE),
+            )
             .replace("@ALGORITHM@", &alg)
             .replace("@INC@", inc);
 

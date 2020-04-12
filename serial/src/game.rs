@@ -17,7 +17,8 @@ pub struct State {
     window: Window,
     #[serde(skip)]
     pub input: Input,
-    fractal: Fractal<AtlasTextureCreator>>,
+
+    fractal: Fractal<AtlasRegion>,
     atlas: Atlas,
 }
 

@@ -138,7 +138,7 @@ pub struct AtlasTextureCreator<'a> {
     pub sdl: &'a mut Sdl,
 }
 
-impl TileTextureProvider for AtlasTextureCreator<'a> {
+impl<'a> TileTextureProvider for AtlasTextureCreator<'a> {
     type Texture = AtlasRegion;
 
     fn alloc(&mut self, pixels_rgba: &[u8]) -> Self::Texture {

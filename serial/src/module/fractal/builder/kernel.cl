@@ -1,6 +1,6 @@
 __kernel void add(write_only image2d_t image, float max_iter, double offset_x, double offset_y, double zoom) {
     int2 coord = (int2)(get_global_id(0), get_global_id(1));
-    double2 image_pos = (double2)((double) coord.x / 128.0, (double) coord.y / 128.0);
+    double2 image_pos = (double2)((double) coord.x, (double) coord.y) / @TEXTURE_SIZE@;
 
     double2 c = ((double2)((double) image_pos.x, (double) image_pos.y));
 

@@ -1,6 +1,6 @@
 use crate::iter::compare::{CompareIter, ComparedValue};
 use crate::math::*;
-use crate::module::{input::InputAction, Input, Sdl, Time, Window};
+use crate::module::{input::InputAction, Input, Time, Window};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
@@ -9,8 +9,6 @@ pub mod builder;
 pub mod tile;
 pub mod viewport;
 
-use self::atlas::AtlasRegion;
-use self::atlas::AtlasTextureCreator;
 use self::atlas::TileTextureProvider;
 use self::builder::queue::{TileQueue, WorkQueue};
 use self::builder::TileBuilder;
@@ -33,12 +31,18 @@ pub enum DragState {
 // directly Queried should be removed. what data structure is best for this?
 // multiple gen types, like threaded gen, etc
 #[derive(Serialize, Deserialize)]
-pub struct Fractal<T: TileTextureProvider> {
+pub struct Fractal<T> {
     pos: Viewport,
+
+    // this uses a workaround to prevent incorrect `T: Default` bounds.
+    // see: https://github.com/serde-rs/serde/issues/1541
     #[serde(skip)]
-    textures: Vec<(TileRequest, T::Texture)>,
+    #[serde(default = "Default::default")]
+    textures: Vec<(TileRequest, T)>,
+
     #[serde(skip)]
     queue: Arc<Mutex<TileQueue>>,
+
     #[serde(skip)]
     tile_builder: Option<TileBuilder>,
 
@@ -54,10 +58,11 @@ pub struct Fractal<T: TileTextureProvider> {
     items_to_insert: Vec<TileRequest>,
 
     #[serde(skip)]
-    items_to_retain: Vec<(TileRequest, T::Texture)>,
+    #[serde(default = "Default::default")]
+    items_to_retain: Vec<(TileRequest, T)>,
 }
 
-impl<T: TileTextureProvider> Fractal<T> {
+impl<T> Fractal<T> {
     pub fn new() -> Self {
         Fractal {
             textures: Vec::new(),
@@ -77,7 +82,7 @@ impl<T: TileTextureProvider> Fractal<T> {
         }
     }
 
-    pub fn update_tiles(&mut self, texture_creator: &mut T) {
+    pub fn update_tiles(&mut self, texture_creator: &mut impl TileTextureProvider<Texture = T>) {
         let mut q = match self.queue.try_lock() {
             Err(_) => return,
             Ok(q) => q,
@@ -174,7 +179,7 @@ impl<T: TileTextureProvider> Fractal<T> {
 
     pub fn update(
         &mut self,
-        texture_provider: &mut T,
+        texture_provider: &mut impl TileTextureProvider<Texture = T>,
         time: &Time,
         window: &Window,
         input: &Input,
@@ -270,8 +275,8 @@ fn mk_rect(a: V2i, b: V2i) -> Rect {
     }
 }
 
-impl<T: TileTextureProvider> Default for Fractal<T> {
-    fn default() -> Fractal {
+impl<T> Default for Fractal<T> {
+    fn default() -> Self {
         Fractal::new()
     }
 }
