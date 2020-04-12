@@ -124,3 +124,38 @@ impl Drop for AtlasRegion {
         // assert!(self.free);
     }
 }
+
+pub trait TileTextureProvider {
+    type Texture;
+
+    fn alloc(&mut self, pixels_rgba: &[u8]) -> Self::Texture;
+    fn free(&mut self, texture: Self::Texture);
+    fn draw(&mut self, texture: &Self::Texture, to: Rect);
+}
+
+pub struct AtlasTextureCreator<'a> {
+    pub atlas: &'a mut Atlas,
+    pub sdl: &'a mut Sdl,
+}
+
+impl TileTextureProvider for AtlasTextureCreator<'a> {
+    type Texture = AtlasRegion;
+
+    fn alloc(&mut self, pixels_rgba: &[u8]) -> Self::Texture {
+        let t = self.atlas.alloc(self.sdl);
+        self.atlas.update(&t, pixels_rgba);
+        t
+    }
+
+    fn free(&mut self, texture: Self::Texture) {
+        self.atlas.remove(texture);
+    }
+
+    fn draw(&mut self, texture: &Self::Texture, to: Rect) {
+        self.sdl.canvas_copy(
+            &self.atlas.texture[texture.index.z as usize],
+            Some(texture.rect_padded().to_sdl()),
+            Some(to.to_sdl()),
+        );
+    }
+}

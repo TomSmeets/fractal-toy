@@ -8,6 +8,13 @@ pub struct Rect {
 }
 
 impl Rect {
+    pub fn new(x: i32, y: i32, w: i32, h: i32) -> Self {
+        Rect {
+            pos: V2i::new(x, y),
+            size: V2i::new(w, h),
+        }
+    }
+
     pub fn is_inside(&self, p: V2i) -> bool {
         p.x >= self.pos.x
             && p.y >= self.pos.y

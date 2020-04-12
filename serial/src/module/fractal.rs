@@ -1,7 +1,6 @@
 use crate::iter::compare::{CompareIter, ComparedValue};
 use crate::math::*;
 use crate::module::{input::InputAction, Input, Sdl, Time, Window};
-use sdl2::rect::Rect;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
@@ -10,15 +9,16 @@ pub mod builder;
 pub mod tile;
 pub mod viewport;
 
-use self::atlas::Atlas;
 use self::atlas::AtlasRegion;
+use self::atlas::AtlasTextureCreator;
+use self::atlas::TileTextureProvider;
 use self::builder::queue::{TileQueue, WorkQueue};
 use self::builder::TileBuilder;
 use self::builder::{TileRequest, TileType};
 use self::tile::TilePos;
 use self::viewport::Viewport;
 
-const TEXTURE_SIZE: usize = 64 * 2;
+pub const TEXTURE_SIZE: usize = 64 * 2;
 
 #[derive(Serialize, Deserialize)]
 pub enum DragState {
@@ -33,11 +33,10 @@ pub enum DragState {
 // directly Queried should be removed. what data structure is best for this?
 // multiple gen types, like threaded gen, etc
 #[derive(Serialize, Deserialize)]
-pub struct Fractal {
+pub struct Fractal<T: TileTextureProvider> {
     pos: Viewport,
-    atlas: Atlas,
     #[serde(skip)]
-    textures: Vec<(TileRequest, AtlasRegion)>,
+    textures: Vec<(TileRequest, T::Texture)>,
     #[serde(skip)]
     queue: Arc<Mutex<TileQueue>>,
     #[serde(skip)]
@@ -55,16 +54,15 @@ pub struct Fractal {
     items_to_insert: Vec<TileRequest>,
 
     #[serde(skip)]
-    items_to_retain: Vec<(TileRequest, AtlasRegion)>,
+    items_to_retain: Vec<(TileRequest, T::Texture)>,
 }
 
-impl Fractal {
+impl<T: TileTextureProvider> Fractal<T> {
     pub fn new() -> Self {
         Fractal {
             textures: Vec::new(),
             pos: Viewport::new(Vector2::new(800, 600)),
             drag: DragState::None,
-            atlas: Atlas::new(TEXTURE_SIZE as u32),
             pause: false,
             debug: false,
             tile_builder: None,
@@ -79,7 +77,7 @@ impl Fractal {
         }
     }
 
-    pub fn update_tiles(&mut self, sdl: &mut Sdl) {
+    pub fn update_tiles(&mut self, texture_creator: &mut T) {
         let mut q = match self.queue.try_lock() {
             Err(_) => return,
             Ok(q) => q,
@@ -131,7 +129,7 @@ impl Fractal {
             match i {
                 ComparedValue::Left((_, t)) => {
                     // only in old_iter, remove value
-                    self.atlas.remove(t);
+                    texture_creator.free(t);
                 },
                 ComparedValue::Right(r) => {
                     // Only in new_iter: enqueue value
@@ -162,9 +160,7 @@ impl Fractal {
         // TODO: add sorted done at beginning when iterating
         // q.done.sort_unstable_by(|(r1, _), (r2, _)| r1.cmp(r2));
         for (k, v) in q.done.drain(..) {
-            let atlas_region = self.atlas.alloc(sdl);
-            self.atlas.update(&atlas_region, &v.pixels);
-
+            let atlas_region = texture_creator.alloc(&v.pixels);
             // TODO: what is faster sort or iter?
             self.items_to_retain.push((k, atlas_region));
         }
@@ -176,7 +172,13 @@ impl Fractal {
         std::mem::swap(&mut self.items_to_retain, &mut self.textures);
     }
 
-    pub fn update(&mut self, time: &Time, sdl: &mut Sdl, window: &Window, input: &Input) {
+    pub fn update(
+        &mut self,
+        texture_provider: &mut T,
+        time: &Time,
+        window: &Window,
+        input: &Input,
+    ) {
         self.frame_counter += 1;
 
         self.pos.resize(window.size);
@@ -231,27 +233,14 @@ impl Fractal {
         }
 
         if !self.pause {
-            self.update_tiles(sdl);
+            self.update_tiles(texture_provider);
         }
 
         // draw stuff
         for (p, atlas_region) in self.textures.iter() {
             let r = self.pos_to_rect(&p.pos);
             // TODO: make rendering separate from sdl
-            sdl.canvas_copy(
-                &self.atlas.texture[atlas_region.index.z as usize],
-                Some(atlas_region.rect_padded().to_sdl()),
-                Some(r),
-            );
-        }
-
-        if self.debug {
-            // Show atlas
-            // TODO: show in ui window
-            let w = window.size.x / self.atlas.texture.len().max(4) as u32;
-            for (i, t) in self.atlas.texture.iter().enumerate() {
-                sdl.canvas_copy(t, None, Some(Rect::new(i as i32 * w as i32, 0, w, w)));
-            }
+            texture_provider.draw(atlas_region, r);
         }
     }
 
@@ -275,10 +264,13 @@ fn mk_rect(a: V2i, b: V2i) -> Rect {
     let width = max_x.saturating_sub(min_x);
     let height = max_y.saturating_sub(min_y);
 
-    Rect::new(min_x, min_y, width as u32, height as u32)
+    Rect {
+        pos: V2i::new(min_x, min_y),
+        size: V2i::new(width, height),
+    }
 }
 
-impl Default for Fractal {
+impl<T: TileTextureProvider> Default for Fractal<T> {
     fn default() -> Fractal {
         Fractal::new()
     }
