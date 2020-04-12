@@ -16,19 +16,23 @@ pub struct Vertex {
 pub struct GfxImmState {
     gl_vao: GLuint,
     gl_verts: GLuint,
+    gl_elems: GLuint,
 
     shader: ShaderProgram,
 
     vertex: Vec<Vertex>,
+    index: Vec<u32>,
 }
 
 impl GfxImmState {
     pub fn new(gl: &Gl) -> Self {
         let mut gl_vao = 0;
         let mut gl_verts = 0;
+        let mut gl_elems = 0;
         unsafe {
             gl.GenVertexArrays(1, &mut gl_vao);
             gl.GenBuffers(1, &mut gl_verts);
+            gl.GenBuffers(1, &mut gl_elems);
         }
 
         let vert = include_str!("main.vert");
@@ -41,13 +45,23 @@ impl GfxImmState {
         GfxImmState {
             gl_vao,
             gl_verts,
+            gl_elems,
             shader,
             vertex: Vec::new(),
+            index: Vec::new(),
         }
     }
 
-    pub fn push(&mut self, v: Vertex) {
+    pub fn push(&mut self, v: Vertex) -> u32 {
+        let i = self.vertex.len();
         self.vertex.push(v);
+        i as u32
+    }
+
+    pub fn push_tri(&mut self, i: u32, j: u32, k: u32) {
+        self.index.push(i);
+        self.index.push(j);
+        self.index.push(k);
     }
 
     pub fn rect(&mut self, rect: [f32; 4], col: [f32; 3]) {
@@ -55,29 +69,17 @@ impl GfxImmState {
         let ly = rect[1];
         let hx = lx + rect[2];
         let hy = ly + rect[3];
-        self.push(Vertex { pos: [lx, ly], col });
-        self.push(Vertex { pos: [hx, hy], col });
-        self.push(Vertex { pos: [lx, hy], col });
 
-        self.push(Vertex { pos: [lx, ly], col });
-        self.push(Vertex { pos: [hx, ly], col });
-        self.push(Vertex { pos: [hx, hy], col });
+        let ll = self.push(Vertex { pos: [lx, ly], col });
+        let hh = self.push(Vertex { pos: [hx, hy], col });
+        let lh = self.push(Vertex { pos: [lx, hy], col });
+        let hl = self.push(Vertex { pos: [hx, ly], col });
+
+        self.push_tri(ll, hh, lh);
+        self.push_tri(ll, hl, hh);
     }
 
     pub fn draw(&mut self, gl: &Gl) {
-        // self.push(Vertex {
-        //     pos: [0.0, 1.0],
-        //     col: [1.0, 0.0, 0.0],
-        // });
-        // self.push(Vertex {
-        //     pos: [-1.0, -1.0],
-        //     col: [0.0, 1.0, 0.0],
-        // });
-        // self.push(Vertex {
-        //     pos: [1.0, -1.0],
-        //     col: [0.0, 0.0, 1.0],
-        // });
-
         self.shader.use_program(gl);
         unsafe {
             if true {
@@ -92,6 +94,14 @@ impl GfxImmState {
                 gl::ARRAY_BUFFER,
                 (self.vertex.len() * std::mem::size_of::<Vertex>()) as isize,
                 self.vertex.as_ptr() as _,
+                gl::DYNAMIC_DRAW,
+            );
+
+            gl.BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.gl_elems);
+            gl.BufferData(
+                gl::ELEMENT_ARRAY_BUFFER,
+                (self.index.len() * std::mem::size_of::<u32>()) as isize,
+                self.index.as_ptr() as _,
                 gl::DYNAMIC_DRAW,
             );
 
@@ -115,10 +125,17 @@ impl GfxImmState {
             gl.EnableVertexAttribArray(self.shader.attr.col as _);
 
             // glBindTexture(GL_TEXTURE_2D, g_gl.texture);
-            gl.DrawArrays(gl::TRIANGLES, 0, self.vertex.len() as i32);
+            // gl.DrawArrays(gl::TRIANGLES, 0, self.vertex.len() as i32);
+            gl.DrawElements(
+                gl::TRIANGLES,
+                self.index.len() as i32,
+                gl::UNSIGNED_INT,
+                0 as _,
+            );
         }
 
         self.vertex.clear();
+        self.index.clear();
     }
 }
 
@@ -128,6 +145,7 @@ impl Drop for GfxImmState {
             let gl = super::GL.as_ref().unwrap();
             gl.DeleteVertexArrays(1, &self.gl_vao);
             gl.DeleteBuffers(1, &self.gl_verts);
+            gl.DeleteBuffers(1, &self.gl_elems);
         }
     }
 }
