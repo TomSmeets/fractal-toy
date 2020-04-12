@@ -24,10 +24,12 @@ impl Connection {
     }
 
     pub fn write(&mut self, data: &[u8]) {
+        self.conn.set_nonblocking(false).unwrap();
         self.conn.write_all(data).unwrap();
     }
 
     pub fn read(&mut self, data: &mut [u8]) -> Option<usize> {
+        self.conn.set_nonblocking(true).unwrap();
         match self.conn.read(data) {
             Ok(0) => None,
             Ok(n) => Some(n),

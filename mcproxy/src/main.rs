@@ -29,19 +29,19 @@ fn main() {
     let mut srv = Connection::server("127.0.0.1:25566");
     let mut out = Connection::client("127.0.0.1:25565");
 
-    let mut buffer = vec![0; 64 * 1024 * 1024];
+    let mut buffer = vec![0; 1024 * 1024];
     loop {
-        println!("loop: cli -> srv");
         if let Some(n) = srv.read(&mut buffer) {
             let buffer = &mut buffer[0..n];
+            println!("loop: cli -> srv");
             hexdump(&buffer);
             out.write(&buffer);
             println!("Done");
         }
 
-        println!("loop: cli <- srv");
         if let Some(n) = out.read(&mut buffer) {
             let buffer = &mut buffer[0..n];
+            println!("loop: cli <- srv");
             hexdump(&buffer);
             srv.write(&buffer);
             println!("Done");
