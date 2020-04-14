@@ -1,3 +1,4 @@
+use super::TileTextureProvider;
 use crate::math::*;
 use crate::module::Sdl;
 use sdl2::render::Texture;
@@ -125,14 +126,6 @@ impl Drop for AtlasRegion {
         // TODO: somehow this triggers sometimes
         // assert!(self.free);
     }
-}
-
-pub trait TileTextureProvider {
-    type Texture;
-
-    fn alloc(&mut self, pixels_rgba: &[u8]) -> Self::Texture;
-    fn free(&mut self, texture: Self::Texture);
-    fn draw(&mut self, texture: &Self::Texture, to: Rect);
 }
 
 pub struct AtlasTextureCreator<'a> {

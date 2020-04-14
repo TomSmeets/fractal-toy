@@ -9,7 +9,6 @@ pub mod builder;
 pub mod tile;
 pub mod viewport;
 
-use self::atlas::TileTextureProvider;
 use self::builder::queue::{TileQueue, WorkQueue};
 use self::builder::TileBuilder;
 use self::builder::{TileRequest, TileType};
@@ -22,6 +21,14 @@ pub const TEXTURE_SIZE: usize = 64 * 2;
 pub enum DragState {
     None,
     From(V2i),
+}
+
+pub trait TileTextureProvider {
+    type Texture;
+
+    fn alloc(&mut self, pixels_rgba: &[u8]) -> Self::Texture;
+    fn free(&mut self, texture: Self::Texture);
+    fn draw(&mut self, texture: &Self::Texture, to: Rect);
 }
 
 // pos -> pixels | atlas
