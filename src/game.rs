@@ -6,8 +6,6 @@ use crate::module::atlas::Atlas;
 use crate::module::atlas::AtlasRegion;
 use crate::module::atlas::AtlasTextureCreator;
 
-// TODO: implemnt save and load, this will handle some types that dont work with
-// reload. For example the btreemap
 #[derive(Serialize, Deserialize)]
 pub struct State {
     time: Time,

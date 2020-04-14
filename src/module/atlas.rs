@@ -124,7 +124,7 @@ impl AtlasRegion {
 
 impl Drop for AtlasRegion {
     fn drop(&mut self) {
-        // TODO: somehow this triggers sometimes
+        // self.free should be true, however not when dropping the entire struct by serializing to disk
         // assert!(self.free);
     }
 }

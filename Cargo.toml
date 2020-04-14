@@ -16,6 +16,8 @@ static = [ "sdl2/static-link", "sdl2/bundled" ]
 # TODO: it might be time to move away from sdl2
 # lets stay away from vulkan for now.
 # glium + glutin + gilrs seems to work ok
+# better: seperate into library parts that don't depend on any backend
+# then implement the backend stuff directly in opengl,vulkan,webgl, etc
 [dependencies]
 serde      = { version =  "1.0", features = [ "derive", "rc" ] }
 serde_json = "1.0"

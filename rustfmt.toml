@@ -9,5 +9,5 @@ reorder_impl_items = true
 use_field_init_shorthand = true
 use_small_heuristics = "Default"
 use_try_shorthand = true
-wrap_comments = true
+wrap_comments = false
 merge_imports = false

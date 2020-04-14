@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 // TODO: Do something with padding,
 // either make it always standard or only atlas specific
+// preferably make padding optional, but it might be to hard
 use crate::module::atlas::PADDING;
 use crate::module::fractal::TEXTURE_SIZE;
 

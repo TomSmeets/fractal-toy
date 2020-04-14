@@ -30,12 +30,6 @@ pub trait TileTextureProvider {
     fn draw(&mut self, texture: &Self::Texture, to: Rect);
 }
 
-// pos -> pixels | atlas
-// queue: [TilePos]
-// done:  [Pos, Content]
-// TODO: Queried tiles should be exactly those displayed. All tiles that are not
-// directly Queried should be removed. what data structure is best for this?
-// multiple gen types, like threaded gen, etc
 #[derive(Serialize, Deserialize)]
 pub struct Fractal<T> {
     // state
@@ -242,12 +236,11 @@ impl<T> Fractal<T> {
         }
 
         // draw stuff
-        // TODO: drawing could also be offloded to the implementation
+        // TODO: drawing could also be entirely offloded to the implementation
         // because this is a very simple drawing loop, all tiles are drawn
         // also debug stuff should not be part of this type
         for (p, tile) in self.tiles.iter() {
             let r = self.pos_to_rect(&p.pos);
-            // TODO: make rendering separate from sdl
             texture_provider.draw(tile, r);
         }
     }
