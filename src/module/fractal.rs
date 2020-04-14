@@ -162,9 +162,9 @@ impl<T> Fractal<T> {
         // TODO: add sorted done at beginning when iterating
         // q.done.sort_unstable_by(|(r1, _), (r2, _)| r1.cmp(r2));
         for (k, v) in q.done.drain(..) {
-            let atlas_region = texture_creator.alloc(&v.pixels);
+            let tile = texture_creator.alloc(&v.pixels);
             // TODO: what is faster sort or iter?
-            self.next_frame_tiles.push((k, atlas_region));
+            self.next_frame_tiles.push((k, tile));
         }
 
         // This should use timsort and should be pretty fast for this usecase
@@ -242,10 +242,13 @@ impl<T> Fractal<T> {
         }
 
         // draw stuff
-        for (p, atlas_region) in self.tiles.iter() {
+        // TODO: drawing could also be offloded to the implementation
+        // because this is a very simple drawing loop, all tiles are drawn
+        // also debug stuff should not be part of this type
+        for (p, tile) in self.tiles.iter() {
             let r = self.pos_to_rect(&p.pos);
             // TODO: make rendering separate from sdl
-            texture_provider.draw(atlas_region, r);
+            texture_provider.draw(tile, r);
         }
     }
 
