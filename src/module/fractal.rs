@@ -32,36 +32,38 @@ pub enum DragState {
 // multiple gen types, like threaded gen, etc
 #[derive(Serialize, Deserialize)]
 pub struct Fractal<T> {
+    // state
     pos: Viewport,
+    pub iter: i32,
+    pub kind: TileType,
+
+    // Input stuff
+    pub pause: bool,
+    pub debug: bool,
+    drag: DragState,
 
     // this uses a workaround to prevent incorrect `T: Default` bounds.
     // see: https://github.com/serde-rs/serde/issues/1541
     #[serde(skip)]
     #[serde(default = "Default::default")]
-    textures: Vec<(TileRequest, T)>,
+    tiles: Vec<(TileRequest, T)>,
+
+    // this temporary storage for when updating tiles
+    // stored to prevent reallocations
+    #[serde(skip)]
+    #[serde(default = "Default::default")]
+    next_frame_tiles: Vec<(TileRequest, T)>,
 
     #[serde(skip)]
     queue: Arc<Mutex<TileQueue>>,
-
     #[serde(skip)]
     tile_builder: Option<TileBuilder>,
-
-    pub iter: i32,
-    pub kind: TileType,
-
-    pub pause: bool,
-    pub debug: bool,
-    drag: DragState,
-
-    #[serde(skip)]
-    #[serde(default = "Default::default")]
-    items_to_retain: Vec<(TileRequest, T)>,
 }
 
 impl<T> Fractal<T> {
     pub fn new() -> Self {
         Fractal {
-            textures: Vec::new(),
+            tiles: Vec::new(),
             pos: Viewport::new(Vector2::new(800, 600)),
             drag: DragState::None,
             pause: false,
@@ -72,7 +74,7 @@ impl<T> Fractal<T> {
             iter: 64,
             kind: TileType::Mandelbrot,
 
-            items_to_retain: Vec::new(),
+            next_frame_tiles: Vec::new(),
         }
     }
 
@@ -109,7 +111,7 @@ impl<T> Fractal<T> {
         //   nnnnnn
 
         // items we rendered last frame
-        let old_iter = self.textures.drain(..);
+        let old_iter = self.tiles.drain(..);
         // items we should render this frame
         let iter = self.iter;
         let kind = self.kind;
@@ -119,7 +121,7 @@ impl<T> Fractal<T> {
             kind,
         });
 
-        assert!(self.items_to_retain.is_empty());
+        assert!(self.next_frame_tiles.is_empty());
 
         let iter = CompareIter::new(old_iter, new_iter, |l, r| l.0.cmp(r));
 
@@ -139,14 +141,14 @@ impl<T> Fractal<T> {
                 },
                 ComparedValue::Both(l, _) => {
                     // this value should be retained, as it is in new_iter and old_iter
-                    self.items_to_retain.push(l)
+                    self.next_frame_tiles.push(l)
                 },
             }
         }
         q.todo.reverse();
 
         println!("--- queue ---");
-        println!("retain:   {:?}", self.items_to_retain.len());
+        println!("retain:   {:?}", self.next_frame_tiles.len());
         println!("todo: {:?}", q.todo.len());
         println!("doing:    {:?}", q.doing.len());
         println!("done:     {:?}", q.done.len());
@@ -156,14 +158,14 @@ impl<T> Fractal<T> {
         for (k, v) in q.done.drain(..) {
             let atlas_region = texture_creator.alloc(&v.pixels);
             // TODO: what is faster sort or iter?
-            self.items_to_retain.push((k, atlas_region));
+            self.next_frame_tiles.push((k, atlas_region));
         }
 
         // This should use timsort and should be pretty fast for this usecase
         // Note that in this spesific case, the normal sort will probably be faster than
         // the unstable sort TODO: profile :)
-        self.items_to_retain.sort_by(|(r1, _), (r2, _)| r1.cmp(r2));
-        std::mem::swap(&mut self.items_to_retain, &mut self.textures);
+        self.next_frame_tiles.sort_by(|(r1, _), (r2, _)| r1.cmp(r2));
+        std::mem::swap(&mut self.next_frame_tiles, &mut self.tiles);
     }
 
     pub fn do_input(&mut self, input: &Input, time: &Time) {
@@ -234,7 +236,7 @@ impl<T> Fractal<T> {
         }
 
         // draw stuff
-        for (p, atlas_region) in self.textures.iter() {
+        for (p, atlas_region) in self.tiles.iter() {
             let r = self.pos_to_rect(&p.pos);
             // TODO: make rendering separate from sdl
             texture_provider.draw(atlas_region, r);
