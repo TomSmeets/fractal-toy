@@ -82,7 +82,7 @@ impl<T> Fractal<T> {
         }
     }
 
-    pub fn update_tiles(&mut self, texture_creator: &mut impl TileTextureProvider<Texture = T>) {
+    fn update_tiles(&mut self, texture_creator: &mut impl TileTextureProvider<Texture = T>) {
         let mut q = match self.queue.try_lock() {
             Err(_) => return,
             Ok(q) => q,
@@ -177,17 +177,7 @@ impl<T> Fractal<T> {
         std::mem::swap(&mut self.items_to_retain, &mut self.textures);
     }
 
-    pub fn update(
-        &mut self,
-        texture_provider: &mut impl TileTextureProvider<Texture = T>,
-        time: &Time,
-        window: &Window,
-        input: &Input,
-    ) {
-        self.frame_counter += 1;
-
-        self.pos.resize(window.size);
-
+    pub fn do_input(&mut self, input: &Input, time: &Time) {
         self.pos.zoom_in_at(0.3 * input.scroll as f64, input.mouse);
         self.pos.translate({
             let mut p = time.dt as f64 * input.dir_move * 2.0 * self.pos.size_in_pixels.x;
@@ -195,10 +185,6 @@ impl<T> Fractal<T> {
             to_v2i(p)
         });
         self.pos.zoom_in(time.dt as f64 * input.dir_look.y * 3.5);
-
-        if self.tile_builder.is_none() {
-            self.tile_builder = Some(TileBuilder::new(Arc::clone(&self.queue)));
-        }
 
         if let DragState::From(p1) = self.drag {
             self.pos.translate(p1 - input.mouse);
@@ -236,6 +222,25 @@ impl<T> Fractal<T> {
                 TileType::ShipHybrid => TileType::Empty,
             }
         }
+    }
+
+    pub fn update(
+        &mut self,
+        texture_provider: &mut impl TileTextureProvider<Texture = T>,
+        time: &Time,
+        window: &Window,
+        input: &Input,
+    ) {
+        // This recreates tile builders when entire struct is deserialized
+        if self.tile_builder.is_none() {
+            self.tile_builder = Some(TileBuilder::new(Arc::clone(&self.queue)));
+        }
+
+        self.frame_counter += 1;
+
+        self.pos.resize(window.size);
+
+        self.do_input(input, time);
 
         if !self.pause {
             self.update_tiles(texture_provider);
