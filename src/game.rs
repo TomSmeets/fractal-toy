@@ -2,9 +2,9 @@ use crate::module::{input::InputAction, Fractal, Input, Sdl, Time, Window};
 use serde::{Deserialize, Serialize};
 
 use crate::math::*;
-use crate::module::fractal::atlas::Atlas;
-use crate::module::fractal::atlas::AtlasRegion;
-use crate::module::fractal::atlas::AtlasTextureCreator;
+use crate::module::atlas::Atlas;
+use crate::module::atlas::AtlasRegion;
+use crate::module::atlas::AtlasTextureCreator;
 
 // TODO: implemnt save and load, this will handle some types that dont work with
 // reload. For example the btreemap

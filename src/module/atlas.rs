@@ -1,5 +1,6 @@
-use super::TileTextureProvider;
 use crate::math::*;
+use crate::module::fractal::TileTextureProvider;
+use crate::module::fractal::TEXTURE_SIZE;
 use crate::module::Sdl;
 use sdl2::render::Texture;
 use serde::{Deserialize, Serialize};
@@ -15,7 +16,7 @@ pub struct Atlas {
 
 impl Atlas {
     pub fn new() -> Atlas {
-        let res = super::TEXTURE_SIZE as u32;
+        let res = TEXTURE_SIZE as u32;
         let size = 64 * 64 / res;
         Atlas {
             free: Vec::new(),

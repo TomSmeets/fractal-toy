@@ -1,3 +1,4 @@
+pub mod atlas;
 pub mod fractal;
 pub mod input;
 pub mod sdl;

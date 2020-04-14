@@ -1,7 +1,10 @@
 use crate::math::*;
 use serde::{Deserialize, Serialize};
 
-use crate::module::fractal::{atlas::PADDING, TEXTURE_SIZE};
+// TODO: Do something with padding,
+// either make it always standard or only atlas specific
+use crate::module::atlas::PADDING;
+use crate::module::fractal::TEXTURE_SIZE;
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Serialize, Deserialize, Debug)]
 pub struct TilePos {

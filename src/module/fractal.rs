@@ -4,7 +4,6 @@ use crate::module::{input::InputAction, Input, Time, Window};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
-pub mod atlas;
 pub mod builder;
 pub mod tile;
 pub mod viewport;
