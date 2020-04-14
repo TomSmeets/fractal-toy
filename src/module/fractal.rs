@@ -52,10 +52,6 @@ pub struct Fractal<T> {
     pub pause: bool,
     pub debug: bool,
     drag: DragState,
-    frame_counter: u32,
-
-    #[serde(skip)]
-    items_to_insert: Vec<TileRequest>,
 
     #[serde(skip)]
     #[serde(default = "Default::default")]
@@ -75,9 +71,7 @@ impl<T> Fractal<T> {
 
             iter: 64,
             kind: TileType::Mandelbrot,
-            frame_counter: 0,
 
-            items_to_insert: Vec::new(),
             items_to_retain: Vec::new(),
         }
     }
@@ -125,11 +119,11 @@ impl<T> Fractal<T> {
             kind,
         });
 
-        assert!(self.items_to_insert.is_empty());
         assert!(self.items_to_retain.is_empty());
 
         let iter = CompareIter::new(old_iter, new_iter, |l, r| l.0.cmp(r));
 
+        q.todo.clear();
         for i in iter {
             match i {
                 ComparedValue::Left((_, t)) => {
@@ -140,7 +134,7 @@ impl<T> Fractal<T> {
                     // Only in new_iter: enqueue value
                     // TODO: subtract sorted iters instead of this if
                     if !q.doing.contains(&r) && !q.done.iter().any(|x| x.0 == r) {
-                        self.items_to_insert.push(r)
+                        q.todo.push(r)
                     }
                 },
                 ComparedValue::Both(l, _) => {
@@ -149,18 +143,13 @@ impl<T> Fractal<T> {
                 },
             }
         }
+        q.todo.reverse();
 
         println!("--- queue ---");
         println!("retain:   {:?}", self.items_to_retain.len());
-        println!("todo:     {:?}", self.items_to_insert.len());
-        println!("todo_old: {:?}", q.todo.len());
+        println!("todo: {:?}", q.todo.len());
         println!("doing:    {:?}", q.doing.len());
         println!("done:     {:?}", q.done.len());
-
-        // swap new and old todos
-        self.items_to_insert.reverse();
-        std::mem::swap(&mut q.todo, &mut self.items_to_insert);
-        self.items_to_insert.clear();
 
         // TODO: add sorted done at beginning when iterating
         // q.done.sort_unstable_by(|(r1, _), (r2, _)| r1.cmp(r2));
@@ -235,8 +224,6 @@ impl<T> Fractal<T> {
         if self.tile_builder.is_none() {
             self.tile_builder = Some(TileBuilder::new(Arc::clone(&self.queue)));
         }
-
-        self.frame_counter += 1;
 
         self.pos.resize(window.size);
 
