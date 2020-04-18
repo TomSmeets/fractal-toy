@@ -113,7 +113,7 @@ impl Input {
         }
     }
 
-    pub fn update(&mut self) {
+    pub fn begin(&mut self) {
         self.scroll = 0;
         self.dir_look = V2::zero();
         self.dir_move = V2::zero();

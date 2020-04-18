@@ -60,13 +60,11 @@ impl State {
             fractal,
             atlas,
         } = self;
-
-        input.update();
-
         let time = DeltaTime(1.0 / 60.0);
 
         // input stuff
         let events: Vec<_> = sdl.event.poll_iter().collect();
+        input.begin();
         input.handle_sdl(&events);
         for e in events.iter() {
             match e {
