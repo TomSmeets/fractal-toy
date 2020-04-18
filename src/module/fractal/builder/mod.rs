@@ -107,6 +107,18 @@ pub enum TileType {
     ShipHybrid,
 }
 
+impl TileType {
+    /// cycle between tiletypes
+    pub fn next(self) -> Self {
+        match self {
+            TileType::Empty => TileType::Mandelbrot,
+            TileType::Mandelbrot => TileType::BurningShip,
+            TileType::BurningShip => TileType::ShipHybrid,
+            TileType::ShipHybrid => TileType::Empty,
+        }
+    }
+}
+
 #[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd)]
 pub struct TileRequest {
     pub pos: TilePos,

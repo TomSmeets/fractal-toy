@@ -13,6 +13,7 @@ pub struct Sdl {
     /// explicit that we are using this.
     pub ctx: sdl2::Sdl,
     pub video: sdl2::VideoSubsystem,
+    pub controller: sdl2::GameControllerSubsystem,
     pub event: sdl2::EventPump,
     pub canvas: Canvas<Window>,
     pub font: Font<'static>,
@@ -22,8 +23,6 @@ static FONT_DATA: &[u8] = include_bytes!(concat!(env!("FONT_DEJAVU"), "/DejaVuSa
 
 impl Sdl {
     pub fn new() -> Self {
-        // IMPOTANT: Don't use sdl.gamecontroller or sdl.joystic subsystems
-        // For some reason this causes horrible lag spikes when polling events
         let ctx = sdl2::init().unwrap();
         let video = ctx.video().unwrap();
 
@@ -34,6 +33,13 @@ impl Sdl {
             .position_centered()
             .build()
             .unwrap();
+
+        // IMPOTANT: This causes some issues in older sdl2 versions
+        // For some reason this causes horrible lag spikes when polling events
+        // see https://stackoverflow.com/a/53658644
+        // however i have also noticed the same issue when on version '355a4f94a782' of sdl2
+        // not sure which commit fixed it, but with the stable sdl-2.0.12 it seems to work
+        let controller = ctx.game_controller().unwrap();
 
         let event = ctx.event_pump().unwrap();
         let mut canvas = window.into_canvas().present_vsync().build().unwrap();
@@ -52,6 +58,7 @@ impl Sdl {
         Sdl {
             ctx,
             video,
+            controller,
             event,
             canvas,
             font,

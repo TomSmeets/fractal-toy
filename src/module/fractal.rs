@@ -204,12 +204,7 @@ impl<T> Fractal<T> {
         }
 
         if input.button(InputAction::F7).went_down() {
-            self.kind = match self.kind {
-                TileType::Empty => TileType::Mandelbrot,
-                TileType::Mandelbrot => TileType::BurningShip,
-                TileType::BurningShip => TileType::ShipHybrid,
-                TileType::ShipHybrid => TileType::Empty,
-            }
+            self.kind = self.kind.next();
         }
     }
 }

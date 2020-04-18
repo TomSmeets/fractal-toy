@@ -1,5 +1,6 @@
 use crate::math::*;
 
+use sdl2::controller::Axis;
 use sdl2::{event::*, keyboard::Keycode, mouse::MouseButton};
 use serde::{Deserialize, Serialize};
 
@@ -115,8 +116,6 @@ impl Input {
 
     pub fn begin(&mut self) {
         self.scroll = 0;
-        self.dir_look = V2::zero();
-        self.dir_move = V2::zero();
 
         for a in self.action.iter_mut() {
             a.update();
@@ -158,38 +157,81 @@ impl Input {
                     self.mouse.x = *x as i32;
                     self.mouse.y = *y as i32;
                 },
+                Event::ControllerAxisMotion { axis, value, .. } => {
+                    let value = *value as f64 / 32767.0;
+                    match axis {
+                        Axis::LeftX => {
+                            self.dir_move.x = value;
+                        },
+                        Axis::LeftY => {
+                            self.dir_move.y = -value;
+                        },
+                        Axis::RightX => {
+                            self.dir_look.x = value;
+                        },
+                        Axis::RightY => {
+                            self.dir_look.y = -value;
+                        },
+                        _ => (),
+                    }
+                },
                 _ => (),
             }
         }
 
         if self.button(InputAction::MoveUp).is_down {
-            self.dir_move.y += 1.;
+            self.dir_move.y = 1.;
         }
         if self.button(InputAction::MoveDown).is_down {
-            self.dir_move.y -= 1.;
+            self.dir_move.y = -1.;
         }
         if self.button(InputAction::MoveRight).is_down {
-            self.dir_move.x += 1.;
+            self.dir_move.x = 1.;
         }
         if self.button(InputAction::MoveLeft).is_down {
-            self.dir_move.x -= 1.;
+            self.dir_move.x = -1.;
         }
 
         if self.button(InputAction::LookUp).is_down {
-            self.dir_look.y += 1.;
+            self.dir_look.y = 1.;
         }
         if self.button(InputAction::LookDown).is_down {
-            self.dir_look.y -= 1.;
+            self.dir_look.y = -1.;
         }
         if self.button(InputAction::LookRight).is_down {
-            self.dir_look.x += 1.;
+            self.dir_look.x = 1.;
         }
         if self.button(InputAction::LookLeft).is_down {
-            self.dir_look.x -= 1.;
+            self.dir_look.x = -1.;
+        }
+
+        if self.button(InputAction::MoveUp).went_up() {
+            self.dir_move.y = 0.0;
+        }
+        if self.button(InputAction::MoveDown).went_up() {
+            self.dir_move.y = 0.0;
+        }
+        if self.button(InputAction::MoveRight).went_up() {
+            self.dir_move.x = 0.0;
+        }
+        if self.button(InputAction::MoveLeft).went_up() {
+            self.dir_move.x = 0.0;
+        }
+
+        if self.button(InputAction::LookUp).went_up() {
+            self.dir_look.y = 0.0;
+        }
+        if self.button(InputAction::LookDown).went_up() {
+            self.dir_look.y = 0.0;
+        }
+        if self.button(InputAction::LookRight).went_up() {
+            self.dir_look.x = 0.0;
+        }
+        if self.button(InputAction::LookLeft).went_up() {
+            self.dir_look.x = 0.0;
         }
 
         // self.dir_look = limit(self.dir_look);
-        self.dir_move = limit(self.dir_move);
     }
 
     fn sdl_key_to_action(&self, key: Keycode) -> InputAction {

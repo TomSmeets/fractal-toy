@@ -75,6 +75,9 @@ impl State {
                     },
                     _ => (),
                 },
+                Event::ControllerDeviceAdded { which, .. } => unsafe {
+                    sdl2::sys::SDL_GameControllerOpen(*which as i32);
+                },
                 _ => (),
             }
         }
