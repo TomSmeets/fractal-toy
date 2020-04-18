@@ -102,6 +102,7 @@ impl State {
 
         // draw debug
         if fractal.debug {
+            // visualize queue
             {
                 let q = fractal.queue.lock().unwrap();
                 sdl.canvas.set_draw_color(Color::RGB(0, 0, 255));
@@ -117,7 +118,7 @@ impl State {
             }
 
             // Show atlas
-            // TODO: show in ui window
+            // TODO: show in ui window?
             let w = window_size.x as i32 / atlas.texture.len().max(4) as i32;
             for (i, t) in atlas.texture.iter().enumerate() {
                 sdl.canvas_copy(t, None, Some(Rect::new(i as i32 * w, 0, w, w).to_sdl()));

@@ -22,6 +22,8 @@ static FONT_DATA: &[u8] = include_bytes!(concat!(env!("FONT_DEJAVU"), "/DejaVuSa
 
 impl Sdl {
     pub fn new() -> Self {
+        // IMPOTANT: Don't use sdl.gamecontroller or sdl.joystic subsystems
+        // For some reason this causes horrible lag spikes when polling events
         let ctx = sdl2::init().unwrap();
         let video = ctx.video().unwrap();
 

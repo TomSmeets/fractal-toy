@@ -33,7 +33,7 @@ impl Viewport {
         // flip y
         p.y *= -1.0;
 
-        // ame center of screen  0,0
+        // make center of screen  0,0
         p.x += self.size_in_pixels.x / 2.0;
         p.y += self.size_in_pixels.y / 2.0;
 
@@ -61,6 +61,7 @@ impl Viewport {
         p
     }
 
+    /// Apply a translation in pixels
     pub fn translate(&mut self, offset: V2i) {
         let mut offset = to_v2(offset);
         offset.y *= -1.0;
@@ -70,6 +71,7 @@ impl Viewport {
         self.offset.y = self.offset.y.min(3.0).max(-3.0);
     }
 
+    /// Zoom in or out towards a screen position
     pub fn zoom_in_at(&mut self, amount: f64, screen_pos: V2i) {
         if amount * amount < 0.001 {
             return;
@@ -81,16 +83,18 @@ impl Viewport {
         self.translate(-diff_in_pixels);
     }
 
+    /// Zoom in or out towards the screen center
+    /// see also: [`Viewport::zoom_in_at`]
     pub fn zoom_in(&mut self, amount: f64) {
         self.zoom = (self.zoom + amount).min(48.5).max(-2.5);
     }
 
-    // scale of the entire viewport
+    /// scale of the entire viewport
     pub fn scale(&self) -> f64 {
         0.5_f64.powf(self.zoom)
     }
 
-    // scale of one pixel
+    /// scale of one pixel
     pub fn pixel_scale(&self) -> f64 {
         self.scale() / self.size_in_pixels.x
     }
