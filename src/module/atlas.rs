@@ -49,8 +49,8 @@ impl Atlas {
         }
     }
 
-    pub fn alloc(&mut self, sdl: &mut Sdl) -> AtlasRegion {
-        match self.free.pop() {
+    pub fn alloc(&mut self, sdl: &mut Sdl, pixels: &[u8]) -> AtlasRegion {
+        let r = match self.free.pop() {
             Some(i) => AtlasRegion {
                 index: i,
                 res: self.res,
@@ -58,21 +58,28 @@ impl Atlas {
             },
             None => {
                 self.alloc_page(sdl);
-                self.alloc(sdl)
+                self.alloc(sdl, pixels)
             },
-        }
-    }
+        };
 
-    pub fn update(&mut self, r: &AtlasRegion, pixels: &[u8]) {
         let r1 = r.rect();
         let t = &mut self.texture[r.index.z as usize];
         t.update(Some(r1.to_sdl()), pixels, 4 * self.res as usize)
             .unwrap();
+        r
     }
 
     pub fn remove(&mut self, mut r: AtlasRegion) {
         self.free.push(r.index);
         r.free = true;
+    }
+
+    pub fn draw(&mut self, sdl: &mut Sdl, texture: &AtlasRegion, to: Rect) {
+        sdl.canvas_copy(
+            &self.texture[texture.index.z as usize],
+            Some(texture.rect_padded().to_sdl()),
+            Some(to.to_sdl()),
+        );
     }
 }
 
@@ -146,20 +153,10 @@ impl<'a> TileTextureProvider for AtlasTextureCreator<'a> {
     type Texture = AtlasRegion;
 
     fn alloc(&mut self, pixels_rgba: &[u8]) -> Self::Texture {
-        let t = self.atlas.alloc(self.sdl);
-        self.atlas.update(&t, pixels_rgba);
-        t
+        self.atlas.alloc(self.sdl, pixels_rgba)
     }
 
     fn free(&mut self, texture: Self::Texture) {
-        self.atlas.remove(texture);
-    }
-
-    fn draw(&mut self, texture: &Self::Texture, to: Rect) {
-        self.sdl.canvas_copy(
-            &self.atlas.texture[texture.index.z as usize],
-            Some(texture.rect_padded().to_sdl()),
-            Some(to.to_sdl()),
-        );
+        self.atlas.remove(texture)
     }
 }

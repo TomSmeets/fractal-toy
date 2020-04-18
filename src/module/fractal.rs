@@ -1,5 +1,6 @@
 use crate::iter::compare::{CompareIter, ComparedValue};
 use crate::math::*;
+use crate::module::time::DeltaTime;
 use crate::module::{input::InputAction, Input, Time, Window};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
@@ -11,7 +12,6 @@ pub mod viewport;
 use self::builder::queue::{TileQueue, WorkQueue};
 use self::builder::TileBuilder;
 use self::builder::{TileRequest, TileType};
-use self::tile::TilePos;
 use self::viewport::Viewport;
 
 pub const TEXTURE_SIZE: usize = 64 * 2;
@@ -27,13 +27,12 @@ pub trait TileTextureProvider {
 
     fn alloc(&mut self, pixels_rgba: &[u8]) -> Self::Texture;
     fn free(&mut self, texture: Self::Texture);
-    fn draw(&mut self, texture: &Self::Texture, to: Rect);
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Fractal<T> {
     // state
-    pos: Viewport,
+    pub pos: Viewport,
     pub iter: i32,
     pub kind: TileType,
 
@@ -46,7 +45,7 @@ pub struct Fractal<T> {
     // see: https://github.com/serde-rs/serde/issues/1541
     #[serde(skip)]
     #[serde(default = "Default::default")]
-    tiles: Vec<(TileRequest, T)>,
+    pub tiles: Vec<(TileRequest, T)>,
 
     // this temporary storage for when updating tiles
     // stored to prevent reallocations
@@ -55,16 +54,16 @@ pub struct Fractal<T> {
     next_frame_tiles: Vec<(TileRequest, T)>,
 
     #[serde(skip)]
-    queue: Arc<Mutex<TileQueue>>,
+    pub queue: Arc<Mutex<TileQueue>>,
     #[serde(skip)]
     tile_builder: Option<TileBuilder>,
 }
 
 impl<T> Fractal<T> {
-    pub fn new() -> Self {
+    pub fn new(size: Vector2<u32>) -> Self {
         Fractal {
             tiles: Vec::new(),
-            pos: Viewport::new(Vector2::new(800, 600)),
+            pos: Viewport::new(size),
             drag: DragState::None,
             pause: false,
             debug: false,
@@ -78,7 +77,12 @@ impl<T> Fractal<T> {
         }
     }
 
-    fn update_tiles(&mut self, texture_creator: &mut impl TileTextureProvider<Texture = T>) {
+    pub fn update_tiles(&mut self, texture_creator: &mut impl TileTextureProvider<Texture = T>) {
+        // This recreates tile builders when entire struct is deserialized
+        if self.tile_builder.is_none() {
+            self.tile_builder = Some(TileBuilder::new(Arc::clone(&self.queue)));
+        }
+
         let mut q = match self.queue.try_lock() {
             Err(_) => return,
             Ok(q) => q,
@@ -162,14 +166,14 @@ impl<T> Fractal<T> {
         std::mem::swap(&mut self.next_frame_tiles, &mut self.tiles);
     }
 
-    pub fn do_input(&mut self, input: &Input, time: &Time) {
+    pub fn do_input(&mut self, input: &Input, dt: DeltaTime) {
         self.pos.zoom_in_at(0.3 * input.scroll as f64, input.mouse);
         self.pos.translate({
-            let mut p = time.dt as f64 * input.dir_move * 2.0 * self.pos.size_in_pixels.x;
+            let mut p = dt.0 as f64 * input.dir_move * 2.0 * self.pos.size_in_pixels.x;
             p.y *= -1.0;
             to_v2i(p)
         });
-        self.pos.zoom_in(time.dt as f64 * input.dir_look.y * 3.5);
+        self.pos.zoom_in(dt.0 as f64 * input.dir_look.y * 3.5);
 
         if let DragState::From(p1) = self.drag {
             self.pos.translate(p1 - input.mouse);
@@ -209,64 +213,14 @@ impl<T> Fractal<T> {
         }
     }
 
-    pub fn update(
-        &mut self,
-        texture_provider: &mut impl TileTextureProvider<Texture = T>,
-        time: &Time,
-        window: &Window,
-        input: &Input,
-    ) {
-        // This recreates tile builders when entire struct is deserialized
-        if self.tile_builder.is_none() {
-            self.tile_builder = Some(TileBuilder::new(Arc::clone(&self.queue)));
-        }
-
+    pub fn update(&mut self, time: DeltaTime, window: &Window, input: &Input) {
         self.pos.resize(window.size);
-
         self.do_input(input, time);
-
-        if !self.pause {
-            self.update_tiles(texture_provider);
-        }
-
-        // draw stuff
-        // TODO: drawing could also be entirely offloded to the implementation
-        // because this is a very simple drawing loop, all tiles are drawn
-        // also debug stuff should not be part of this type
-        for (p, tile) in self.tiles.iter() {
-            let r = self.pos_to_rect(&p.pos);
-            texture_provider.draw(tile, r);
-        }
-    }
-
-    fn pos_to_rect(&self, p: &TilePos) -> Rect {
-        let [x, y, z] = p.to_f64();
-        let min = V2::new(x, y);
-        let max = min + V2::new(z, z);
-        let min = self.pos.world_to_screen(min);
-        let max = self.pos.world_to_screen(max);
-        mk_rect(min, max)
-    }
-}
-
-fn mk_rect(a: V2i, b: V2i) -> Rect {
-    let min_x = a.x.min(b.x);
-    let min_y = a.y.min(b.y);
-
-    let max_x = a.x.max(b.x);
-    let max_y = a.y.max(b.y);
-
-    let width = max_x.saturating_sub(min_x);
-    let height = max_y.saturating_sub(min_y);
-
-    Rect {
-        pos: V2i::new(min_x, min_y),
-        size: V2i::new(width, height),
     }
 }
 
 impl<T> Default for Fractal<T> {
     fn default() -> Self {
-        Fractal::new()
+        Fractal::new(Vector2::new(800, 600))
     }
 }

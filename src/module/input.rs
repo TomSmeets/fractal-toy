@@ -113,7 +113,7 @@ impl Input {
         }
     }
 
-    pub fn update(&mut self, sdl: &Sdl) {
+    pub fn update(&mut self) {
         self.scroll = 0;
         self.dir_look = V2::zero();
         self.dir_move = V2::zero();
@@ -121,11 +121,6 @@ impl Input {
         for a in self.action.iter_mut() {
             a.update();
         }
-
-        self.handle_sdl(&sdl.events);
-
-        self.dir_look = limit(self.dir_look);
-        self.dir_move = limit(self.dir_move);
     }
 
     pub fn button(&self, act: InputAction) -> &Button {
@@ -192,6 +187,9 @@ impl Input {
         if self.button(InputAction::LookLeft).is_down {
             self.dir_look.x -= 1.;
         }
+
+        // self.dir_look = limit(self.dir_look);
+        self.dir_move = limit(self.dir_move);
     }
 
     fn sdl_key_to_action(&self, key: Keycode) -> InputAction {

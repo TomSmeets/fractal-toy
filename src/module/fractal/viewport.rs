@@ -133,4 +133,29 @@ impl Viewport {
                 .flat_map(move |x| (min.y - pad..max.y + pad + 1).map(move |y| TilePos { x, y, z }))
         })
     }
+
+    pub fn pos_to_rect(&self, p: &TilePos) -> Rect {
+        fn mk_rect(a: V2i, b: V2i) -> Rect {
+            let min_x = a.x.min(b.x);
+            let min_y = a.y.min(b.y);
+
+            let max_x = a.x.max(b.x);
+            let max_y = a.y.max(b.y);
+
+            let width = max_x.saturating_sub(min_x);
+            let height = max_y.saturating_sub(min_y);
+
+            Rect {
+                pos: V2i::new(min_x, min_y),
+                size: V2i::new(width, height),
+            }
+        }
+
+        let [x, y, z] = p.to_f64();
+        let min = V2::new(x, y);
+        let max = min + V2::new(z, z);
+        let min = self.world_to_screen(min);
+        let max = self.world_to_screen(max);
+        mk_rect(min, max)
+    }
 }

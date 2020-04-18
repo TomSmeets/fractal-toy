@@ -13,16 +13,12 @@ pub struct Sdl {
     /// elements are dropped. So it is not necessary to keep the context or
     /// subsystem in memory. I will however keep these fields. as to make it
     /// explicit that we are using this.
-    #[allow(dead_code)]
-    ctx: sdl2::Sdl,
-
-    #[allow(dead_code)]
-    video: sdl2::VideoSubsystem,
-
-    event: sdl2::EventPump,
-    canvas: Canvas<Window>,
+    pub ctx: sdl2::Sdl,
+    pub video: sdl2::VideoSubsystem,
+    pub event: sdl2::EventPump,
+    pub canvas: Canvas<Window>,
     pub events: Vec<sdl2::event::Event>,
-    font: Font<'static>,
+    pub font: Font<'static>,
 }
 
 static FONT_DATA: &[u8] = include_bytes!(concat!(env!("FONT_DEJAVU"), "/DejaVuSans.ttf"));
@@ -130,13 +126,6 @@ impl Sdl {
         (r, pixels)
     }
 
-    pub fn update(&mut self) {
-        self.canvas.present();
-        self.events = self.event.poll_iter().collect();
-        self.canvas.set_draw_color(Color::RGB(0, 0, 0));
-        self.canvas.clear();
-    }
-
     pub fn canvas_copy(
         &mut self,
         texture: &sdl2::render::Texture,
@@ -146,8 +135,9 @@ impl Sdl {
         self.canvas.copy(texture, src, dst).unwrap();
     }
 
-    pub fn output_size(&self) -> (u32, u32) {
-        self.canvas.output_size().unwrap()
+    pub fn output_size(&self) -> Vector2<u32> {
+        let (x, y) = self.canvas.output_size().unwrap();
+        Vector2::new(x, y)
     }
 
     pub fn create_texture_static_rgba8(&mut self, w: u32, h: u32) -> sdl2::render::Texture {

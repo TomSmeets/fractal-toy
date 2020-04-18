@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Copy, Clone)]
+pub struct DeltaTime(pub f32);
+
 #[derive(Serialize, Deserialize)]
 pub struct Time {
     pub dt: f32,
