@@ -8,16 +8,24 @@ use serde::{Deserialize, Serialize};
 pub const PADDING: u32 = 1;
 
 pub struct Atlas {
-    pub size: u32,
-    pub res: u32,
-    pub free: Vec<Vector3<u32>>,
+    // number of tiles in both x and y
+    size: u32,
+
+    // resolution of one tile
+    res: u32,
+
+    // this is a free list of avalible spots where z is layer index in `texture`
+    free: Vec<Vector3<u32>>,
     pub texture: Vec<Texture>,
 }
 
 impl Atlas {
     pub fn new() -> Atlas {
         let res = TEXTURE_SIZE as u32;
-        let size = 64 * 64 / res;
+        // 4K is somewhere near the maximum texture size
+        // determined by trail and error, size does not matter that much,
+        let texture_size = 4 * 1024;
+        let size = texture_size / res;
         Atlas {
             free: Vec::new(),
             size,
