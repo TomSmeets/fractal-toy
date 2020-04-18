@@ -47,11 +47,12 @@ pub fn build(rq: TileRequest) -> Vec<u8> {
                 z
             });
         },
+        // cube = 1.5, sqr = 1.0
         TileType::ShipHybrid => {
             draw_mandel(2.5, rq, &mut pixels, |mut z, c| {
-                z = cpx_cube(z) + c;
+                z = cpx_cube(z) + c; // 1.5
                 z = cpx_abs(z);
-                z = cpx_sqr(z) + c;
+                z = cpx_sqr(z) + c; // 1.0
                 z
             });
         },

@@ -147,12 +147,6 @@ impl<T> Fractal<T> {
         }
         q.todo.reverse();
 
-        println!("--- queue ---");
-        println!("retain:   {:?}", self.next_frame_tiles.len());
-        println!("todo: {:?}", q.todo.len());
-        println!("doing:    {:?}", q.doing.len());
-        println!("done:     {:?}", q.done.len());
-
         // TODO: add sorted done at beginning when iterating
         // q.done.sort_unstable_by(|(r1, _), (r2, _)| r1.cmp(r2));
         for (k, v) in q.done.drain(..) {
