@@ -1,7 +1,7 @@
 use crate::iter::compare::{CompareIter, ComparedValue};
 use crate::math::*;
 use crate::module::time::DeltaTime;
-use crate::module::{input::InputAction, Input, Time, Window};
+use crate::module::{input::InputAction, Input};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
@@ -211,11 +211,6 @@ impl<T> Fractal<T> {
                 TileType::ShipHybrid => TileType::Empty,
             }
         }
-    }
-
-    pub fn update(&mut self, time: DeltaTime, window: &Window, input: &Input) {
-        self.pos.resize(window.size);
-        self.do_input(input, time);
     }
 }
 

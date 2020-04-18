@@ -1,4 +1,4 @@
-use crate::module::{input::InputAction, Fractal, Input, Sdl, Time, Window};
+use crate::module::{input::InputAction, Fractal, Input, Sdl};
 use serde::{Deserialize, Serialize};
 
 use sdl2::event::{Event, WindowEvent};
@@ -103,8 +103,8 @@ impl State {
         // draw debug
         if fractal.debug {
             {
-                sdl.canvas.set_draw_color(Color::RGB(0, 0, 255));
                 let q = fractal.queue.lock().unwrap();
+                sdl.canvas.set_draw_color(Color::RGB(0, 0, 255));
                 for p in q.todo.iter() {
                     let r = fractal.pos.pos_to_rect(&p.pos);
                     sdl.canvas.draw_rect(r.to_sdl()).unwrap();

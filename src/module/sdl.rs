@@ -1,11 +1,9 @@
 use crate::math::*;
 use rusttype::Font;
-use sdl2::{
-    pixels::{Color, PixelFormatEnum},
-    rect::Rect,
-    render::{BlendMode, Canvas},
-    video::Window,
-};
+use sdl2::pixels::PixelFormatEnum;
+use sdl2::rect::Rect;
+use sdl2::render::{BlendMode, Canvas};
+use sdl2::video::Window;
 
 pub struct Sdl {
     /// ~~SDL_Quit is called when dropped, so it has to be kept alive~~
@@ -17,7 +15,6 @@ pub struct Sdl {
     pub video: sdl2::VideoSubsystem,
     pub event: sdl2::EventPump,
     pub canvas: Canvas<Window>,
-    pub events: Vec<sdl2::event::Event>,
     pub font: Font<'static>,
 }
 
@@ -55,7 +52,6 @@ impl Sdl {
             video,
             event,
             canvas,
-            events: Vec::new(),
             font,
         }
     }
