@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub struct Input {
     pub mouse: V2i,
+    // mouse drag in pixels
+    pub drag: V2i,
     pub mouse_down: bool,
     pub mouse_click: bool,
 
@@ -13,12 +15,12 @@ pub struct Input {
     pub dir_move: V2,
 
     pub quit: bool,
-    pub debug: bool,
-    pub pause: bool,
     pub iter_inc: bool,
     pub iter_dec: bool,
     pub cycle: bool,
 
+    pub debug: bool,
+    pub pause: bool,
     pub load: bool,
     pub save: bool,
 }
@@ -35,18 +37,20 @@ impl Input {
             mouse: V2i::zero(),
             mouse_down: false,
             mouse_click: false,
+            drag: V2i::zero(),
 
             scroll: 0,
             zoom: 0.0,
             dir_move: V2::zero(),
 
             quit: false,
-            debug: false,
-            pause: false,
 
             iter_inc: false,
             iter_dec: false,
             cycle: false,
+
+            debug: false,
+            pause: false,
             load: false,
             save: false,
         }
@@ -117,6 +121,8 @@ impl Input {
     }
 
     pub fn handle_sdl(&mut self, events: &[Event]) {
+        let old_mouse = self.mouse;
+
         for e in events {
             match e {
                 Event::Quit { .. } => self.quit = true,
@@ -164,6 +170,12 @@ impl Input {
                 Event::ControllerButtonUp { button, .. } => self.controller_button(*button, false),
                 _ => (),
             }
+        }
+
+        if self.mouse_down {
+            self.drag = self.mouse - old_mouse;
+        } else {
+            self.drag = V2i::zero();
         }
     }
 }

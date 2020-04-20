@@ -18,12 +18,6 @@ use self::viewport::Viewport;
 
 pub const TEXTURE_SIZE: usize = 64 * 2;
 
-#[derive(Serialize, Deserialize)]
-pub enum DragState {
-    None,
-    From(V2i),
-}
-
 /// Something that can build textures from tile pixels
 pub trait TileTextureProvider {
     type Texture;
@@ -37,9 +31,6 @@ pub struct Fractal<T> {
     // state
     pub pos: Viewport,
     pub params: TileParams,
-
-    // Input stuff
-    drag: DragState,
 
     // this uses a workaround to prevent incorrect `T: Default` bounds.
     // see: https://github.com/serde-rs/serde/issues/1541
@@ -57,7 +48,6 @@ impl<T> Fractal<T> {
         Fractal {
             tiles: TileStorage::new(),
             pos: Viewport::new(size),
-            drag: DragState::None,
             tile_builder: None,
             queue: Arc::new(Mutex::new(WorkQueue::new())),
 
@@ -94,17 +84,7 @@ impl<T> Fractal<T> {
             to_v2i(p)
         });
         self.pos.zoom_in(dt.0 as f64 * input.zoom as f64 * 3.5);
-
-        if let DragState::From(p1) = self.drag {
-            self.pos.translate(p1 - input.mouse);
-        }
-
-        // TODO: make drag part of input
-        self.drag = if input.mouse_down {
-            DragState::From(input.mouse)
-        } else {
-            DragState::None
-        };
+        self.pos.translate(-input.drag);
 
         // TODO: in the future we want some kind of ui, or cli interface
         if input.iter_inc {
