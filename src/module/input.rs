@@ -66,7 +66,7 @@ impl Input {
 }
 
 #[cfg(feature = "sdl2")]
-use sdl2::{controller::Axis, event::*, keyboard::Keycode, mouse::MouseButton};
+use sdl2::{controller::Axis, controller::Button, event::*, keyboard::Keycode, mouse::MouseButton};
 
 #[cfg(feature = "sdl2")]
 impl Input {
@@ -90,13 +90,29 @@ impl Input {
 
         if down {
             match key {
+                Keycode::N => self.cycle = true,
+                Keycode::L => self.iter_inc = true,
+                Keycode::J => self.iter_dec = true,
+
                 Keycode::Num1 => self.pause = !self.pause,
                 Keycode::Num2 => self.debug = !self.debug,
-                Keycode::Num3 => self.iter_inc = true,
-                Keycode::Num4 => self.iter_dec = true,
                 Keycode::Num5 => self.save = true,
                 Keycode::Num6 => self.load = true,
-                Keycode::Num7 => self.cycle = true,
+                _ => (),
+            }
+        }
+    }
+
+    fn controller_button(&mut self, button: Button, down: bool) {
+        if down {
+            match button {
+                Button::RightShoulder => self.iter_inc = true,
+                Button::LeftShoulder => self.iter_dec = true,
+                Button::A => self.cycle = true,
+                Button::DPadUp => self.debug = !self.debug,
+                Button::DPadDown => self.pause = !self.pause,
+                Button::DPadLeft => self.save = true,
+                Button::DPadRight => self.load = true,
                 _ => (),
             }
         }
@@ -154,6 +170,8 @@ impl Input {
                         _ => (),
                     }
                 },
+                Event::ControllerButtonDown { button, .. } => self.controller_button(*button, true),
+                Event::ControllerButtonUp { button, .. } => self.controller_button(*button, false),
                 _ => (),
             }
         }
