@@ -39,8 +39,6 @@ pub struct Fractal<T> {
     pub params: TileParams,
 
     // Input stuff
-    pub pause: bool,
-    pub debug: bool,
     drag: DragState,
 
     // this uses a workaround to prevent incorrect `T: Default` bounds.
@@ -60,8 +58,6 @@ impl<T> Fractal<T> {
             tiles: TileStorage::new(),
             pos: Viewport::new(size),
             drag: DragState::None,
-            pause: false,
-            debug: false,
             tile_builder: None,
             queue: Arc::new(Mutex::new(WorkQueue::new())),
 
@@ -88,7 +84,10 @@ impl<T> Fractal<T> {
     }
 
     pub fn do_input(&mut self, input: &Input, dt: DeltaTime) {
-        self.pos.zoom_in_at(0.3 * input.scroll as f64, input.mouse);
+        if input.scroll != 0 {
+            self.pos.zoom_in_at(0.3 * input.scroll as f64, input.mouse);
+        }
+
         self.pos.translate({
             let mut p = dt.0 as f64 * input.dir_move * 2.0 * self.pos.size_in_pixels.x;
             p.y *= -1.0;
@@ -108,9 +107,6 @@ impl<T> Fractal<T> {
         };
 
         // TODO: in the future we want some kind of ui, or cli interface
-        self.pause = input.pause;
-        self.debug = input.debug;
-
         if input.iter_inc {
             self.params.iterations += 40;
         }

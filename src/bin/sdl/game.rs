@@ -85,7 +85,7 @@ impl State {
         // update fractal tiles
         fractal.do_input(input, time);
 
-        if !fractal.pause {
+        if !input.pause {
             fractal.update_tiles(&mut AtlasTextureCreator { sdl, atlas });
         }
 
@@ -98,13 +98,13 @@ impl State {
         for (p, tile) in fractal.tiles.tiles.iter() {
             let r = fractal.pos.pos_to_rect(&p.pos);
             atlas.draw(sdl, tile, r);
-            if fractal.debug {
+            if input.debug {
                 sdl.canvas.draw_rect(r.to_sdl()).unwrap();
             }
         }
 
         // draw debug
-        if fractal.debug {
+        if input.debug {
             // visualize queue
             {
                 let q = fractal.queue.lock().unwrap();
