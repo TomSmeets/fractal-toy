@@ -8,7 +8,7 @@ use serial::module::atlas::Atlas;
 use serial::module::atlas::AtlasRegion;
 use serial::module::atlas::AtlasTextureCreator;
 use serial::module::time::DeltaTime;
-use serial::module::{input::InputAction, Fractal, Input, Sdl};
+use serial::module::{Fractal, Input, Sdl};
 
 #[derive(Serialize, Deserialize)]
 pub struct State {
@@ -130,6 +130,6 @@ impl State {
 
         sdl.canvas.present();
 
-        input.button(InputAction::Quit).is_down
+        input.quit
     }
 }

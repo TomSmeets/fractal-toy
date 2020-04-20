@@ -1,9 +1,6 @@
 mod game;
 use self::game::State;
-use serial::{
-    module::input::InputAction,
-    state::{load, load_in_place, save},
-};
+use serial::state::{load, load_in_place, save};
 
 fn main() {
     let mut s = match load("auto") {
@@ -16,8 +13,8 @@ fn main() {
             break;
         }
 
-        let do_save = s.input.button(InputAction::F5).went_down();
-        let do_load = s.input.button(InputAction::F6).went_down();
+        let do_save = s.input.save;
+        let do_load = s.input.load;
 
         if do_save {
             save("manual", &s);

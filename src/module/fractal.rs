@@ -1,6 +1,6 @@
 use crate::math::*;
 use crate::module::time::DeltaTime;
-use crate::module::{input::InputAction, Input};
+use crate::module::Input;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
@@ -94,37 +94,33 @@ impl<T> Fractal<T> {
             p.y *= -1.0;
             to_v2i(p)
         });
-        self.pos.zoom_in(dt.0 as f64 * input.dir_look.y * 3.5);
+        self.pos.zoom_in(dt.0 as f64 * input.zoom as f64 * 3.5);
 
         if let DragState::From(p1) = self.drag {
             self.pos.translate(p1 - input.mouse);
         }
 
-        self.drag = if input.mouse_down.is_down {
+        // TODO: make drag part of input
+        self.drag = if input.mouse_down {
             DragState::From(input.mouse)
         } else {
             DragState::None
         };
 
         // TODO: in the future we want some kind of ui, or cli interface
-        if input.button(InputAction::F1).went_down() {
-            self.pause = !self.pause;
-        }
+        self.pause = input.pause;
+        self.debug = input.debug;
 
-        if input.button(InputAction::F2).went_down() {
-            self.debug = !self.debug;
-        }
-
-        if input.button(InputAction::F3).went_down() {
+        if input.iter_inc {
             self.params.iterations += 40;
         }
 
-        if input.button(InputAction::F4).went_down() {
+        if input.iter_dec {
             self.params.iterations -= 40;
             self.params.iterations = self.params.iterations.max(3);
         }
 
-        if input.button(InputAction::F7).went_down() {
+        if input.cycle {
             self.params.kind = self.params.kind.next();
         }
     }

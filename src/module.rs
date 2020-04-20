@@ -1,7 +1,14 @@
-pub mod atlas;
 pub mod fractal;
 pub mod input;
-pub mod sdl;
 pub mod time;
 
-pub use self::{fractal::Fractal, input::Input, sdl::Sdl, time::Time};
+#[cfg(feature = "sdl2")]
+pub mod sdl;
+
+#[cfg(feature = "sdl2")]
+pub mod atlas;
+
+#[cfg(feature = "sdl2")]
+pub use self::sdl::Sdl;
+
+pub use self::{fractal::Fractal, input::Input, time::Time};
