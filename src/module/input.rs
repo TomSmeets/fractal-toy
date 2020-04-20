@@ -29,16 +29,6 @@ impl Default for Input {
     }
 }
 
-fn limit(v: V2) -> V2 {
-    let mag = v.magnitude2();
-
-    if mag > 1.0 {
-        v * (1.0 / mag.sqrt())
-    } else {
-        v
-    }
-}
-
 impl Input {
     pub fn new() -> Self {
         Input {
@@ -62,7 +52,15 @@ impl Input {
         }
     }
 
-    pub fn begin(&mut self) {}
+    pub fn begin(&mut self) {
+        self.scroll = 0;
+        self.mouse_click = false;
+        self.iter_inc = false;
+        self.iter_dec = false;
+        self.cycle = false;
+        self.load = false;
+        self.save = false;
+    }
 }
 
 #[cfg(feature = "sdl2")]
@@ -119,14 +117,6 @@ impl Input {
     }
 
     pub fn handle_sdl(&mut self, events: &[Event]) {
-        self.scroll = 0;
-        self.mouse_click = false;
-        self.iter_inc = false;
-        self.iter_dec = false;
-        self.cycle = false;
-        self.load = false;
-        self.save = false;
-
         for e in events {
             match e {
                 Event::Quit { .. } => self.quit = true,
