@@ -1,5 +1,6 @@
+mod game;
+use self::game::State;
 use serial::{
-    game::State,
     module::input::InputAction,
     state::{load, load_in_place, save},
 };

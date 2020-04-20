@@ -1,14 +1,14 @@
-use crate::module::{input::InputAction, Fractal, Input, Sdl};
 use serde::{Deserialize, Serialize};
 
 use sdl2::event::{Event, WindowEvent};
 use sdl2::pixels::Color;
 
-use crate::math::*;
-use crate::module::atlas::Atlas;
-use crate::module::atlas::AtlasRegion;
-use crate::module::atlas::AtlasTextureCreator;
-use crate::module::time::DeltaTime;
+use serial::math::*;
+use serial::module::atlas::Atlas;
+use serial::module::atlas::AtlasRegion;
+use serial::module::atlas::AtlasTextureCreator;
+use serial::module::time::DeltaTime;
+use serial::module::{input::InputAction, Fractal, Input, Sdl};
 
 #[derive(Serialize, Deserialize)]
 pub struct State {
