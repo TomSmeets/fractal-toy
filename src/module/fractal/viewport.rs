@@ -99,18 +99,8 @@ impl Viewport {
         self.scale() / self.size_in_pixels.x
     }
 
-    /// should be sorted from z_low to z_high
-    /// ordering is: z > y > x
-    /// this should probably be the same as the ord implementation of TilePos
-    /// ```rust
-    /// use serial::math::Vector2;
-    /// use serial::module::fractal::viewport::Viewport;
-    /// let v = Viewport::new(Vector2::new(800, 600));
-    /// let xs: Vec<_> = v.get_pos_all().collect();
-    /// let mut ys = xs.clone();
-    /// ys.sort();
-    /// assert_eq!(xs, ys);
-    /// ```
+    /// Returns an iterator with sorted tiles, the ordering is the same according to
+    /// the ord implementation for TilePos
     pub fn get_pos_all(&self) -> impl Iterator<Item = TilePos> {
         // size of single pixel:
         // scale is width of entire viewport in the world
@@ -126,7 +116,8 @@ impl Viewport {
         let z_max = z_max.max(0.0).ceil() as i32;
         let z_min = (z_max - 8).max(0);
 
-        let pad = 1; // extra padding in poportion to tile size
+        // extra padding in poportion to tile size
+        let pad = 1;
         let off = self.offset;
         let s = 0.5 * px_size * self.size_in_pixels;
 
@@ -162,4 +153,13 @@ impl Viewport {
         let max = self.world_to_screen(max);
         mk_rect(min, max)
     }
+}
+
+#[test]
+fn test_viewport_pos_sorted() {
+    let v = Viewport::new(Vector2::new(800, 600));
+    let xs: Vec<_> = v.get_pos_all().collect();
+    let mut ys = xs.clone();
+    ys.sort();
+    assert_eq!(xs, ys);
 }
