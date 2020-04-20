@@ -143,7 +143,7 @@ impl Input {
                 Event::ControllerAxisMotion { axis, value, .. } => {
                     let mut value = *value as f64 / 32767.0;
 
-                    if value < 0.2 {
+                    if value.abs() < 0.2 {
                         value = 0.0;
                     }
 
