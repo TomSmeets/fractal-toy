@@ -129,9 +129,3 @@ impl<T> Fractal<T> {
         }
     }
 }
-
-impl<T> Default for Fractal<T> {
-    fn default() -> Self {
-        Fractal::new(Vector2::new(800, 600))
-    }
-}
