@@ -7,6 +7,7 @@ use crate::iter::compare::{CompareIter, ComparedValue};
 
 /// Remembers generated tiles, and adds new ones
 pub struct TileStorage<T> {
+    /// These tiles are always sorted with respect to TileRequest
     pub tiles: Vec<(TileRequest, T)>,
 
     /// temporary storage for updating tiles to prevent per frame allocations
@@ -115,6 +116,7 @@ fn test_storage() {
     use super::builder::TileType;
     use super::tile::TileContent;
     use crate::math::Vector2;
+    use rand::prelude::*;
 
     struct Provider {}
     impl TileTextureProvider for Provider {
@@ -151,14 +153,35 @@ fn test_storage() {
     // all tiles should have been requested and put into queue.todo
     assert!(!queue.todo.is_empty());
 
+    // the todo items should be sorted in reverse
+    // NOTE: there is 'is_sorted' but it is not yet stable
+    assert!(queue
+        .todo
+        .iter()
+        .zip(queue.todo[1..].iter())
+        .all(|(a, b)| a >= b));
+
     // Pretend that we generated all those tiles
     for r in queue.todo.drain(..) {
         queue.done.push((r, TileContent::new(Vec::new())));
     }
 
+    let mut rng = thread_rng();
+    // queue.done can be orderd in any way
+    // it should not matter
+    queue.done.shuffle(&mut rng);
+
     storage.update_tiles(&mut queue, params, &viewport, &mut provider);
     // Now, however, there should be tiles stored, because we generated them
     assert!(!storage.tiles.is_empty());
+    // the tiles should be sorted
+    // NOTE: there is 'is_sorted' but it is not yet stable
+    assert!(storage
+        .tiles
+        .iter()
+        .zip(storage.tiles[1..].iter())
+        .all(|(a, b)| a <= b));
+
     // and we generated all tiles, so none should be enqueued
     assert!(queue.todo.is_empty());
     // and all done tiles are removed from the queue
