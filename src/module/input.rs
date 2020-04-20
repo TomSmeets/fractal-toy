@@ -168,6 +168,9 @@ impl Input {
                 },
                 Event::ControllerButtonDown { button, .. } => self.controller_button(*button, true),
                 Event::ControllerButtonUp { button, .. } => self.controller_button(*button, false),
+                Event::ControllerDeviceAdded { which, .. } => unsafe {
+                    sdl2::sys::SDL_GameControllerOpen(*which as i32);
+                },
                 _ => (),
             }
         }

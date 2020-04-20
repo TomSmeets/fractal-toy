@@ -31,10 +31,6 @@ impl Default for State {
 }
 
 impl State {
-    pub fn unload(&mut self) {}
-
-    pub fn reload(&mut self) {}
-
     pub fn new() -> State {
         let sdl = Sdl::new();
         let input = Input::new();
@@ -74,9 +70,6 @@ impl State {
                         fractal.pos.resize(*window_size);
                     },
                     _ => (),
-                },
-                Event::ControllerDeviceAdded { which, .. } => unsafe {
-                    sdl2::sys::SDL_GameControllerOpen(*which as i32);
                 },
                 _ => (),
             }
