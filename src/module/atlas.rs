@@ -1,11 +1,10 @@
 use crate::math::*;
 use crate::module::fractal::TileTextureProvider;
+use crate::module::fractal::PADDING;
 use crate::module::fractal::TEXTURE_SIZE;
 use crate::module::Sdl;
 use sdl2::render::Texture;
 use serde::{Deserialize, Serialize};
-
-pub const PADDING: u32 = 1;
 
 pub struct Atlas {
     // number of tiles in both x and y

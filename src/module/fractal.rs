@@ -16,6 +16,8 @@ use self::builder::TileType;
 use self::storage::TileStorage;
 use self::viewport::Viewport;
 
+// We are blending the textures
+pub const PADDING: u32 = 1;
 pub const TEXTURE_SIZE: usize = 64 * 2;
 
 /// Something that can build textures from tile pixels
