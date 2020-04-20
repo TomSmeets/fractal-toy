@@ -6,12 +6,14 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
 pub mod builder;
+pub mod storage;
 pub mod tile;
 pub mod viewport;
 
 use self::builder::queue::{TileQueue, WorkQueue};
 use self::builder::TileBuilder;
-use self::builder::{TileRequest, TileType};
+use self::builder::TileType;
+use self::storage::TileStorage;
 use self::viewport::Viewport;
 
 pub const TEXTURE_SIZE: usize = 64 * 2;
@@ -30,6 +32,7 @@ pub trait TileTextureProvider {
 }
 
 #[derive(Serialize, Deserialize)]
+/// After so many updates, i am not entierly sure what this struct is supposed to become
 pub struct Fractal<T> {
     // state
     pub pos: Viewport,
@@ -41,17 +44,11 @@ pub struct Fractal<T> {
     pub debug: bool,
     drag: DragState,
 
+    #[serde(skip)]
     // this uses a workaround to prevent incorrect `T: Default` bounds.
     // see: https://github.com/serde-rs/serde/issues/1541
-    #[serde(skip)]
-    #[serde(default = "Default::default")]
-    pub tiles: Vec<(TileRequest, T)>,
-
-    // this temporary storage for when updating tiles
-    // stored to prevent reallocations
-    #[serde(skip)]
-    #[serde(default = "Default::default")]
-    next_frame_tiles: Vec<(TileRequest, T)>,
+    #[serde(default = "TileStorage::new")]
+    pub tiles: TileStorage<T>,
 
     #[serde(skip)]
     pub queue: Arc<Mutex<TileQueue>>,
@@ -62,7 +59,7 @@ pub struct Fractal<T> {
 impl<T> Fractal<T> {
     pub fn new(size: Vector2<u32>) -> Self {
         Fractal {
-            tiles: Vec::new(),
+            tiles: TileStorage::new(),
             pos: Viewport::new(size),
             drag: DragState::None,
             pause: false,
@@ -72,8 +69,6 @@ impl<T> Fractal<T> {
 
             iter: 64,
             kind: TileType::Mandelbrot,
-
-            next_frame_tiles: Vec::new(),
         }
     }
 
@@ -83,87 +78,13 @@ impl<T> Fractal<T> {
             self.tile_builder = Some(TileBuilder::new(Arc::clone(&self.queue)));
         }
 
-        let mut q = match self.queue.try_lock() {
+        let mut queue = match self.queue.try_lock() {
             Err(_) => return,
             Ok(q) => q,
         };
 
-        // If we have two ordered lists of tile points
-        // We can iterate over both lists at the same time and produce three kinds.
-        //   drop:    elem(old) && !elem(new)
-        //   retain:  elem(old) &&  elem(new)
-        //   insert: !elem(old) &&  elem(new)
-        //
-        // to produce these lists we can do:
-        // if old.is_none => insert, new.next();
-        // if new.is_none => drop,   old.next();
-        // if new.is_none && old.is_none => break;
-        // if old < new  => remove, old.next()
-        // if old == new => retain, old.next(), new.next()
-        // if old > new  => insert, new.next(),
-        //
-        // oooooo
-        // oo......
-        // oo......
-        // oo......
-        //   ......
-        //
-        // xxxxxx
-        // xx....nn
-        // xx....nn
-        // xx....nn
-        //   nnnnnn
-
-        // items we rendered last frame
-        let old_iter = self.tiles.drain(..);
-        // items we should render this frame
-        let iter = self.iter;
-        let kind = self.kind;
-        let new_iter = self.pos.get_pos_all().map(|pos| TileRequest {
-            pos,
-            iterations: iter,
-            kind,
-        });
-
-        assert!(self.next_frame_tiles.is_empty());
-
-        let iter = CompareIter::new(old_iter, new_iter, |l, r| l.0.cmp(r));
-
-        q.todo.clear();
-        for i in iter {
-            match i {
-                ComparedValue::Left((_, t)) => {
-                    // only in old_iter, remove value
-                    texture_creator.free(t);
-                },
-                ComparedValue::Right(r) => {
-                    // Only in new_iter: enqueue value
-                    // TODO: subtract sorted iters instead of this if
-                    if !q.doing.contains(&r) && !q.done.iter().any(|x| x.0 == r) {
-                        q.todo.push(r)
-                    }
-                },
-                ComparedValue::Both(l, _) => {
-                    // this value should be retained, as it is in new_iter and old_iter
-                    self.next_frame_tiles.push(l)
-                },
-            }
-        }
-        q.todo.reverse();
-
-        // TODO: add sorted done at beginning when iterating
-        // q.done.sort_unstable_by(|(r1, _), (r2, _)| r1.cmp(r2));
-        for (k, v) in q.done.drain(..) {
-            let tile = texture_creator.alloc(&v.pixels);
-            // TODO: what is faster sort or iter?
-            self.next_frame_tiles.push((k, tile));
-        }
-
-        // This should use timsort and should be pretty fast for this usecase
-        // Note that in this spesific case, the normal sort will probably be faster than
-        // the unstable sort TODO: profile :)
-        self.next_frame_tiles.sort_by(|(r1, _), (r2, _)| r1.cmp(r2));
-        std::mem::swap(&mut self.next_frame_tiles, &mut self.tiles);
+        self.tiles
+            .update_tiles(&mut queue, self.kind, self.iter, &self.pos, texture_creator);
     }
 
     pub fn do_input(&mut self, input: &Input, dt: DeltaTime) {
