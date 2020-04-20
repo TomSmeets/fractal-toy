@@ -64,6 +64,7 @@ impl<T> TileStorage<T> {
 
         // items we rendered last frame
         let old_iter = self.tiles.drain(..);
+
         // items we should render this frame
         let new_iter = pos.get_pos_all().map(|pos| TileRequest { pos, params });
 
@@ -107,4 +108,59 @@ impl<T> TileStorage<T> {
         self.next_frame_tiles.sort_by(|(r1, _), (r2, _)| r1.cmp(r2));
         std::mem::swap(&mut self.next_frame_tiles, &mut self.tiles);
     }
+}
+
+#[test]
+fn test_storage() {
+    use super::builder::TileType;
+    use super::tile::TileContent;
+    use crate::math::Vector2;
+
+    struct Provider {}
+    impl TileTextureProvider for Provider {
+        type Texture = ();
+
+        fn alloc(&mut self, _: &[u8]) {}
+
+        fn free(&mut self, _: ()) {}
+    }
+
+    let mut storage = TileStorage::new();
+    let mut provider = Provider {};
+    let mut queue = TileQueue::new();
+    let params = TileParams {
+        // arbitrary params, they do not matter
+        kind: TileType::Mandelbrot,
+        iterations: 64,
+    };
+    let viewport = Viewport::new(Vector2::new(800, 600));
+
+    // for now this only test very basic stuff
+
+    // tiles should be empty in the beginning
+    assert!(storage.tiles.is_empty());
+    // next_frame_tiles should always be empty
+    assert!(storage.next_frame_tiles.is_empty());
+
+    storage.update_tiles(&mut queue, params, &viewport, &mut provider);
+
+    // no tiles have been generated, only requested
+    assert!(storage.tiles.is_empty());
+    assert!(storage.next_frame_tiles.is_empty());
+
+    // all tiles should have been requested and put into queue.todo
+    assert!(!queue.todo.is_empty());
+
+    // Pretend that we generated all those tiles
+    for r in queue.todo.drain(..) {
+        queue.done.push((r, TileContent::new(Vec::new())));
+    }
+
+    storage.update_tiles(&mut queue, params, &viewport, &mut provider);
+    // Now, however, there should be tiles stored, because we generated them
+    assert!(!storage.tiles.is_empty());
+    // and we generated all tiles, so none should be enqueued
+    assert!(queue.todo.is_empty());
+    // and all done tiles are removed from the queue
+    assert!(queue.done.is_empty());
 }
