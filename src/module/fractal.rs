@@ -1,4 +1,3 @@
-use crate::iter::compare::{CompareIter, ComparedValue};
 use crate::math::*;
 use crate::module::time::DeltaTime;
 use crate::module::{input::InputAction, Input};
@@ -12,6 +11,7 @@ pub mod viewport;
 
 use self::builder::queue::{TileQueue, WorkQueue};
 use self::builder::TileBuilder;
+use self::builder::TileParams;
 use self::builder::TileType;
 use self::storage::TileStorage;
 use self::viewport::Viewport;
@@ -24,30 +24,28 @@ pub enum DragState {
     From(V2i),
 }
 
+/// Something that can build textures from tile pixels
 pub trait TileTextureProvider {
     type Texture;
-
     fn alloc(&mut self, pixels_rgba: &[u8]) -> Self::Texture;
     fn free(&mut self, texture: Self::Texture);
 }
 
-#[derive(Serialize, Deserialize)]
 /// After so many updates, i am not entierly sure what this struct is supposed to become
+#[derive(Serialize, Deserialize)]
 pub struct Fractal<T> {
     // state
     pub pos: Viewport,
-    pub iter: i32,
-    pub kind: TileType,
+    pub params: TileParams,
 
     // Input stuff
     pub pause: bool,
     pub debug: bool,
     drag: DragState,
 
-    #[serde(skip)]
     // this uses a workaround to prevent incorrect `T: Default` bounds.
     // see: https://github.com/serde-rs/serde/issues/1541
-    #[serde(default = "TileStorage::new")]
+    #[serde(skip, default = "TileStorage::new")]
     pub tiles: TileStorage<T>,
 
     #[serde(skip)]
@@ -67,8 +65,10 @@ impl<T> Fractal<T> {
             tile_builder: None,
             queue: Arc::new(Mutex::new(WorkQueue::new())),
 
-            iter: 64,
-            kind: TileType::Mandelbrot,
+            params: TileParams {
+                kind: TileType::Mandelbrot,
+                iterations: 64,
+            },
         }
     }
 
@@ -84,7 +84,7 @@ impl<T> Fractal<T> {
         };
 
         self.tiles
-            .update_tiles(&mut queue, self.kind, self.iter, &self.pos, texture_creator);
+            .update_tiles(&mut queue, self.params, &self.pos, texture_creator);
     }
 
     pub fn do_input(&mut self, input: &Input, dt: DeltaTime) {
@@ -116,16 +116,16 @@ impl<T> Fractal<T> {
         }
 
         if input.button(InputAction::F3).went_down() {
-            self.iter += 40;
+            self.params.iterations += 40;
         }
 
         if input.button(InputAction::F4).went_down() {
-            self.iter -= 40;
-            self.iter = self.iter.max(3);
+            self.params.iterations -= 40;
+            self.params.iterations = self.params.iterations.max(3);
         }
 
         if input.button(InputAction::F7).went_down() {
-            self.kind = self.kind.next();
+            self.params.kind = self.params.kind.next();
         }
     }
 }

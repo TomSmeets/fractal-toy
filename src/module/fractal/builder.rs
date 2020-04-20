@@ -119,11 +119,16 @@ impl TileType {
     }
 }
 
+#[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Serialize, Deserialize)]
+pub struct TileParams {
+    pub kind: TileType,
+    pub iterations: i32,
+}
+
 #[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd)]
 pub struct TileRequest {
     pub pos: TilePos,
-    pub kind: TileType,
-    pub iterations: i32,
+    pub params: TileParams,
 }
 
 pub struct TileBuilder {

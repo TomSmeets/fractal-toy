@@ -127,8 +127,8 @@ impl OCLWorker {
     }
 
     fn process(&mut self, p: TileRequest) -> Option<TileContent> {
-        if p.kind != self.kind || self.program.is_none() {
-            self.kind = p.kind;
+        if p.params.kind != self.kind || self.program.is_none() {
+            self.kind = p.params.kind;
             self.program = Some(self.compile());
         }
 
@@ -160,7 +160,7 @@ impl OCLWorker {
             .queue(self.cqueue.clone())
             .global_work_size(&dims)
             .arg(&dst_image)
-            .arg(p.iterations as f32)
+            .arg(p.params.iterations as f32)
             .arg(offset_x)
             .arg(offset_y)
             .arg(zoom)

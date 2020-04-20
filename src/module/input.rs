@@ -1,5 +1,4 @@
 use crate::math::*;
-
 use sdl2::controller::Axis;
 use sdl2::{event::*, keyboard::Keycode, mouse::MouseButton};
 use serde::{Deserialize, Serialize};

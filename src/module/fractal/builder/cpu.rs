@@ -6,7 +6,7 @@ use crate::math::*;
 pub fn build(rq: TileRequest) -> Vec<u8> {
     let mut pixels = vec![0; TEXTURE_SIZE * TEXTURE_SIZE * 4];
 
-    match rq.kind {
+    match rq.params.kind {
         TileType::Empty => {
             for y in 0..TEXTURE_SIZE {
                 for x in 0..TEXTURE_SIZE {
@@ -64,7 +64,7 @@ fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(inc: f64, rq: TileRequest, pixels: &m
     let [offset_x, offset_y, zoom] = rq.pos.to_f64_with_padding();
     let offset = Vector2::new(offset_x, offset_y);
 
-    let iterations = rq.iterations as u32;
+    let iterations = rq.params.iterations as u32;
     let inv_size = 1.0 / TEXTURE_SIZE as f64;
     let inv_iter = 1.0 / iterations as f64;
 

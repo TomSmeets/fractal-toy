@@ -1,6 +1,6 @@
 use super::builder::queue::TileQueue;
+use super::builder::TileParams;
 use super::builder::TileRequest;
-use super::builder::TileType;
 use super::viewport::Viewport;
 use super::TileTextureProvider;
 use crate::iter::compare::{CompareIter, ComparedValue};
@@ -32,8 +32,7 @@ impl<T> TileStorage<T> {
     pub fn update_tiles(
         &mut self,
         q: &mut TileQueue,
-        kind: TileType,
-        iter: i32,
+        params: TileParams,
         pos: &Viewport,
         texture_creator: &mut impl TileTextureProvider<Texture = T>,
     ) {
@@ -66,11 +65,7 @@ impl<T> TileStorage<T> {
         // items we rendered last frame
         let old_iter = self.tiles.drain(..);
         // items we should render this frame
-        let new_iter = pos.get_pos_all().map(|pos| TileRequest {
-            pos,
-            iterations: iter,
-            kind,
-        });
+        let new_iter = pos.get_pos_all().map(|pos| TileRequest { pos, params });
 
         assert!(self.next_frame_tiles.is_empty());
 
