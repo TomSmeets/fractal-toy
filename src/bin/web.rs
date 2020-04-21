@@ -29,15 +29,15 @@ impl TileTextureProvider for Provider {
         // img.set_src("https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Mandel_zoom_00_mandelbrot_set.jpg/1920px-Mandel_zoom_00_mandelbrot_set.jpg");
         let mut bytes = Vec::new();
 
-        {
-            let mut png = PNGEncoder::new(&mut bytes);
-            png.encode(
+        PNGEncoder::new(&mut bytes)
+            .encode(
                 px,
                 TEXTURE_SIZE as u32,
                 TEXTURE_SIZE as u32,
                 ColorType::Rgba8,
-            );
-        }
+            )
+            .unwrap();
+
         let bytes = base64::encode(bytes);
         let src = format!("data:image/png;base64,{}", &bytes);
         img.set_src(&src);
@@ -108,9 +108,9 @@ fn main() {
             .unwrap()
             .try_into()
             .unwrap();
-        button.set_attribute("type", "button");
-        button.set_attribute("value", name);
-        button.add_event_listener(move |event: ClickEvent| {
+        button.set_attribute("type", "button").unwrap();
+        button.set_attribute("value", name).unwrap();
+        button.add_event_listener(move |_: ClickEvent| {
             let mut input = input.borrow_mut();
             fun(&mut input);
         });
