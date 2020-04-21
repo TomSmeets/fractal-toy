@@ -1,5 +1,3 @@
-use image::png::PNGEncoder;
-use image::ColorType;
 use serial::fractal::TileTextureProvider;
 use serial::fractal::TEXTURE_SIZE;
 use serial::time::DeltaTime;
@@ -26,18 +24,16 @@ impl TileTextureProvider for Provider {
             .unwrap()
             .try_into()
             .unwrap();
-        // img.set_src("https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Mandel_zoom_00_mandelbrot_set.jpg/1920px-Mandel_zoom_00_mandelbrot_set.jpg");
+
         let mut bytes = Vec::new();
-
-        PNGEncoder::new(&mut bytes)
-            .encode(
-                px,
-                TEXTURE_SIZE as u32,
-                TEXTURE_SIZE as u32,
-                ColorType::Rgba8,
-            )
-            .unwrap();
-
+        {
+            let mut png = png::Encoder::new(&mut bytes, TEXTURE_SIZE as u32, TEXTURE_SIZE as u32);
+            png.set_color(png::ColorType::RGBA);
+            png.set_depth(png::BitDepth::Eight);
+            png.set_compression(png::Compression::Fast);
+            let mut png = png.write_header().unwrap();
+            png.write_image_data(&px).unwrap();
+        }
         let bytes = base64::encode(bytes);
         let src = format!("data:image/png;base64,{}", &bytes);
         img.set_src(&src);
