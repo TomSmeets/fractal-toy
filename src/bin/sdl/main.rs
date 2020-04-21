@@ -1,5 +1,6 @@
-pub mod atlas;
+mod atlas;
 mod game;
+mod sdl;
 
 use self::game::State;
 use serial::state::{load, load_in_place, save};
