@@ -1,12 +1,10 @@
-use serde::{Deserialize, Serialize};
-
+use crate::atlas::Atlas;
+use crate::atlas::AtlasRegion;
+use crate::atlas::AtlasTextureCreator;
 use sdl2::event::{Event, WindowEvent};
 use sdl2::pixels::Color;
-
+use serde::{Deserialize, Serialize};
 use serial::math::*;
-use serial::module::atlas::Atlas;
-use serial::module::atlas::AtlasRegion;
-use serial::module::atlas::AtlasTextureCreator;
 use serial::module::time::DeltaTime;
 use serial::module::{Fractal, Input, Sdl};
 
