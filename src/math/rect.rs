@@ -22,7 +22,7 @@ impl Rect {
             && p.y < self.pos.y + self.size.y
     }
 
-    #[cfg(feature = "sdl2")]
+    #[cfg(feature = "platform-sdl")]
     pub fn to_sdl(&self) -> sdl2::rect::Rect {
         sdl2::rect::Rect::new(
             self.pos.x,

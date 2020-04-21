@@ -67,10 +67,10 @@ impl Input {
     }
 }
 
-#[cfg(feature = "sdl2")]
+#[cfg(feature = "platform-sdl")]
 use sdl2::{controller::Axis, controller::Button, event::*, keyboard::Keycode, mouse::MouseButton};
 
-#[cfg(feature = "sdl2")]
+#[cfg(feature = "platform-sdl")]
 impl Input {
     fn handle_sdl_key(&mut self, key: Keycode, down: bool) {
         {

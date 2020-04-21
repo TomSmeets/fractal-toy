@@ -9,10 +9,10 @@ pub struct ThreadedTileBuilder {
 
 impl ThreadedTileBuilder {
     pub fn new(queue: Arc<Mutex<TileQueue>>) -> Self {
-        #[cfg(feature = "sdl2")]
+        #[cfg(feature = "platform-sdl")]
         let n = (sdl2::cpuinfo::cpu_count() - 1).max(1);
 
-        #[cfg(not(feature = "sdl2"))]
+        #[cfg(not(feature = "platform-sdl"))]
         let n = 4;
 
         let mut workers = Vec::with_capacity(n as usize);

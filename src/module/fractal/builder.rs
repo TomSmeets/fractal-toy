@@ -6,19 +6,12 @@
 //! Future implementations could be:
 //!
 //! TODO: cuda-float
-//!
 //! TODO: cuda-double
-//!
 //! TODO: opencl-float
-//!
 //! TODO: opencl-double
-//!
 //! TODO: cpu-float
-//!
 //! TODO: cpu-double
-//!
 //! TODO: sse2
-//!
 //! TODO: avx
 //!
 //! INFO:
@@ -58,11 +51,8 @@
 //! iteration count for each pixel. this would save. argb8: 4 bytes per pixel
 //!
 //! rgb8:  3 bytes per pixel
-//!
 //! iter:  2 bytes per pixel (u16)
-//!
 //! iter:  4 bytes per pixel (f32)
-//!
 //! iter:  8 bytes per pixel (f64)
 //!
 //! so rgb is not that bad actually, we should drop the alpha component (what
@@ -70,17 +60,14 @@
 
 pub mod cpu;
 pub mod queue;
+
+#[cfg(feature = "builder-threaded")]
 pub mod threaded;
 
-#[cfg(feature = "ocl")]
+#[cfg(feature = "builder-ocl")]
 pub mod ocl;
 
-#[cfg(feature = "ocl")]
-use self::ocl::OCLTileBuilder;
-
 use self::queue::TileQueue;
-use self::threaded::ThreadedTileBuilder;
-use crate::module::fractal::tile::TileContent;
 use crate::module::fractal::tile::TilePos;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
@@ -133,25 +120,26 @@ pub struct TileRequest {
 }
 
 pub struct TileBuilder {
+    #[allow(dead_code)]
     queue: Arc<Mutex<TileQueue>>,
 
-    #[allow(dead_code)]
     #[cfg(feature = "builder-threaded")]
-    threaded: ThreadedTileBuilder,
-
-    #[cfg(feature = "ocl")]
     #[allow(dead_code)]
-    ocl: OCLTileBuilder,
+    threaded: self::threaded::ThreadedTileBuilder,
+
+    #[cfg(feature = "builder-ocl")]
+    #[allow(dead_code)]
+    ocl: self::ocl::OCLTileBuilder,
 }
 
 impl TileBuilder {
     pub fn new(queue: Arc<Mutex<TileQueue>>) -> Self {
         TileBuilder {
             #[cfg(feature = "builder-threaded")]
-            threaded: ThreadedTileBuilder::new(Arc::clone(&queue)),
+            threaded: self::threaded::ThreadedTileBuilder::new(Arc::clone(&queue)),
 
-            #[cfg(feature = "ocl")]
-            ocl: OCLTileBuilder::new(Arc::clone(&queue)),
+            #[cfg(feature = "builder-ocl")]
+            ocl: self::ocl::OCLTileBuilder::new(Arc::clone(&queue)),
 
             queue,
         }
@@ -160,6 +148,7 @@ impl TileBuilder {
     pub fn update(&mut self) {
         #[cfg(feature = "builder-single")]
         {
+            use crate::module::fractal::tile::TileContent;
             let next: Option<TileRequest> = self.queue.lock().unwrap().pop_todo();
             if let Some(next) = next {
                 let t = TileContent::new(self::cpu::build(next));
