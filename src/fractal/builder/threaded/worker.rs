@@ -1,7 +1,7 @@
-use    crate::fractal::builder::{queue::*, TileRequest};
-  use  crate::fractal::tile::TileContent;
+use crate::fractal::builder::{queue::*, TileRequest};
+use crate::fractal::tile::TileContent;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{        Arc, Mutex};
+use std::sync::{Arc, Mutex};
 use std::thread;
 
 // TODO: it should be possible to generate wihout thread support
