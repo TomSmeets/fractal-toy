@@ -2,13 +2,19 @@ use image::png::PNGEncoder;
 use image::ColorType;
 use serial::module::fractal::TileTextureProvider;
 use serial::module::fractal::TEXTURE_SIZE;
+use serial::module::time::DeltaTime;
 use serial::module::Fractal;
+use serial::module::Input;
 use stdweb::js;
 use stdweb::unstable::TryInto;
+use stdweb::web::event::ClickEvent;
 use stdweb::web::html_element::ImageElement;
+use stdweb::web::html_element::InputElement;
 use stdweb::web::*;
 
 use serial::math::*;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 struct Provider {}
 impl TileTextureProvider for Provider {
@@ -46,22 +52,28 @@ impl TileTextureProvider for Provider {
 
 struct State {
     time: f64,
+    input: Rc<RefCell<Input>>,
     fractal: Fractal<ImageElement>,
 }
 
 impl State {
-    fn new() -> Self {
+    fn new(input: Rc<RefCell<Input>>) -> Self {
         State {
             time: 0.0,
+            input,
             fractal: Fractal::new(Vector2::new(600, 800)),
         }
     }
 
     fn update(&mut self, time: f64) {
-        let dt = time - self.time;
+        let dt = DeltaTime((time - self.time) as f32);
         self.time = time;
-
         let mut prov = Provider {};
+        {
+            let mut input = self.input.borrow_mut();
+            self.fractal.do_input(&input, dt);
+            input.begin();
+        }
         self.fractal.update_tiles(&mut prov);
         let msg = format!("tile_count: {}", self.fractal.tiles.tiles.len());
         js! {
@@ -83,6 +95,32 @@ fn main() {
         console.log(@{msg})
     }
 
-    let state = Box::new(State::new());
+    let input = Rc::new(RefCell::new(Input::new()));
+
+    fn make_button<F: FnMut(&mut Input) + 'static>(
+        input: &Rc<RefCell<Input>>,
+        name: &str,
+        mut fun: F,
+    ) {
+        let input = Rc::clone(input);
+        let button: InputElement = document()
+            .create_element("input")
+            .unwrap()
+            .try_into()
+            .unwrap();
+        button.set_attribute("type", "button");
+        button.set_attribute("value", name);
+        button.add_event_listener(move |event: ClickEvent| {
+            let mut input = input.borrow_mut();
+            fun(&mut input);
+        });
+        document().body().unwrap().append_child(&button);
+    }
+
+    make_button(&input, "cycle", |input| input.cycle = true);
+    make_button(&input, "more iters", |input| input.iter_inc = true);
+    make_button(&input, "less iters", |input| input.iter_dec = true);
+
+    let state = Box::new(State::new(input));
     animate(state, 0.0);
 }
