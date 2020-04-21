@@ -1,6 +1,6 @@
-use crate::module::fractal::builder::{queue::*, TileRequest, TileType};
-use crate::module::fractal::tile::TileContent;
-use crate::module::fractal::TEXTURE_SIZE;
+use crate::fractal::builder::{queue::*, TileRequest, TileType};
+use crate::fractal::tile::TileContent;
+use crate::fractal::TEXTURE_SIZE;
 use ocl::enums::{ImageChannelDataType, ImageChannelOrder, MemObjectType};
 use ocl::flags::CommandQueueProperties;
 use ocl::{Context, Device, Image, Kernel, Program, Queue};

@@ -5,8 +5,8 @@ use sdl2::event::{Event, WindowEvent};
 use sdl2::pixels::Color;
 use serde::{Deserialize, Serialize};
 use serial::math::*;
-use serial::module::time::DeltaTime;
-use serial::module::{Fractal, Input, Sdl};
+use serial::time::DeltaTime;
+use serial::{Fractal, Input, Sdl};
 
 #[derive(Serialize, Deserialize)]
 pub struct State {

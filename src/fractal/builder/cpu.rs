@@ -1,5 +1,5 @@
 use super::{TileRequest, TileType};
-use crate::module::fractal::TEXTURE_SIZE;
+use crate::fractal::TEXTURE_SIZE;
 
 use crate::math::*;
 

@@ -1,10 +1,10 @@
 use image::png::PNGEncoder;
 use image::ColorType;
-use serial::module::fractal::TileTextureProvider;
-use serial::module::fractal::TEXTURE_SIZE;
-use serial::module::time::DeltaTime;
-use serial::module::Fractal;
-use serial::module::Input;
+use serial::fractal::TileTextureProvider;
+use serial::fractal::TEXTURE_SIZE;
+use serial::time::DeltaTime;
+use serial::Fractal;
+use serial::Input;
 use stdweb::js;
 use stdweb::unstable::TryInto;
 use stdweb::web::event::ClickEvent;

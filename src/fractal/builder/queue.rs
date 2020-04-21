@@ -1,5 +1,5 @@
 use super::TileRequest;
-use crate::module::fractal::tile::*;
+use crate::fractal::tile::*;
 
 pub type TileQueue = WorkQueue<TileRequest, TileContent>;
 

@@ -68,7 +68,7 @@ pub mod threaded;
 pub mod ocl;
 
 use self::queue::TileQueue;
-use crate::module::fractal::tile::TilePos;
+use crate::fractal::tile::TilePos;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
@@ -148,7 +148,7 @@ impl TileBuilder {
     pub fn update(&mut self) {
         #[cfg(feature = "builder-single")]
         {
-            use crate::module::fractal::tile::TileContent;
+            use crate::fractal::tile::TileContent;
             let next: Option<TileRequest> = self.queue.lock().unwrap().pop_todo();
             if let Some(next) = next {
                 let t = TileContent::new(self::cpu::build(next));

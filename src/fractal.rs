@@ -1,6 +1,6 @@
 use crate::math::*;
-use crate::module::time::DeltaTime;
-use crate::module::Input;
+use crate::time::DeltaTime;
+use crate::Input;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 

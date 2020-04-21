@@ -1,10 +1,10 @@
 use sdl2::render::Texture;
 use serde::{Deserialize, Serialize};
 use serial::math::*;
-use serial::module::fractal::TileTextureProvider;
-use serial::module::fractal::PADDING;
-use serial::module::fractal::TEXTURE_SIZE;
-use serial::module::Sdl;
+use serial::fractal::TileTextureProvider;
+use serial::fractal::PADDING;
+use serial::fractal::TEXTURE_SIZE;
+use serial::Sdl;
 
 pub struct Atlas {
     // number of tiles in both x and y

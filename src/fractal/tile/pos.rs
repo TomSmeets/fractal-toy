@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 // TODO: Do something with padding,
 // either make it always standard or only atlas specific
 // preferably make padding optional, but it might be to hard
-use crate::module::fractal::PADDING;
-use crate::module::fractal::TEXTURE_SIZE;
+use crate::fractal::PADDING;
+use crate::fractal::TEXTURE_SIZE;
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Serialize, Deserialize, Debug)]
 pub struct TilePos {
