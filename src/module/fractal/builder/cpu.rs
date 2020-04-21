@@ -13,10 +13,10 @@ pub fn build(rq: TileRequest) -> Vec<u8> {
                     let i = y * TEXTURE_SIZE + x;
                     if x <= 4 || y <= 4 || x >= TEXTURE_SIZE - 5 || y >= TEXTURE_SIZE - 5 {
                         unsafe {
-                            *pixels.get_unchecked_mut(i * 4 + 0) = 255;
+                            *pixels.get_unchecked_mut(i * 4 + 0) = 64;
                             *pixels.get_unchecked_mut(i * 4 + 1) = 64;
                             *pixels.get_unchecked_mut(i * 4 + 2) = 64;
-                            *pixels.get_unchecked_mut(i * 4 + 3) = 64;
+                            *pixels.get_unchecked_mut(i * 4 + 3) = 255;
                         }
                     } else {
                         let dx = x as i32 * 2 - TEXTURE_SIZE as i32;
@@ -25,10 +25,10 @@ pub fn build(rq: TileRequest) -> Vec<u8> {
                         let l = TEXTURE_SIZE as i32;
                         let c = if r < l * l { 255 } else { 0 };
                         unsafe {
-                            *pixels.get_unchecked_mut(i * 4 + 0) = 255;
-                            *pixels.get_unchecked_mut(i * 4 + 1) = c as u8;
-                            *pixels.get_unchecked_mut(i * 4 + 2) = (x * c / TEXTURE_SIZE) as u8;
-                            *pixels.get_unchecked_mut(i * 4 + 3) = (y * c / TEXTURE_SIZE) as u8;
+                            *pixels.get_unchecked_mut(i * 4 + 0) = c as u8;
+                            *pixels.get_unchecked_mut(i * 4 + 1) = (x * c / TEXTURE_SIZE) as u8;
+                            *pixels.get_unchecked_mut(i * 4 + 2) = (y * c / TEXTURE_SIZE) as u8;
+                            *pixels.get_unchecked_mut(i * 4 + 3) = 255;
                         }
                     }
                 }
@@ -88,10 +88,10 @@ fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(inc: f64, rq: TileRequest, pixels: &m
             let rgb = hsv2rgb(itr as f64 / 64.0, v, v);
             let idx = x + y * TEXTURE_SIZE;
             unsafe {
-                *pixels.get_unchecked_mut(idx * 4 + 0) = 255;
-                *pixels.get_unchecked_mut(idx * 4 + 1) = rgb[0];
-                *pixels.get_unchecked_mut(idx * 4 + 2) = rgb[1];
-                *pixels.get_unchecked_mut(idx * 4 + 3) = rgb[2];
+                *pixels.get_unchecked_mut(idx * 4 + 0) = rgb[0];
+                *pixels.get_unchecked_mut(idx * 4 + 1) = rgb[1];
+                *pixels.get_unchecked_mut(idx * 4 + 2) = rgb[2];
+                *pixels.get_unchecked_mut(idx * 4 + 3) = 255;
             }
         }
     }

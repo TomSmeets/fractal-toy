@@ -66,6 +66,8 @@ impl<T> Fractal<T> {
             self.tile_builder = Some(TileBuilder::new(Arc::clone(&self.queue)));
         }
 
+        self.tile_builder.as_mut().unwrap().update();
+
         let mut queue = match self.queue.try_lock() {
             Err(_) => return,
             Ok(q) => q,

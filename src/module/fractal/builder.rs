@@ -80,6 +80,7 @@ use self::ocl::OCLTileBuilder;
 
 use self::queue::TileQueue;
 use self::threaded::ThreadedTileBuilder;
+use crate::module::fractal::tile::TileContent;
 use crate::module::fractal::tile::TilePos;
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
@@ -132,7 +133,10 @@ pub struct TileRequest {
 }
 
 pub struct TileBuilder {
+    queue: Arc<Mutex<TileQueue>>,
+
     #[allow(dead_code)]
+    #[cfg(feature = "builder-threaded")]
     threaded: ThreadedTileBuilder,
 
     #[cfg(feature = "ocl")]
@@ -143,10 +147,24 @@ pub struct TileBuilder {
 impl TileBuilder {
     pub fn new(queue: Arc<Mutex<TileQueue>>) -> Self {
         TileBuilder {
+            #[cfg(feature = "builder-threaded")]
             threaded: ThreadedTileBuilder::new(Arc::clone(&queue)),
 
             #[cfg(feature = "ocl")]
             ocl: OCLTileBuilder::new(Arc::clone(&queue)),
+
+            queue,
+        }
+    }
+
+    pub fn update(&mut self) {
+        #[cfg(feature = "builder-single")]
+        {
+            let next: Option<TileRequest> = self.queue.lock().unwrap().pop_todo();
+            if let Some(next) = next {
+                let t = TileContent::new(self::cpu::build(next));
+                self.queue.lock().unwrap().push_done(next, t);
+            }
         }
     }
 }

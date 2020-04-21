@@ -18,9 +18,11 @@ name = "web"
 required-features = [ "web" ]
 
 [features]
-default = [ "ocl", "sdl2" ]
-web = [ "stdweb", "stdweb-derive" ]
+default = [ "ocl", "sdl2", "builder-threaded" ]
+web = [ "stdweb", "stdweb-derive", "builder-single" ]
 static = [ "sdl2/static-link", "sdl2/bundled" ]
+builder-threaded = []
+builder-single = []
 
 # TODO: it might be time to move away from sdl2
 # lets stay away from vulkan for now.
@@ -34,6 +36,8 @@ cgmath     = { version = "0.17", features = [ "serde" ] }
 rand       = "0.7"
 rusttype   = "0.8"
 
+image = "0.23"
+base64 = "0.12"
 sdl2 = { version = "0.33", features = [ "unsafe_textures" ], optional = true }
 ocl  = { version = "0.19", optional = true }
 stdweb = { version = "0.4", optional = true }

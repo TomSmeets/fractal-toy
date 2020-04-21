@@ -52,13 +52,13 @@ __kernel void add(write_only image2d_t image, float max_iter, double offset_x, d
     float4 pixel = (float4)(1.0, 1.0, 1.0, 1.0);
 
     switch(part) {
-        case 0: pixel = (float4)(1.0f, max, inc, min); break;
-        case 1: pixel = (float4)(1.0f, dec, max, min); break;
-        case 2: pixel = (float4)(1.0f, min, max, inc); break;
-        case 3: pixel = (float4)(1.0f, min, dec, max); break;
-        case 4: pixel = (float4)(1.0f, inc, min, max); break;
-        case 5: pixel = (float4)(1.0f, max, min, dec); break;
-        default: pixel = (float4)(1.0f, max, max, max); break;
+        case 0: pixel = (float4)(max, inc, min, 1.0f); break;
+        case 1: pixel = (float4)(dec, max, min, 1.0f); break;
+        case 2: pixel = (float4)(min, max, inc, 1.0f); break;
+        case 3: pixel = (float4)(min, dec, max, 1.0f); break;
+        case 4: pixel = (float4)(inc, min, max, 1.0f); break;
+        case 5: pixel = (float4)(max, min, dec, 1.0f); break;
+        default: pixel = (float4)(max, max, max, 1.0f); break;
     }
 
     // write pixel to image
