@@ -1,25 +1,31 @@
-use crate::sdl::Sdl;
-use sdl2::render::Texture;
+use crate::fractal::TileTextureProvider;
+use crate::fractal::PADDING;
+use crate::fractal::TEXTURE_SIZE;
+use crate::math::*;
 use serde::{Deserialize, Serialize};
-use serial::fractal::TileTextureProvider;
-use serial::fractal::PADDING;
-use serial::fractal::TEXTURE_SIZE;
-use serial::math::*;
 
-pub struct Atlas {
+pub trait AtlasTextureProvider {
+    type Texture;
+
+    fn alloc(&mut self, width: u32, height: u32) -> Self::Texture;
+    fn update(&mut self, texture: &mut Self::Texture, rect: Rect, pixels: &[u8]);
+    fn free(&mut self, texture: Self::Texture);
+}
+
+pub struct Atlas<T> {
     // number of tiles in both x and y
-    size: u32,
+    pub size: u32,
 
     // resolution of one tile
-    res: u32,
+    pub res: u32,
 
     // this is a free list of avalible spots where z is layer index in `texture`
     free: Vec<Vector3<u32>>,
-    pub texture: Vec<Texture>,
+    pub texture: Vec<T>,
 }
 
-impl Atlas {
-    pub fn new() -> Atlas {
+impl<T> Atlas<T> {
+    pub fn new() -> Self {
         let res = TEXTURE_SIZE as u32;
         // 4K is somewhere near the maximum texture size
         // determined by trail and error, size does not matter that much,
@@ -33,11 +39,10 @@ impl Atlas {
         }
     }
 
-    pub fn alloc_page(&mut self, sdl: &mut Sdl) {
+    pub fn alloc_page(&mut self, sdl: &mut impl AtlasTextureProvider<Texture = T>) {
         let page = self.texture.len();
 
-        let texture = sdl.create_texture_static_rgba8(self.size * self.res, self.size * self.res);
-
+        let texture = sdl.alloc(self.size * self.res, self.size * self.res);
         self.texture.push(texture);
 
         self.free.reserve(self.size as usize * self.size as usize);
@@ -48,7 +53,11 @@ impl Atlas {
         }
     }
 
-    pub fn alloc(&mut self, sdl: &mut Sdl, pixels: &[u8]) -> AtlasRegion {
+    pub fn alloc(
+        &mut self,
+        sdl: &mut impl AtlasTextureProvider<Texture = T>,
+        pixels: &[u8],
+    ) -> AtlasRegion {
         let r = match self.free.pop() {
             Some(i) => AtlasRegion {
                 index: i,
@@ -63,8 +72,7 @@ impl Atlas {
 
         let r1 = r.rect();
         let t = &mut self.texture[r.index.z as usize];
-        t.update(Some(r1.to_sdl()), pixels, 4 * self.res as usize)
-            .unwrap();
+        sdl.update(t, r1, pixels);
         r
     }
 
@@ -72,31 +80,23 @@ impl Atlas {
         self.free.push(r.index);
         r.free = true;
     }
-
-    pub fn draw(&mut self, sdl: &mut Sdl, texture: &AtlasRegion, to: Rect) {
-        sdl.canvas_copy(
-            &self.texture[texture.index.z as usize],
-            Some(texture.rect_padded().to_sdl()),
-            Some(to.to_sdl()),
-        );
-    }
 }
 
-impl Default for Atlas {
+impl<T> Default for Atlas<T> {
     fn default() -> Self {
         Atlas::new()
     }
 }
 
-impl Drop for Atlas {
-    fn drop(&mut self) {
-        for t in self.texture.drain(..) {
-            unsafe {
-                t.destroy();
-            }
-        }
-    }
-}
+// impl Drop for Atlas<T> {
+//     fn drop(&mut self) {
+//         for t in self.texture.drain(..) {
+//             unsafe {
+//                 t.destroy();
+//             }
+//         }
+//     }
+// }
 
 #[derive(Serialize, Deserialize)]
 pub struct AtlasRegion {
@@ -143,12 +143,12 @@ impl Drop for AtlasRegion {
     }
 }
 
-pub struct AtlasTextureCreator<'a> {
-    pub atlas: &'a mut Atlas,
-    pub sdl: &'a mut Sdl,
+pub struct AtlasTextureCreator<'a, T: AtlasTextureProvider> {
+    pub atlas: &'a mut Atlas<T::Texture>,
+    pub sdl: &'a mut T,
 }
 
-impl<'a> TileTextureProvider for AtlasTextureCreator<'a> {
+impl<'a, T: AtlasTextureProvider> TileTextureProvider for AtlasTextureCreator<'a, T> {
     type Texture = AtlasRegion;
 
     fn alloc(&mut self, pixels_rgba: &[u8]) -> Self::Texture {

@@ -8,6 +8,7 @@ use std::ffi::CStr;
 pub struct ProgramAttribs {
     pub pos: GLint,
     pub col: GLint,
+    pub tex: GLint,
 }
 
 #[derive(Debug)]
@@ -27,7 +28,11 @@ impl ShaderProgram {
                 id: gl.CreateProgram(),
                 vert,
                 frag,
-                attr: ProgramAttribs { pos: -1, col: -1 },
+                attr: ProgramAttribs {
+                    pos: -1,
+                    col: -1,
+                    tex: -1,
+                },
             };
             gl.AttachShader(prog.id, prog.frag.id);
             gl.AttachShader(prog.id, prog.vert.id);
@@ -48,7 +53,10 @@ impl ShaderProgram {
                 prog.id,
                 CStr::from_bytes_with_nul(b"vert_col\0").unwrap().as_ptr(),
             );
-
+            prog.attr.tex = gl.GetAttribLocation(
+                prog.id,
+                CStr::from_bytes_with_nul(b"vert_tex\0").unwrap().as_ptr(),
+            );
             Ok(prog)
         }
     }

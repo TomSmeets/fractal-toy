@@ -1,4 +1,3 @@
-mod atlas;
 mod game;
 mod sdl;
 

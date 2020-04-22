@@ -1,10 +1,10 @@
-use crate::atlas::Atlas;
-use crate::atlas::AtlasRegion;
-use crate::atlas::AtlasTextureCreator;
 use crate::sdl::Sdl;
 use sdl2::event::{Event, WindowEvent};
 use sdl2::pixels::Color;
 use serde::{Deserialize, Serialize};
+use serial::atlas::Atlas;
+use serial::atlas::AtlasRegion;
+use serial::atlas::AtlasTextureCreator;
 use serial::math::*;
 use serial::time::DeltaTime;
 use serial::{Fractal, Input};
@@ -19,7 +19,7 @@ pub struct State {
     fractal: Fractal<AtlasRegion>,
 
     #[serde(skip)]
-    atlas: Atlas,
+    atlas: Atlas<sdl2::render::Texture>,
     window_size: Vector2<u32>,
 }
 
@@ -89,7 +89,12 @@ impl State {
         sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
         for (p, tile) in fractal.tiles.tiles.iter() {
             let r = fractal.pos.pos_to_rect(&p.pos);
-            atlas.draw(sdl, tile, r);
+            // atlas.draw(sdl, tile, r);
+            sdl.canvas_copy(
+                &atlas.texture[tile.index.z as usize],
+                Some(tile.rect_padded().to_sdl()),
+                Some(r.to_sdl()),
+            );
             if input.debug {
                 sdl.canvas.draw_rect(r.to_sdl()).unwrap();
             }

@@ -4,7 +4,9 @@ use glutin::window::Window;
 use glutin::window::WindowBuilder;
 use glutin::{ContextBuilder, ContextWrapper, PossiblyCurrent};
 
+use serial::atlas::*;
 use serial::fractal::TileTextureProvider;
+use serial::fractal::TEXTURE_SIZE;
 use serial::math::*;
 use serial::time::DeltaTime;
 use serial::Fractal;
@@ -17,15 +19,6 @@ mod shader;
 use self::gl::Gl;
 use self::imm::GfxImmState;
 use self::imm::Vertex;
-
-struct Provider {}
-impl TileTextureProvider for Provider {
-    type Texture = ();
-
-    fn alloc(&mut self, _: &[u8]) {}
-
-    fn free(&mut self, _: ()) {}
-}
 
 static mut GL: Option<Gl> = None;
 
@@ -81,7 +74,8 @@ impl GLCtx {
         unsafe { static_gl() }
     }
 
-    fn draw(&mut self, fractal: &Fractal<()>) {
+    #[rustfmt::skip]
+    fn draw(&mut self, atlas: &Atlas<gl::types::GLuint>, fractal: &Fractal<AtlasRegion>) {
         let gl = self.gl();
 
         unsafe {
@@ -89,6 +83,7 @@ impl GLCtx {
             gl.Clear(gl::COLOR_BUFFER_BIT);
         }
 
+        let mut texture = None;
         for (p, tile) in fractal.tiles.tiles.iter() {
             let r = fractal.pos.pos_to_rect(&p.pos);
             let lx = r.pos.x;
@@ -104,17 +99,99 @@ impl GLCtx {
             let hx = hx as f32 / size_x * 2.0 - 1.0;
             let hy = hy as f32 / size_y * 2.0 - 1.0;
 
-            self.imm.push(Vertex { pos: [lx, ly], col: [0.0, 0.0, 1.0]});
-            self.imm.push(Vertex { pos: [hx, ly], col: [1.0, 0.0, 1.0]});
-            self.imm.push(Vertex { pos: [hx, hy], col: [1.0, 1.0, 1.0]});
+            let ly = -ly;
+            let hy = -hy;
 
-            self.imm.push(Vertex { pos: [lx, ly], col: [0.0, 0.0, 1.0]});
-            self.imm.push(Vertex { pos: [hx, hy], col: [1.0, 1.0, 1.0]});
-            self.imm.push(Vertex { pos: [lx, hy], col: [0.0, 1.0, 1.0]});
+            let r = tile.rect_padded();
+            let tlx = r.pos.x;
+            let tly = r.pos.y;
+            let thx = r.pos.x + r.size.x;
+            let thy = r.pos.y + r.size.y;
+
+            match texture {
+                None => texture = Some(tile.index.z),
+                Some(t) => {
+                    if t != tile.index.z {
+                        texture = Some(tile.index.z);
+                    }
+                }
+            }
+
+            let tlx = tlx as f32 / (atlas.size*atlas.res) as f32;
+            let tly = tly as f32 / (atlas.size*atlas.res) as f32;
+            let thx = thx as f32 / (atlas.size*atlas.res) as f32;
+            let thy = thy as f32 / (atlas.size*atlas.res) as f32;
+
+
+            self.imm.push(Vertex { pos: [hx, hy], col: [1.0, 1.0, 1.0], tex: [ thx, thy ] });
+            self.imm.push(Vertex { pos: [hx, ly], col: [1.0, 0.0, 1.0], tex: [ thx, tly ] });
+            self.imm.push(Vertex { pos: [lx, ly], col: [0.0, 0.0, 1.0], tex: [ tlx, tly ] });
+
+            self.imm.push(Vertex { pos: [lx, hy], col: [0.0, 1.0, 1.0], tex: [ tlx, thy ] });
+            self.imm.push(Vertex { pos: [hx, hy], col: [1.0, 1.0, 1.0], tex: [ thx, thy ] });
+            self.imm.push(Vertex { pos: [lx, ly], col: [0.0, 0.0, 1.0], tex: [ tlx, tly ] });
+            self.imm.draw(atlas.texture[tile.index.z as usize] as i32, gl);
         }
 
-        self.imm.draw(gl);
+        if let Some(texture) = texture {
+            self.imm.draw(dbg!(atlas.texture[texture as usize]) as i32, gl);
+        }
+
         self.ctx.swap_buffers().unwrap();
+    }
+}
+
+impl Drop for GLCtx {
+    fn drop(&mut self) {
+        let gl = self.gl();
+    }
+}
+
+fn handle_input(input: &mut Input, event: &WindowEvent) {
+    use glutin::event;
+    use glutin::event::ElementState::*;
+    use glutin::event::MouseButton::*;
+    use glutin::event::MouseScrollDelta::*;
+    use glutin::event::VirtualKeyCode as VK;
+    use glutin::event::WindowEvent::*;
+
+    match event {
+        CursorMoved { position, .. } => {
+            input.mouse = Vector2::new(position.x as _, position.y as _)
+        },
+        MouseWheel { delta, .. } => match delta {
+            LineDelta(_, y) => input.scroll = *y as i32,
+            PixelDelta(_) => (),
+        },
+        MouseInput { button, state, .. } => match button {
+            Left => input.mouse_down = *state == Pressed,
+            _ => (),
+        },
+        KeyboardInput {
+            input:
+                event::KeyboardInput {
+                    virtual_keycode: Some(key),
+                    state,
+                    ..
+                },
+            ..
+        } => {
+            let f = match *state {
+                Pressed => 1.0,
+                Released => 0.0,
+            };
+
+            match key {
+                VK::W => input.dir_move.y = f,
+                VK::S => input.dir_move.y = -f,
+                VK::A => input.dir_move.x = f,
+                VK::D => input.dir_move.x = -f,
+                _ => {
+                    dbg!(key);
+                },
+            }
+        },
+        _ => (),
     }
 }
 
@@ -123,9 +200,10 @@ fn main() {
     let window = WindowBuilder::new();
 
     let mut ctx = GLCtx::new(window, &event_loop);
-    let mut fractal = Fractal::new(Vector2::new(800, 600));
+    let mut fractal: Fractal<AtlasRegion> = Fractal::new(Vector2::new(800, 600));
     let mut input = Input::new();
     let mut dt = DeltaTime(1.0 / 60.0);
+    let mut atlas = Atlas::new();
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
@@ -133,22 +211,24 @@ fn main() {
         match event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                WindowEvent::CursorMoved { position, .. } => {
-                    input.mouse = Vector2::new(position.x as _, position.y as _)
-                },
                 WindowEvent::Resized(sz) => {
                     fractal.pos.resize(Vector2::new(sz.width, sz.height));
                     ctx.resize(sz.width, sz.height);
                 },
-                _ => (),
+                e => handle_input(&mut input, &e),
             },
             Event::MainEventsCleared => {
-                let mut p = Provider {};
                 fractal.do_input(&input, dt);
                 input.begin();
-
-                fractal.update_tiles(&mut p);
-                ctx.draw(&fractal);
+                {
+                    let mut p = imm::Provider { gl: ctx.gl() };
+                    let mut p = AtlasTextureCreator {
+                        atlas: &mut atlas,
+                        sdl: &mut p,
+                    };
+                    fractal.update_tiles(&mut p);
+                }
+                ctx.draw(&atlas, &fractal);
             },
             Event::RedrawRequested(_) => {},
             _ => (),

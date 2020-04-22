@@ -1,7 +1,11 @@
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::rect::Rect;
+use sdl2::render::Texture;
 use sdl2::render::{BlendMode, Canvas};
 use sdl2::video::Window;
+use serial::atlas::AtlasTextureProvider;
+use serial::fractal::TEXTURE_SIZE;
+use serial::math::Rect as MRect;
 use serial::math::*;
 
 pub struct Sdl {
@@ -83,5 +87,25 @@ impl Sdl {
 impl Default for Sdl {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl AtlasTextureProvider for Sdl {
+    type Texture = Texture;
+
+    fn alloc(&mut self, width: u32, height: u32) -> Texture {
+        self.create_texture_static_rgba8(width, height)
+    }
+
+    fn free(&mut self, t: Texture) {
+        unsafe {
+            t.destroy();
+        }
+    }
+
+    fn update(&mut self, texture: &mut Texture, rect: MRect, pixels: &[u8]) {
+        texture
+            .update(Some(rect.to_sdl()), pixels, 4 * TEXTURE_SIZE as usize)
+            .unwrap();
     }
 }

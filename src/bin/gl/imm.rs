@@ -3,6 +3,10 @@ use crate::gl;
 use crate::gl::types::*;
 use crate::gl::Gl;
 use memoffset::offset_of;
+use serial::atlas::AtlasTextureProvider;
+use serial::fractal::TEXTURE_SIZE;
+use serial::math::Rect;
+use std::ffi::CStr;
 use std::ffi::CString;
 
 #[repr(C)]
@@ -10,16 +14,69 @@ use std::ffi::CString;
 pub struct Vertex {
     pub pos: [f32; 2],
     pub col: [f32; 3],
+    pub tex: [f32; 2],
 }
 
 #[derive(Debug)]
 pub struct GfxImmState {
     gl_vao: GLuint,
     gl_verts: GLuint,
+    gl_texture: GLuint,
 
     shader: ShaderProgram,
 
     vertex: Vec<Vertex>,
+}
+
+pub struct Provider<'a> {
+    pub gl: &'a mut Gl,
+}
+
+impl AtlasTextureProvider for Provider<'_> {
+    type Texture = GLuint;
+
+    fn alloc(&mut self, w: u32, h: u32) -> GLuint {
+        let mut texture = 0;
+        unsafe {
+            self.gl.GenTextures(1, &mut texture);
+            self.gl.BindTexture(gl::TEXTURE_2D, texture);
+            self.gl.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as _);
+            self.gl.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as _);
+            self.gl.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as _);
+            self.gl.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as _);
+            self.gl.TexImage2D(
+                gl::TEXTURE_2D,
+                0,
+                gl::RGBA8 as _,
+                w as _,
+                h as _,
+                0,
+                gl::RGBA as _,
+                gl::UNSIGNED_BYTE as _,
+                std::ptr::null(),
+            );
+        }
+        texture
+    }
+
+    fn update(&mut self, texture: &mut GLuint, rect: Rect, px: &[u8]) {
+        unsafe {
+            self.gl.BindTexture(gl::TEXTURE_2D, *texture);
+            self.gl.TexSubImage2D(
+                gl::TEXTURE_2D,
+                0,
+                rect.pos.x,
+                rect.pos.y,
+                rect.size.x,
+                rect.size.y,
+                gl::RGBA,
+                gl::UNSIGNED_BYTE,
+                px.as_ptr() as _,
+            );
+        }
+    }
+
+    fn free(&mut self, texture: GLuint) {}
 }
 
 impl GfxImmState {
@@ -38,9 +95,18 @@ impl GfxImmState {
 
         let shader = ShaderProgram::compile(gl, &vert, &frag).unwrap();
 
+        let gl_texture = 0;
+        unsafe {
+            gl.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as _);
+            gl.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as _);
+            gl.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as _);
+            gl.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as _);
+        }
+
         GfxImmState {
             gl_vao,
             gl_verts,
+            gl_texture,
             shader,
             vertex: Vec::new(),
         }
@@ -50,14 +116,9 @@ impl GfxImmState {
         self.vertex.push(v);
     }
 
-    pub fn draw(&mut self, gl: &mut Gl) {
+    pub fn draw(&mut self, texture: gl::types::GLint, gl: &mut Gl) {
         self.shader.use_program(gl);
         unsafe {
-            if true {
-                gl.Enable(gl::CULL_FACE);
-                gl.CullFace(gl::BACK);
-            }
-
             gl.BindVertexArray(self.gl_vao);
 
             gl.BindBuffer(gl::ARRAY_BUFFER, self.gl_verts);
@@ -86,24 +147,26 @@ impl GfxImmState {
                 offset_of!(Vertex, col) as _,
             );
             gl.EnableVertexAttribArray(self.shader.attr.col as _);
+            gl.VertexAttribPointer(
+                self.shader.attr.tex as _,
+                2,
+                gl::FLOAT,
+                gl::FALSE,
+                std::mem::size_of::<Vertex>() as _,
+                offset_of!(Vertex, tex) as _,
+            );
+            gl.EnableVertexAttribArray(self.shader.attr.tex as _);
 
-            // glBindTexture(GL_TEXTURE_2D, g_gl.texture);
+            if true {
+                gl.Enable(gl::CULL_FACE);
+                gl.CullFace(gl::BACK);
+            }
+
+            gl.BindTexture(gl::TEXTURE_2D, texture as _);
             gl.DrawArrays(gl::TRIANGLES, 0, self.vertex.len() as i32);
         }
 
         self.vertex.clear();
-        self.push(Vertex {
-            pos: [0.0, 1.0],
-            col: [1.0, 0.0, 0.0],
-        });
-        self.push(Vertex {
-            pos: [-1.0, -1.0],
-            col: [0.0, 1.0, 0.0],
-        });
-        self.push(Vertex {
-            pos: [1.0, -1.0],
-            col: [0.0, 0.0, 1.0],
-        });
     }
 }
 
