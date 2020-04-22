@@ -4,9 +4,7 @@ use crate::gl::types::*;
 use crate::gl::Gl;
 use memoffset::offset_of;
 use serial::atlas::AtlasTextureProvider;
-use serial::fractal::TEXTURE_SIZE;
 use serial::math::Rect;
-use std::ffi::CStr;
 use std::ffi::CString;
 
 #[repr(C)]
@@ -40,10 +38,14 @@ impl AtlasTextureProvider for Provider<'_> {
         unsafe {
             self.gl.GenTextures(1, &mut texture);
             self.gl.BindTexture(gl::TEXTURE_2D, texture);
-            self.gl.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as _);
-            self.gl.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as _);
-            self.gl.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as _);
-            self.gl.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as _);
+            self.gl
+                .TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as _);
+            self.gl
+                .TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as _);
+            self.gl
+                .TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as _);
+            self.gl
+                .TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as _);
             self.gl.TexImage2D(
                 gl::TEXTURE_2D,
                 0,
@@ -76,7 +78,11 @@ impl AtlasTextureProvider for Provider<'_> {
         }
     }
 
-    fn free(&mut self, texture: GLuint) {}
+    fn free(&mut self, texture: GLuint) {
+        unsafe {
+            self.gl.DeleteTextures(1, &texture);
+        }
+    }
 }
 
 impl GfxImmState {
