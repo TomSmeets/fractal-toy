@@ -14,11 +14,12 @@ pub struct Input {
     pub zoom: f32,
     pub dir_move: V2,
 
-    pub quit: bool,
     pub iter_inc: bool,
     pub iter_dec: bool,
     pub cycle: bool,
 
+    // TODO: these are not part of fractal, maybe move out?
+    pub quit: bool,
     pub debug: bool,
     pub pause: bool,
     pub load: bool,
