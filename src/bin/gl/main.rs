@@ -1,18 +1,20 @@
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::{ControlFlow, EventLoop};
 use glutin::window::WindowBuilder;
-use serial::atlas::*;
+use serial::atlas::AtlasRegion;
 use serial::math::*;
 use serial::time::DeltaTime;
 use serial::Fractal;
 use serial::Input;
 
+mod atlas;
 mod ctx;
 mod gl;
 mod imm;
 mod program;
 mod shader;
 
+use self::atlas::Atlas;
 use self::ctx::GLCtx;
 use self::gl::Gl;
 
@@ -98,14 +100,7 @@ fn main() {
             Event::MainEventsCleared => {
                 fractal.do_input(&input, dt);
                 input.begin();
-                {
-                    let mut p = imm::Provider { gl: ctx.gl() };
-                    let mut p = AtlasTextureCreator {
-                        atlas: &mut atlas,
-                        sdl: &mut p,
-                    };
-                    fractal.update_tiles(&mut p);
-                }
+                fractal.update_tiles(&mut atlas.provider(ctx.gl()));
                 ctx.draw(&atlas, &fractal);
             },
             Event::RedrawRequested(_) => {},

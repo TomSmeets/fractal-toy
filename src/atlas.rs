@@ -12,39 +12,37 @@ pub trait AtlasTextureProvider {
     fn free(&mut self, texture: Self::Texture);
 }
 
-pub struct Atlas<T> {
+pub struct SimpleAtlas {
     // number of tiles in both x and y
     pub size: u32,
 
     // resolution of one tile
     pub res: u32,
 
-    // this is a free list of avalible spots where z is layer index in `texture`
+    pub page_count: u32,
+
+    // free tiles
     free: Vec<Vector3<u32>>,
-    pub texture: Vec<T>,
 }
 
-impl<T> Atlas<T> {
+impl SimpleAtlas {
     pub fn new() -> Self {
         let res = TEXTURE_SIZE as u32;
         // 4K is somewhere near the maximum texture size
         // determined by trail and error, size does not matter that much,
         let texture_size = 4 * 1024;
         let size = texture_size / res;
-        Atlas {
+        SimpleAtlas {
             free: Vec::new(),
             size,
             res,
-            texture: Vec::new(),
+            page_count: 0,
         }
     }
 
-    pub fn alloc_page(&mut self, sdl: &mut impl AtlasTextureProvider<Texture = T>) {
-        let page = self.texture.len();
-
-        let texture = sdl.alloc(self.size * self.res, self.size * self.res);
-        self.texture.push(texture);
-
+    pub fn alloc_page(&mut self) {
+        let page = self.page_count;
+        self.page_count += 1;
         self.free.reserve(self.size as usize * self.size as usize);
         for j in 0..self.size {
             for i in 0..self.size {
@@ -53,11 +51,7 @@ impl<T> Atlas<T> {
         }
     }
 
-    pub fn alloc(
-        &mut self,
-        sdl: &mut impl AtlasTextureProvider<Texture = T>,
-        pixels: &[u8],
-    ) -> AtlasRegion {
+    pub fn alloc(&mut self) -> AtlasRegion {
         let r = match self.free.pop() {
             Some(i) => AtlasRegion {
                 index: i,
@@ -65,20 +59,57 @@ impl<T> Atlas<T> {
                 free: false,
             },
             None => {
-                self.alloc_page(sdl);
-                self.alloc(sdl, pixels)
+                self.alloc_page();
+                self.alloc()
             },
         };
-
-        let r1 = r.rect();
-        let t = &mut self.texture[r.index.z as usize];
-        sdl.update(t, r1, pixels);
         r
     }
 
     pub fn remove(&mut self, mut r: AtlasRegion) {
         self.free.push(r.index);
         r.free = true;
+    }
+}
+
+pub struct Atlas<T> {
+    pub simple: SimpleAtlas,
+    pub texture: Vec<T>,
+}
+
+impl<T> Atlas<T> {
+    pub fn new() -> Self {
+        Atlas {
+            simple: SimpleAtlas::new(),
+            texture: Vec::new(),
+        }
+    }
+
+    pub fn alloc(
+        &mut self,
+        sdl: &mut impl AtlasTextureProvider<Texture = T>,
+        pixels: &[u8],
+    ) -> AtlasRegion {
+        let region = self.simple.alloc();
+        let texture = match self.texture.get_mut(region.index.z as usize) {
+            Some(texture) => texture,
+            None => {
+                let texture = sdl.alloc(
+                    self.simple.size * self.simple.res,
+                    self.simple.size * self.simple.res,
+                );
+                self.texture.push(texture);
+                self.texture.last_mut().unwrap()
+            },
+        };
+
+        sdl.update(texture, region.rect(), pixels);
+
+        region
+    }
+
+    pub fn remove(&mut self, r: AtlasRegion) {
+        self.simple.remove(r);
     }
 }
 

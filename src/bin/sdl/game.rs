@@ -1,10 +1,9 @@
+use crate::atlas::Atlas;
 use crate::sdl::Sdl;
 use sdl2::event::{Event, WindowEvent};
 use sdl2::pixels::Color;
 use serde::{Deserialize, Serialize};
-use serial::atlas::Atlas;
 use serial::atlas::AtlasRegion;
-use serial::atlas::AtlasTextureCreator;
 use serial::math::*;
 use serial::time::DeltaTime;
 use serial::{Fractal, Input};
@@ -19,7 +18,7 @@ pub struct State {
     fractal: Fractal<AtlasRegion>,
 
     #[serde(skip)]
-    atlas: Atlas<sdl2::render::Texture>,
+    atlas: Atlas,
     window_size: Vector2<u32>,
 }
 
@@ -78,7 +77,7 @@ impl State {
         fractal.do_input(input, time);
 
         if !input.pause {
-            fractal.update_tiles(&mut AtlasTextureCreator { sdl, atlas });
+            fractal.update_tiles(&mut atlas.provider(sdl));
         }
 
         // start drawing

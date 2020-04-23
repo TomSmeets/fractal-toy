@@ -1,3 +1,4 @@
+use crate::atlas::Atlas;
 use crate::gl;
 use crate::gl::Gl;
 use crate::imm::GfxImmState;
@@ -8,7 +9,7 @@ use glutin::event_loop::EventLoop;
 use glutin::window::Window;
 use glutin::window::WindowBuilder;
 use glutin::{ContextBuilder, ContextWrapper, PossiblyCurrent};
-use serial::atlas::*;
+use serial::atlas::AtlasRegion;
 use serial::math::*;
 use serial::Fractal;
 
@@ -58,7 +59,7 @@ impl GLCtx {
     }
 
     #[rustfmt::skip]
-    pub fn draw(&mut self, atlas: &Atlas<gl::types::GLuint>, fractal: &Fractal<AtlasRegion>) {
+    pub fn draw(&mut self, atlas: &Atlas, fractal: &Fractal<AtlasRegion>) {
         let gl = self.gl();
 
         unsafe {
@@ -100,10 +101,11 @@ impl GLCtx {
                 }
             }
 
-            let tlx = tlx as f32 / (atlas.size*atlas.res) as f32;
-            let tly = tly as f32 / (atlas.size*atlas.res) as f32;
-            let thx = thx as f32 / (atlas.size*atlas.res) as f32;
-            let thy = thy as f32 / (atlas.size*atlas.res) as f32;
+            let pixel_size = atlas.simple.size * atlas.simple.res;
+            let tlx = tlx as f32 / pixel_size as f32;
+            let tly = tly as f32 / pixel_size as f32;
+            let thx = thx as f32 / pixel_size as f32;
+            let thy = thy as f32 / pixel_size as f32;
 
 
             self.imm.push(Vertex { pos: [hx, hy], col: [1.0, 1.0, 1.0], tex: [ thx, thy ] });
