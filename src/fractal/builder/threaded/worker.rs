@@ -4,7 +4,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-// TODO: it should be possible to generate wihout thread support
 pub struct Worker {
     quit: Arc<AtomicBool>,
     handle: Option<std::thread::JoinHandle<()>>,
