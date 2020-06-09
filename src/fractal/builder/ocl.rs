@@ -7,6 +7,8 @@ use ocl::{Context, Device, Image, Kernel, Program, Queue};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use  crate::algo;
+use  crate::algo::FractalAlg;
 
 static SOURCE_TEMPLATE: &str = include_str!("kernel.cl");
 
@@ -45,55 +47,47 @@ pub struct OCLWorker {
     queue: Arc<Mutex<TileQueue>>,
     quit: Arc<AtomicBool>,
 
-    kind: TileType,
+    kind: algo::GenericAlg,
 }
 
 impl OCLWorker {
     pub fn compile(&mut self) -> Program {
-        let pow2 = r#"
-            tmp = z;
-            z.x = tmp.x*tmp.x - tmp.y*tmp.y + c.x;
-            z.y = 2.0*tmp.x*tmp.y + c.y;
-        "#;
+        let alg = self.kind;
+        let mut src = String::new();
+        for s in alg.steps.iter() {
+            let cl_pow2: &str= r#"
+                tmp = z;
+                z.x = tmp.x*tmp.x - tmp.y*tmp.y + c.x;
+                z.y = 2.0*tmp.x*tmp.y + c.y;
+            "#;
 
-        let pow3 = r#"
-            tmp = z;
-            z.x = tmp.x*tmp.x*tmp.x - tmp.y*tmp.y*tmp.x - 2*tmp.x*tmp.y*tmp.y + c.x;
-            z.y = 2.0*tmp.x*tmp.x*tmp.y + tmp.x*tmp.x*tmp.y - tmp.y*tmp.y*tmp.y + c.y;
-        "#;
+            let cl_pow3: &str = r#"
+                tmp = z;
+                z.x = tmp.x*tmp.x*tmp.x - tmp.y*tmp.y*tmp.x - 2*tmp.x*tmp.y*tmp.y + c.x;
+                z.y = 2.0*tmp.x*tmp.x*tmp.y + tmp.x*tmp.x*tmp.y - tmp.y*tmp.y*tmp.y + c.y;
+            "#;
 
-        let abs = r#"
-            z = fabs(z);
-            z.y = -z.y;
-        "#;
+            let cl_abs: &str= r#"
+                z = fabs(z);
+                z.y = -z.y;
+            "#;
 
-        let mut alg = String::new();
-        let mut inc = "1.0";
-
-        match self.kind {
-            TileType::Mandelbrot => {
-                alg.push_str(pow2);
-            },
-            TileType::ShipHybrid => {
-                alg.push_str(pow3);
-                alg.push_str(abs);
-                alg.push_str(pow2);
-                inc = "2.5";
-            },
-            TileType::BurningShip => {
-                alg.push_str(abs);
-                alg.push_str(pow2);
-            },
-            TileType::Empty => {},
+            src.push_str(match s {
+                algo::AlgStep::Pow2 => cl_pow2,
+                algo::AlgStep::Pow3 => cl_pow3,
+                algo::AlgStep::Abs  => cl_abs,
+            })
         }
+
+        let inc = alg.iterations_per_step().to_string();
 
         let new_src = SOURCE_TEMPLATE
             .replace(
                 "@TEXTURE_SIZE@",
                 &format!("{}.0", super::super::TEXTURE_SIZE),
             )
-            .replace("@ALGORITHM@", &alg)
-            .replace("@INC@", inc);
+            .replace("@ALGORITHM@", &src)
+            .replace("@INC@", &inc);
 
         Program::builder()
             .src(new_src)
@@ -122,7 +116,7 @@ impl OCLWorker {
             cqueue,
             program: None,
             queue,
-            kind: TileType::Empty,
+            kind: algo::GenericAlg { steps: vec![] },
         }
     }
 

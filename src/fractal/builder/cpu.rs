@@ -3,60 +3,21 @@ use crate::fractal::TEXTURE_SIZE;
 
 use crate::math::*;
 
+use crate::algo;
+use crate::algo::FractalAlg;
+
 pub fn build(rq: TileRequest) -> Vec<u8> {
     let mut pixels = vec![0; TEXTURE_SIZE * TEXTURE_SIZE * 4];
 
-    match rq.params.kind {
-        TileType::Empty => {
-            for y in 0..TEXTURE_SIZE {
-                for x in 0..TEXTURE_SIZE {
-                    let i = y * TEXTURE_SIZE + x;
-                    if x <= 4 || y <= 4 || x >= TEXTURE_SIZE - 5 || y >= TEXTURE_SIZE - 5 {
-                        unsafe {
-                            *pixels.get_unchecked_mut(i * 4 + 0) = 64;
-                            *pixels.get_unchecked_mut(i * 4 + 1) = 64;
-                            *pixels.get_unchecked_mut(i * 4 + 2) = 64;
-                            *pixels.get_unchecked_mut(i * 4 + 3) = 255;
-                        }
-                    } else {
-                        let dx = x as i32 * 2 - TEXTURE_SIZE as i32;
-                        let dy = y as i32 * 2 - TEXTURE_SIZE as i32;
-                        let r = dx * dx + dy * dy;
-                        let l = TEXTURE_SIZE as i32;
-                        let c = if r < l * l { 255 } else { 0 };
-                        unsafe {
-                            *pixels.get_unchecked_mut(i * 4 + 0) = c as u8;
-                            *pixels.get_unchecked_mut(i * 4 + 1) = (x * c / TEXTURE_SIZE) as u8;
-                            *pixels.get_unchecked_mut(i * 4 + 2) = (y * c / TEXTURE_SIZE) as u8;
-                            *pixels.get_unchecked_mut(i * 4 + 3) = 255;
-                        }
-                    }
-                }
-            }
-        },
-        TileType::Mandelbrot => {
-            draw_mandel(1.0, rq, &mut pixels, |mut z, c| {
-                z = cpx_sqr(z) + c;
-                z
-            });
-        },
-        TileType::BurningShip => {
-            draw_mandel(1.0, rq, &mut pixels, |mut z, c| {
-                z = cpx_abs(z);
-                z = cpx_sqr(z) + c;
-                z
-            });
-        },
-        // cube = 1.5, sqr = 1.0
-        TileType::ShipHybrid => {
-            draw_mandel(2.5, rq, &mut pixels, |mut z, c| {
-                z = cpx_cube(z) + c; // 1.5
-                z = cpx_abs(z);
-                z = cpx_sqr(z) + c; // 1.0
-                z
-            });
-        },
-    }
+    let alg: &dyn algo::FractalAlg = match rq.params.kind {
+        TileType::Mandelbrot  => &algo::Mandelbrot  {},
+        TileType::BurningShip => &algo::BurningShip {},
+        TileType::ShipHybrid  => &algo::ShipHybrid  {},
+        TileType::Empty       => &algo::Debug  { },
+    };
+
+    let alg = alg.steps();
+    draw_mandel(alg.iterations_per_step(), rq, &mut pixels, |z, c| alg.step_cpu(z, c));
     pixels
 }
 

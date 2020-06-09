@@ -70,6 +70,7 @@ pub mod ocl;
 use self::queue::TileQueue;
 use crate::fractal::tile::TilePos;
 use serde::{Deserialize, Serialize};
+use crate::math::V2;
 use std::sync::{Arc, Mutex};
 
 #[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Serialize, Deserialize)]
@@ -106,6 +107,7 @@ impl TileType {
         }
     }
 }
+
 
 #[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct TileParams {
@@ -144,6 +146,9 @@ impl TileBuilder {
             queue,
         }
     }
+
+    // todo split into (params & algo)
+    pub fn set_algo(alg: TileParams) {}
 
     pub fn update(&mut self) {
         #[cfg(feature = "builder-single")]
