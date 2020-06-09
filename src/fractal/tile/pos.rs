@@ -1,13 +1,12 @@
-use crate::math::*;
-use serde::{Deserialize, Serialize};
-
 // TODO: Do something with padding,
 // either make it always standard or only atlas specific
 // preferably make padding optional, but it might be to hard
 use crate::fractal::PADDING;
 use crate::fractal::TEXTURE_SIZE;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Debug)]
 pub struct TilePos {
     pub z: u8,
     pub x: i64,
@@ -17,17 +16,15 @@ pub struct TilePos {
 #[rustfmt::skip]
 #[test]
 fn test_fromf64() {
-    assert_eq!(TilePos::from_f64(V2::new(0.0,  0.0),  0), TilePos { x: 0, y: 0, z: 0 });
-    assert_eq!(TilePos::from_f64(V2::new(0.5,  0.5),  0), TilePos { x: 0, y: 0, z: 0 });
-    assert_eq!(TilePos::from_f64(V2::new(0.9,  0.9),  0), TilePos { x: 0, y: 0, z: 0 });
-    assert_eq!(TilePos::from_f64(V2::new(1.01, 1.01), 0), TilePos { x: 1, y: 1, z: 0 });
-
-    assert_eq!(TilePos::from_f64(V2::new(0.0, 0.0), 1), TilePos { x: 0, y: 0, z: 1 });
-    assert_eq!(TilePos::from_f64(V2::new(0.4, 0.4), 1), TilePos { x: 0, y: 0, z: 1 });
-    assert_eq!(TilePos::from_f64(V2::new(0.5, 0.4), 1), TilePos { x: 1, y: 0, z: 1 });
-    assert_eq!(TilePos::from_f64(V2::new(0.4, 0.5), 1), TilePos { x: 0, y: 1, z: 1 });
-
-    assert_eq!(TilePos::from_f64(V2::new(0.0, 0.0), 16), TilePos { x: 0, y: 0, z: 16 });
+    assert_eq!(TilePos::from_real(0.0,  0.0,  0), TilePos { x: 0, y: 0, z: 0 });
+    assert_eq!(TilePos::from_real(0.5,  0.5,  0), TilePos { x: 0, y: 0, z: 0 });
+    assert_eq!(TilePos::from_real(0.9,  0.9,  0), TilePos { x: 0, y: 0, z: 0 });
+    assert_eq!(TilePos::from_real(1.01, 1.01, 0), TilePos { x: 1, y: 1, z: 0 });
+    assert_eq!(TilePos::from_real(0.0, 0.0, 1), TilePos { x: 0, y: 0, z: 1 });
+    assert_eq!(TilePos::from_real(0.4, 0.4, 1), TilePos { x: 0, y: 0, z: 1 });
+    assert_eq!(TilePos::from_real(0.5, 0.4, 1), TilePos { x: 1, y: 0, z: 1 });
+    assert_eq!(TilePos::from_real(0.4, 0.5, 1), TilePos { x: 0, y: 1, z: 1 });
+    assert_eq!(TilePos::from_real(0.0, 0.0, 16), TilePos { x: 0, y: 0, z: 16 });
 }
 
 impl TilePos {
@@ -35,11 +32,11 @@ impl TilePos {
         TilePos { x: 0, y: 0, z: 0 }
     }
 
-    pub fn from_f64(p: V2, z: u8) -> TilePos {
+    pub fn from_real(x: f64, y: f64, z: u8) -> TilePos {
         let s = (1_u64 << z) as f64;
         TilePos {
-            x: (p.x * s).floor() as i64,
-            y: (p.y * s).floor() as i64,
+            x: (x * s).floor() as i64,
+            y: (y * s).floor() as i64,
             z,
         }
     }
