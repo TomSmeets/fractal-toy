@@ -51,6 +51,14 @@ impl TilePos {
         [(self.x + 1) as f64 * s, (self.y + 1) as f64 * s]
     }
 
+    /// [ min_x, min_y, max_x, max_y ]
+    pub fn rect(&self) -> [f64; 4] {
+        let s = self.tile_scale();
+        let x = self.x as f64 * s;
+        let y = self.y as f64 * s;
+        [x, y, x + s, y + s]
+    }
+
     // pub fn to_f64_with_padding(&self) -> [f64; 3] {
     //     let s = self.tile_scale();
     //     let pad = s * (PADDING as f64 / TEXTURE_SIZE as f64);
