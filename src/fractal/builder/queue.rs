@@ -7,6 +7,7 @@ pub type TileQueue = WorkQueue<TileRequest, TileContent>;
 //  [done..,doing..,todo..]
 pub struct WorkQueue<K, V> {
     pub todo: Vec<K>,
+    // doing is used here to remember which tiles we already enqueued
     pub doing: Vec<K>,
     pub done: Vec<(K, V)>,
 }
