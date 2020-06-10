@@ -62,11 +62,12 @@ impl TilePos {
     // }
 }
 
+#[rustfmt::skip]
 #[test]
 fn test_root() {
-    assert_eq!(TilePos::root().pos_min(), [0.0, 0.0]);
-    assert_eq!(TilePos::root().pos_max(), [1.0, 1.0]);
+    assert_eq!(TilePos::root().pos_min(),    [0.0, 0.0]);
     assert_eq!(TilePos::root().pos_center(), [0.5, 0.5]);
+    assert_eq!(TilePos::root().pos_max(),    [1.0, 1.0]);
     assert_eq!(TilePos::root().tile_scale(), 1.0);
     assert_eq!(TilePos::root(), TilePos::at(0.0, 0.0, 0));
     assert_eq!(TilePos::root(), TilePos::at(0.4, 0.4, 0));
