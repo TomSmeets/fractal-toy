@@ -87,7 +87,7 @@ impl State {
 
         // draw tiles
         sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
-        for (p, tile) in fractal.tiles.tiles.iter() {
+        for (p, tile) in fractal.tiles.iter() {
             let r = fractal.pos.pos_to_rect(&p.pos);
             match tile {
                 Task::Done(tile) => {

@@ -75,7 +75,7 @@ impl<T> Fractal<T> {
             // TODO: either predict this boundst
             // TODO: or dynamically change it
             // TODO: or make it small and provide tiles more than once per frame
-            let (in_tx, in_rx)   = bounded(32);
+            let (in_tx, in_rx) = bounded(32);
             let (out_tx, out_rx) = bounded(32);
             let q = QueueHandler {
                 tx: in_tx,
@@ -92,7 +92,7 @@ impl<T> Fractal<T> {
         let mut todo_count = 0;
         let mut doing_count = 0;
         let mut done_count = 0;
-        for (_, t) in self.tiles.tiles.iter() {
+        for (_, t) in self.tiles.iter() {
             match t {
                 Task::Todo => todo_count += 1,
                 Task::Doing => doing_count += 1,
@@ -104,7 +104,7 @@ impl<T> Fractal<T> {
         dbg!(done_count);
 
         // send todo to builders
-        for (r, t) in self.tiles.tiles.iter_mut() {
+        for (r, t) in self.tiles.iter_mut() {
             if let Task::Todo = t {
                 if let Ok(_) = queue.tx.try_send(*r) {
                     *t = Task::Doing;
@@ -116,7 +116,7 @@ impl<T> Fractal<T> {
 
         // read from builders
         while let Ok((r, t)) = queue.rx.try_recv() {
-            if let Some(v) = self.tiles.tiles.get_mut(&r) {
+            if let Some(v) = self.tiles.get_mut(&r) {
                 let t = texture_creator.alloc(&t.pixels);
                 *v = Task::Done(t);
             }
