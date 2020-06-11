@@ -10,8 +10,8 @@ use glutin::window::Window;
 use glutin::window::WindowBuilder;
 use glutin::{ContextBuilder, ContextWrapper, PossiblyCurrent};
 use serial::atlas::AtlasRegion;
-use serial::fractal::storage::Task;
 use serial::math::*;
+use serial::tilemap::Task;
 use serial::Fractal;
 
 pub struct GLCtx {

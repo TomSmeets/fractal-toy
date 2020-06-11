@@ -1,6 +1,6 @@
-use super::tile::TilePos;
 use super::TEXTURE_SIZE;
 use crate::math::*;
+use crate::tilemap::TilePos;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]

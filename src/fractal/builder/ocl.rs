@@ -1,6 +1,6 @@
 use crate::fractal::builder::{TileRequest, TileType};
-use crate::fractal::tile::TileContent;
 use crate::fractal::TEXTURE_SIZE;
+use crate::tilemap::TileContent;
 use crossbeam_channel::{Receiver, Sender};
 use ocl::enums::{ImageChannelDataType, ImageChannelOrder, MemObjectType};
 use ocl::flags::CommandQueueProperties;

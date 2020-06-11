@@ -1,13 +1,15 @@
-use super::builder::TileParams;
-use super::builder::TileRequest;
-use super::viewport::Viewport;
-use super::TileTextureProvider;
+// TODO: remove all external deps
+use crate::fractal::builder::TileParams;
+use crate::fractal::builder::TileRequest;
+use crate::fractal::viewport::Viewport;
+use crate::fractal::TileTextureProvider;
 use crate::iter::compare::{CompareIter, ComparedValue};
 use std::collections::BTreeMap;
 
 type Iter<'a, T> = std::collections::btree_map::Iter<'a, TileRequest, Task<T>>;
 type IterMut<'a, T> = std::collections::btree_map::IterMut<'a, TileRequest, Task<T>>;
 
+// TODO: move task out of here
 #[derive(Debug)]
 pub enum Task<T> {
     Todo,

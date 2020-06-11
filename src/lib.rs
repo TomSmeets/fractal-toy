@@ -8,4 +8,6 @@ pub mod fractal;
 pub mod input;
 pub mod time;
 
+pub mod tilemap;
+
 pub use self::{atlas::Atlas, fractal::Fractal, input::Input, time::Time};

@@ -4,8 +4,8 @@ use sdl2::event::{Event, WindowEvent};
 use sdl2::pixels::Color;
 use serde::{Deserialize, Serialize};
 use serial::atlas::AtlasRegion;
-use serial::fractal::storage::Task;
 use serial::math::*;
+use serial::tilemap::Task;
 use serial::time::DeltaTime;
 use serial::{Fractal, Input};
 

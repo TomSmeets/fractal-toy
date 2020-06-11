@@ -66,8 +66,8 @@ pub mod threaded;
 #[cfg(feature = "builder-ocl")]
 pub mod ocl;
 
-use crate::fractal::tile::TileContent;
-use crate::fractal::tile::TilePos;
+use crate::tilemap::TileContent;
+use crate::tilemap::TilePos;
 use crossbeam_channel::{Receiver, Sender};
 use serde::{Deserialize, Serialize};
 

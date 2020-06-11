@@ -4,18 +4,16 @@ use crate::Input;
 use serde::{Deserialize, Serialize};
 
 pub mod builder;
-pub mod storage;
-pub mod tile;
 pub mod viewport;
 
 use self::builder::TileBuilder;
 use self::builder::TileParams;
 use self::builder::TileRequest;
 use self::builder::TileType;
-use self::storage::Task;
-use self::storage::TileStorage;
-use self::tile::TileContent;
 use self::viewport::Viewport;
+use crate::tilemap::Task;
+use crate::tilemap::TileContent;
+use crate::tilemap::TileStorage;
 use crossbeam_channel::bounded;
 use crossbeam_channel::{Receiver, Sender};
 
