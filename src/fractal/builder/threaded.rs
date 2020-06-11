@@ -1,14 +1,15 @@
-use super::queue::*;
-use std::sync::{Arc, Mutex};
 mod worker;
 use self::worker::Worker;
+use crate::fractal::builder::TileRequest;
+use crate::fractal::tile::TileContent;
+use crossbeam_channel::{Receiver, Sender};
 
 pub struct ThreadedTileBuilder {
     pub workers: Vec<Worker>,
 }
 
 impl ThreadedTileBuilder {
-    pub fn new(queue: Arc<Mutex<TileQueue>>) -> Self {
+    pub fn new(rx: Receiver<TileRequest>, tx: Sender<(TileRequest, TileContent)>) -> Self {
         #[cfg(feature = "platform-sdl")]
         let n = (sdl2::cpuinfo::cpu_count() - 1).max(1);
 
@@ -18,16 +19,8 @@ impl ThreadedTileBuilder {
         let mut workers = Vec::with_capacity(n as usize);
         println!("spawning {} workers", n);
         for _ in 0..n {
-            workers.push(Worker::new(Arc::clone(&queue)));
+            workers.push(Worker::new(rx.clone(), tx.clone()));
         }
         Self { workers }
-    }
-}
-
-impl Drop for ThreadedTileBuilder {
-    fn drop(&mut self) {
-        for w in self.workers.iter_mut() {
-            w.quit();
-        }
     }
 }

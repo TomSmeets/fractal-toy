@@ -59,7 +59,6 @@
 //! about alignment? profile!)
 
 pub mod cpu;
-pub mod queue;
 
 #[cfg(feature = "builder-threaded")]
 pub mod threaded;
@@ -67,12 +66,12 @@ pub mod threaded;
 #[cfg(feature = "builder-ocl")]
 pub mod ocl;
 
-use self::queue::TileQueue;
+use crate::fractal::tile::TileContent;
 use crate::fractal::tile::TilePos;
+use crossbeam_channel::{Receiver, Sender};
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
 
-#[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Serialize, Deserialize, Debug)]
 pub enum TileType {
     /// Used mostly for debugging
     Empty,
@@ -107,22 +106,19 @@ impl TileType {
     }
 }
 
-#[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Serialize, Deserialize, Debug)]
 pub struct TileParams {
     pub kind: TileType,
     pub iterations: i32,
 }
 
-#[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd)]
+#[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Debug)]
 pub struct TileRequest {
     pub pos: TilePos,
     pub params: TileParams,
 }
 
 pub struct TileBuilder {
-    #[allow(dead_code)]
-    queue: Arc<Mutex<TileQueue>>,
-
     #[cfg(feature = "builder-threaded")]
     #[allow(dead_code)]
     threaded: self::threaded::ThreadedTileBuilder,
@@ -133,27 +129,15 @@ pub struct TileBuilder {
 }
 
 impl TileBuilder {
-    pub fn new(queue: Arc<Mutex<TileQueue>>) -> Self {
+    pub fn new(rx: Receiver<TileRequest>, tx: Sender<(TileRequest, TileContent)>) -> Self {
         TileBuilder {
             #[cfg(feature = "builder-threaded")]
-            threaded: self::threaded::ThreadedTileBuilder::new(Arc::clone(&queue)),
+            threaded: self::threaded::ThreadedTileBuilder::new(rx.clone(), tx.clone()),
 
             #[cfg(feature = "builder-ocl")]
-            ocl: self::ocl::OCLTileBuilder::new(Arc::clone(&queue)),
-
-            queue,
+            ocl: self::ocl::OCLTileBuilder::new(rx.clone(), tx.clone()),
         }
     }
 
-    pub fn update(&mut self) {
-        #[cfg(feature = "builder-single")]
-        {
-            use crate::fractal::tile::TileContent;
-            let next: Option<TileRequest> = self.queue.lock().unwrap().pop_todo();
-            if let Some(next) = next {
-                let t = TileContent::new(self::cpu::build(next));
-                self.queue.lock().unwrap().push_done(next, t);
-            }
-        }
-    }
+    pub fn update(&mut self) {}
 }

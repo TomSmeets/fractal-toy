@@ -1,18 +1,24 @@
-use super::builder::queue::TileQueue;
 use super::builder::TileParams;
 use super::builder::TileRequest;
 use super::viewport::Viewport;
 use super::TileTextureProvider;
 use crate::iter::compare::{CompareIter, ComparedValue};
 
+#[derive(Debug)]
+pub enum Task<T> {
+    Todo,
+    Doing,
+    Done(T),
+}
+
 /// Remembers generated tiles, and adds new ones
 pub struct TileStorage<T> {
     /// These tiles are always sorted with respect to TileRequest
-    pub tiles: Vec<(TileRequest, T)>,
+    pub tiles: Vec<(TileRequest, Task<T>)>,
 
     /// temporary storage for updating tiles to prevent per frame allocations
     /// should alwyas be empty
-    next_frame_tiles: Vec<(TileRequest, T)>,
+    next_frame_tiles: Vec<(TileRequest, Task<T>)>,
 }
 
 impl<T> Default for TileStorage<T> {
@@ -29,10 +35,18 @@ impl<T> TileStorage<T> {
         }
     }
 
+    pub fn insert(&mut self, k: TileRequest, v: Task<T>) {
+        self.tiles.push((k, v));
+
+        // This should use timsort and should be pretty fast for this usecase
+        // Note that in this spesific case, the normal sort will probably be faster than
+        // the unstable sort TODO: profile :)
+        self.next_frame_tiles.sort_by(|(r1, _), (r2, _)| r1.cmp(r2));
+    }
+
     // TODO: reduce argument count
     pub fn update_tiles(
         &mut self,
-        q: &mut TileQueue,
         params: TileParams,
         pos: &Viewport,
         texture_creator: &mut impl TileTextureProvider<Texture = T>,
@@ -73,40 +87,24 @@ impl<T> TileStorage<T> {
 
         let iter = CompareIter::new(old_iter, new_iter, |l, r| l.0.cmp(r));
 
-        q.todo.clear();
         for i in iter {
             match i {
                 ComparedValue::Left((_, t)) => {
-                    // only in old_iter, remove value
-                    texture_creator.free(t);
+                    if let Task::Done(t) = t {
+                        // only in old_iter, remove value
+                        texture_creator.free(t);
+                    }
                 },
                 ComparedValue::Right(r) => {
-                    // Only in new_iter: enqueue value
-                    // TODO: subtract sorted iters instead of this if
-                    if !q.doing.contains(&r) && !q.done.iter().any(|x| x.0 == r) {
-                        q.todo.push(r)
-                    }
+                    self.next_frame_tiles.push((r, Task::Todo));
                 },
                 ComparedValue::Both(l, _) => {
                     // this value should be retained, as it is in new_iter and old_iter
-                    self.next_frame_tiles.push(l)
+                    self.next_frame_tiles.push(l);
                 },
             }
         }
-        q.todo.reverse();
 
-        // TODO: add sorted done at beginning when iterating
-        // q.done.sort_unstable_by(|(r1, _), (r2, _)| r1.cmp(r2));
-        for (k, v) in q.done.drain(..) {
-            let tile = texture_creator.alloc(&v.pixels);
-            // TODO: what is faster sort or iter?
-            self.next_frame_tiles.push((k, tile));
-        }
-
-        // This should use timsort and should be pretty fast for this usecase
-        // Note that in this spesific case, the normal sort will probably be faster than
-        // the unstable sort TODO: profile :)
-        self.next_frame_tiles.sort_by(|(r1, _), (r2, _)| r1.cmp(r2));
         std::mem::swap(&mut self.next_frame_tiles, &mut self.tiles);
     }
 }

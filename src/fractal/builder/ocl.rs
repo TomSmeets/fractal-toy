@@ -1,30 +1,25 @@
-use crate::fractal::builder::{queue::*, TileRequest, TileType};
+use crate::fractal::builder::{TileRequest, TileType};
 use crate::fractal::tile::TileContent;
 use crate::fractal::TEXTURE_SIZE;
+use crossbeam_channel::{Receiver, Sender};
 use ocl::enums::{ImageChannelDataType, ImageChannelOrder, MemObjectType};
 use ocl::flags::CommandQueueProperties;
 use ocl::{Context, Device, Image, Kernel, Program, Queue};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
 use std::thread;
 
 static SOURCE_TEMPLATE: &str = include_str!("kernel.cl");
 
 pub struct OCLTileBuilder {
-    quit: Arc<AtomicBool>,
     handle: Option<std::thread::JoinHandle<()>>,
 }
 
 impl OCLTileBuilder {
-    pub fn new(queue: Arc<Mutex<TileQueue>>) -> Self {
-        let quit = Arc::new(AtomicBool::new(false));
-        let q2 = Arc::clone(&quit);
+    pub fn new(rx: Receiver<TileRequest>, tx: Sender<(TileRequest, TileContent)>) -> Self {
         let handle = thread::spawn(|| {
-            let mut w = OCLWorker::new(q2, queue);
+            let mut w = OCLWorker::new(rx, tx);
             w.run();
         });
         OCLTileBuilder {
-            quit,
             handle: Some(handle),
         }
     }
@@ -32,7 +27,6 @@ impl OCLTileBuilder {
 
 impl Drop for OCLTileBuilder {
     fn drop(&mut self) {
-        self.quit.store(true, Ordering::Relaxed);
         self.handle.take().unwrap().join().unwrap();
     }
 }
@@ -42,8 +36,9 @@ pub struct OCLWorker {
     device: Device,
     cqueue: Queue,
     program: Option<Program>,
-    queue: Arc<Mutex<TileQueue>>,
-    quit: Arc<AtomicBool>,
+
+    rx: Receiver<TileRequest>,
+    tx: Sender<(TileRequest, TileContent)>,
 
     kind: TileType,
 }
@@ -102,7 +97,7 @@ impl OCLWorker {
             .unwrap()
     }
 
-    pub fn new(quit: Arc<AtomicBool>, queue: Arc<Mutex<TileQueue>>) -> Self {
+    pub fn new(rx: Receiver<TileRequest>, tx: Sender<(TileRequest, TileContent)>) -> Self {
         let context = Context::builder()
             .devices(Device::specifier().first())
             .build()
@@ -116,12 +111,12 @@ impl OCLWorker {
         .unwrap();
 
         OCLWorker {
-            quit,
             context,
             device,
             cqueue,
             program: None,
-            queue,
+            rx,
+            tx,
             kind: TileType::Empty,
         }
     }
@@ -178,24 +173,9 @@ impl OCLWorker {
     }
 
     pub fn run(&mut self) {
-        loop {
-            if self.quit.load(Ordering::Relaxed) {
-                break;
-            }
-
-            let next: Option<TileRequest> = self.queue.lock().unwrap().pop_todo();
-            match next {
-                Some(p) => {
-                    if let Some(r) = self.process(p) {
-                        self.queue.lock().unwrap().push_done(p, r);
-                    }
-                },
-                None => {
-                    thread::yield_now();
-                    // yield will use 100% cpu for some reason, so we also wait a bit
-                    // TODO: use wait and notify?
-                    thread::sleep(std::time::Duration::from_millis(50));
-                },
+        while let Ok(next) = self.rx.recv() {
+            if let Some(r) = self.process(next) {
+                self.tx.send((next, r)).unwrap();
             }
         }
     }

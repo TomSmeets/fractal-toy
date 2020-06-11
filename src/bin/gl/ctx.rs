@@ -10,6 +10,7 @@ use glutin::window::Window;
 use glutin::window::WindowBuilder;
 use glutin::{ContextBuilder, ContextWrapper, PossiblyCurrent};
 use serial::atlas::AtlasRegion;
+use serial::fractal::storage::Task;
 use serial::math::*;
 use serial::Fractal;
 
@@ -68,7 +69,10 @@ impl GLCtx {
         }
 
         let mut texture = None;
-        for (p, tile) in fractal.tiles.tiles.iter() {
+        for (p, tile) in fractal.tiles.tiles.iter().filter_map(|(p, t)| match t {
+            Task::Done(t) => Some((p, t)),
+                _ => None,
+        }) {
             let r = fractal.pos.pos_to_rect(&p.pos);
             let lx = r.pos.x;
             let ly = r.pos.y;

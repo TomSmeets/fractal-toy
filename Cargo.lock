@@ -1812,6 +1812,7 @@ dependencies = [
  "base64",
  "cgmath",
  "criterion",
+ "crossbeam-channel",
  "gilrs",
  "gl_generator 0.14.0",
  "glutin",

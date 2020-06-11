@@ -2,19 +2,22 @@ use crate::math::*;
 use crate::time::DeltaTime;
 use crate::Input;
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
 
 pub mod builder;
 pub mod storage;
 pub mod tile;
 pub mod viewport;
 
-use self::builder::queue::{TileQueue, WorkQueue};
 use self::builder::TileBuilder;
 use self::builder::TileParams;
+use self::builder::TileRequest;
 use self::builder::TileType;
+use self::storage::Task;
 use self::storage::TileStorage;
+use self::tile::TileContent;
 use self::viewport::Viewport;
+use crossbeam_channel::bounded;
+use crossbeam_channel::{Receiver, Sender};
 
 // We are blending the textures
 pub const PADDING: u32 = 1;
@@ -25,6 +28,12 @@ pub trait TileTextureProvider {
     type Texture;
     fn alloc(&mut self, pixels_rgba: &[u8]) -> Self::Texture;
     fn free(&mut self, texture: Self::Texture);
+}
+
+pub struct QueueHandler {
+    pub tx: Sender<TileRequest>,
+    pub rx: Receiver<(TileRequest, TileContent)>,
+    pub builder: TileBuilder,
 }
 
 /// After so many updates, i am not entierly sure what this struct is supposed to become
@@ -40,9 +49,7 @@ pub struct Fractal<T> {
     pub tiles: TileStorage<T>,
 
     #[serde(skip)]
-    pub queue: Arc<Mutex<TileQueue>>,
-    #[serde(skip)]
-    tile_builder: Option<TileBuilder>,
+    pub queue: Option<QueueHandler>,
 }
 
 impl<T> Fractal<T> {
@@ -50,9 +57,7 @@ impl<T> Fractal<T> {
         Fractal {
             tiles: TileStorage::new(),
             pos: Viewport::new(size),
-            tile_builder: None,
-            queue: Arc::new(Mutex::new(WorkQueue::new())),
-
+            queue: None,
             params: TileParams {
                 kind: TileType::Mandelbrot,
                 iterations: 64,
@@ -62,19 +67,55 @@ impl<T> Fractal<T> {
 
     pub fn update_tiles(&mut self, texture_creator: &mut impl TileTextureProvider<Texture = T>) {
         // This recreates tile builders when entire struct is deserialized
-        if self.tile_builder.is_none() {
-            self.tile_builder = Some(TileBuilder::new(Arc::clone(&self.queue)));
+        if self.queue.is_none() {
+            let (in_tx, in_rx) = bounded(32);
+            let (out_tx, out_rx) = bounded(32);
+            let q = QueueHandler {
+                tx: in_tx,
+                rx: out_rx,
+                builder: TileBuilder::new(in_rx, out_tx),
+            };
+            self.queue = Some(q);
+            println!("created queue")
         }
 
-        self.tile_builder.as_mut().unwrap().update();
+        let queue = self.queue.as_mut().unwrap();
+        queue.builder.update();
 
-        let mut queue = match self.queue.try_lock() {
-            Err(_) => return,
-            Ok(q) => q,
-        };
+        let mut todo_count = 0;
+        let mut doing_count = 0;
+        let mut done_count = 0;
+        for (_, t) in self.tiles.tiles.iter() {
+            match t {
+                Task::Todo  => { todo_count+=1; },
+                Task::Doing => { doing_count+=1; },
+                Task::Done(_)  => { done_count+=1; },
+            }
+        }
+        dbg!(todo_count);
+        dbg!(doing_count);
+        dbg!(done_count);
 
-        self.tiles
-            .update_tiles(&mut queue, self.params, &self.pos, texture_creator);
+        // send todo to builders
+        for (r, t) in self.tiles.tiles.iter_mut() {
+            if let Task::Todo = t {} else { continue; }
+            if let Ok(_) = queue.tx.try_send(*r) {} else { break; }
+            *t = Task::Doing;
+        }
+
+        // read from builders
+        while let Ok((r, t)) = queue.rx.try_recv() {
+            // send todo to builders
+            for (k, v) in self.tiles.tiles.iter_mut() {
+                if k == &r {
+                    let t = texture_creator.alloc(&t.pixels);
+                    *v = Task::Done(t);
+                    break;
+                }
+            }
+        }
+
+        self.tiles.update_tiles(self.params, &self.pos, texture_creator);
     }
 
     pub fn do_input(&mut self, input: &Input, dt: DeltaTime) {

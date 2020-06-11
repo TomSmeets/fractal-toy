@@ -5,8 +5,7 @@ use crate::fractal::PADDING;
 use crate::fractal::TEXTURE_SIZE;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Debug)]
 pub struct TilePos {
     pub z: u8,
     pub x: i64,
