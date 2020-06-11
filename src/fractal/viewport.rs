@@ -124,10 +124,7 @@ impl Viewport {
         (z_min as u8..z_max as u8 + 1).flat_map(move |z| {
             let min = off - s;
             let max = off + s;
-            let min = TilePos::from_real(min.x, min.y, z);
-            let max = TilePos::from_real(max.x, max.y, z);
-            (min.x - pad..max.x + pad + 1)
-                .flat_map(move |x| (min.y - pad..max.y + pad + 1).map(move |y| TilePos { x, y, z }))
+            TilePos::between(min, max, z, pad)
         })
     }
 

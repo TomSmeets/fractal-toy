@@ -3,13 +3,14 @@
 // preferably make padding optional, but it might be to hard
 use crate::fractal::PADDING;
 use crate::fractal::TEXTURE_SIZE;
+use crate::math::V2;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Debug)]
 pub struct TilePos {
-    pub z: u8,
-    pub x: i64,
-    pub y: i64,
+    z: u8,
+    x: i64,
+    y: i64,
 }
 
 #[rustfmt::skip]
@@ -38,6 +39,15 @@ impl TilePos {
             y: (y * s).floor() as i64,
             z,
         }
+    }
+
+    // Iterate over tiles between 'min' and 'max'
+    pub fn between(min: V2, max: V2, z: u8, pad: i64) -> impl Iterator<Item = TilePos> {
+        let min = TilePos::from_real(min.x, min.y, z);
+        let max = TilePos::from_real(max.x, max.y, z);
+        let rx = (min.x - pad)..(max.x + pad + 1);
+        let ry = (min.y - pad)..(max.y + pad + 1);
+        rx.flat_map(move |x| ry.clone().map(move |y| TilePos { x, y, z }))
     }
 
     pub fn parent(&mut self) {
