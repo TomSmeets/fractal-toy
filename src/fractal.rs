@@ -116,13 +116,9 @@ impl<T> Fractal<T> {
 
         // read from builders
         while let Ok((r, t)) = queue.rx.try_recv() {
-            // send todo to builders
-            for (k, v) in self.tiles.tiles.iter_mut() {
-                if k == &r {
-                    let t = texture_creator.alloc(&t.pixels);
-                    *v = Task::Done(t);
-                    break;
-                }
+            if let Some(v) = self.tiles.tiles.get_mut(&r) {
+                let t = texture_creator.alloc(&t.pixels);
+                *v = Task::Done(t);
             }
         }
 
