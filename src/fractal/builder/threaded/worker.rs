@@ -20,7 +20,9 @@ impl Worker {
 fn worker(rx: Receiver<TileRequest>, tx: Sender<(TileRequest, TileContent)>) {
     while let Ok(next) = rx.recv() {
         let t = TileContent::new(super::super::cpu::build(next));
-        tx.send((next, t)).unwrap();
+        if let Err(_) = tx.send((next, t)) {
+            break;
+        }
     }
 }
 

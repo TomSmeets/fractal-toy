@@ -89,37 +89,38 @@ impl State {
         sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
         for (p, tile) in fractal.tiles.tiles.iter() {
             let r = fractal.pos.pos_to_rect(&p.pos);
-            if let Task::Done(tile) = tile {
-                // atlas.draw(sdl, tile, r);
-                sdl.canvas_copy(
-                    &atlas.texture[tile.index.z as usize],
-                    Some(tile.rect_padded().to_sdl()),
-                    Some(r.to_sdl()),
-                );
-            }
+            match tile {
+                Task::Done(tile) => {
+                    // atlas.draw(sdl, tile, r);
+                    sdl.canvas_copy(
+                        &atlas.texture[tile.index.z as usize],
+                        Some(tile.rect_padded().to_sdl()),
+                        Some(r.to_sdl()),
+                    );
 
-            if input.debug {
-                sdl.canvas.draw_rect(r.to_sdl()).unwrap();
+                    if input.debug {
+                        sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
+                        sdl.canvas.draw_rect(r.to_sdl()).unwrap();
+                    }
+                },
+
+                Task::Todo => {
+                    if input.debug {
+                        sdl.canvas.set_draw_color(Color::RGB(0, 0, 255));
+                        sdl.canvas.draw_rect(r.to_sdl()).unwrap();
+                    }
+                },
+                Task::Doing => {
+                    if input.debug {
+                        sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
+                        sdl.canvas.draw_rect(r.to_sdl()).unwrap();
+                    }
+                },
             }
         }
 
         // draw debug
         if input.debug {
-            // visualize queue
-            // {
-            //     let q = fractal.queue.lock().unwrap();
-            //     sdl.canvas.set_draw_color(Color::RGB(0, 0, 255));
-            //     for p in q.todo.iter() {
-            //         let r = fractal.pos.pos_to_rect(&p.pos);
-            //         sdl.canvas.draw_rect(r.to_sdl()).unwrap();
-            //     }
-            //     sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
-            //     for p in q.doing.iter() {
-            //         let r = fractal.pos.pos_to_rect(&p.pos);
-            //         sdl.canvas.draw_rect(r.to_sdl()).unwrap();
-            //     }
-            // }
-
             // Show atlas
             // TODO: show in ui window?
             let w = window_size.x as i32 / atlas.texture.len().max(4) as i32;
