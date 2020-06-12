@@ -59,6 +59,8 @@ impl<T> Fractal<T> {
             params: TileParams {
                 kind: TileType::Mandelbrot,
                 iterations: 64,
+                padding: 1,
+                resolution: TEXTURE_SIZE as u32,
             },
         }
     }

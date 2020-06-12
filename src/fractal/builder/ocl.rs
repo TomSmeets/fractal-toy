@@ -147,7 +147,10 @@ impl OCLWorker {
             .build()
             .unwrap();
 
-        let rect = p.pos.rect_padded();
+        let rect = p
+            .pos
+            .rect()
+            .grow_relative(p.params.padding as f64 / p.params.resolution as f64);
 
         let kernel = Kernel::builder()
             .program(&program)

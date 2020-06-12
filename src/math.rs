@@ -26,14 +26,16 @@ impl FRect {
         FRect { x, y, w, h }
     }
 
-    /// Grow this rectangle on all sides by 'n'
-    /// NOTE: total size will increase by 2n!
-    pub fn grow(self, n: f64) -> Self {
+    /// Grow this rectangle on all sides by 's'
+    /// NOTE: total size will increase by 2*n*{w, h}!
+    pub fn grow_relative(self, s: f64) -> Self {
+        let sx = s * self.w;
+        let sy = s * self.h;
         Self {
-            x: self.x - n,
-            y: self.y - n,
-            w: self.w + n + n,
-            h: self.h + n + n,
+            x: self.x - sx,
+            y: self.y - sy,
+            w: self.w + sx + sx,
+            h: self.h + sy + sy,
         }
     }
 

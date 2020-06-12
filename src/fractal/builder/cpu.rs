@@ -61,7 +61,10 @@ pub fn build(rq: TileRequest) -> Vec<u8> {
 }
 
 fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(inc: f64, rq: TileRequest, pixels: &mut [u8], f: F) {
-    let rect = rq.pos.rect_padded();
+    let rect = rq
+        .pos
+        .rect()
+        .grow_relative(rq.params.padding as f64 / rq.params.resolution as f64);
     let offset = rect.corner_min();
     let zoom = rect.w;
 

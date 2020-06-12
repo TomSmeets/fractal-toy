@@ -1,8 +1,3 @@
-// TODO: Do something with padding,
-// either make it always standard or only atlas specific
-// preferably make padding optional, but it might be to hard
-use crate::fractal::PADDING;
-use crate::fractal::TEXTURE_SIZE;
 use crate::math::FRect;
 use crate::math::V2;
 use serde::{Deserialize, Serialize};
@@ -49,13 +44,6 @@ impl TilePos {
         let x = self.x as f64 * s;
         let y = self.y as f64 * s;
         FRect::new(x, y, s, s)
-    }
-
-    /// Recatngle with a single pixel padding
-    /// TODO: Move out of here]
-    pub fn rect_padded(&self) -> FRect {
-        let pad = PADDING as f64 / TEXTURE_SIZE as f64;
-        self.rect().grow(self.tile_scale() * pad)
     }
 
     pub fn to_f64(&self) -> [f64; 3] {
