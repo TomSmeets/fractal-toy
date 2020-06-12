@@ -1,17 +1,17 @@
 use super::{TileRequest, TileType};
-use crate::fractal::TEXTURE_SIZE;
 
 use crate::math::*;
 
 pub fn build(rq: TileRequest) -> Vec<u8> {
-    let mut pixels = vec![0; TEXTURE_SIZE * TEXTURE_SIZE * 4];
+    let texture_size = rq.params.resolution as usize;
+    let mut pixels = vec![0; texture_size * texture_size * 4];
 
     match rq.params.kind {
         TileType::Empty => {
-            for y in 0..TEXTURE_SIZE {
-                for x in 0..TEXTURE_SIZE {
-                    let i = y * TEXTURE_SIZE + x;
-                    if x <= 4 || y <= 4 || x >= TEXTURE_SIZE - 5 || y >= TEXTURE_SIZE - 5 {
+            for y in 0..texture_size {
+                for x in 0..texture_size {
+                    let i = y * texture_size + x;
+                    if x <= 4 || y <= 4 || x >= texture_size - 5 || y >= texture_size - 5 {
                         unsafe {
                             *pixels.get_unchecked_mut(i * 4 + 0) = 64;
                             *pixels.get_unchecked_mut(i * 4 + 1) = 64;
@@ -19,15 +19,15 @@ pub fn build(rq: TileRequest) -> Vec<u8> {
                             *pixels.get_unchecked_mut(i * 4 + 3) = 255;
                         }
                     } else {
-                        let dx = x as i32 * 2 - TEXTURE_SIZE as i32;
-                        let dy = y as i32 * 2 - TEXTURE_SIZE as i32;
+                        let dx = x as i32 * 2 - texture_size as i32;
+                        let dy = y as i32 * 2 - texture_size as i32;
                         let r = dx * dx + dy * dy;
-                        let l = TEXTURE_SIZE as i32;
+                        let l = texture_size as i32;
                         let c = if r < l * l { 255 } else { 0 };
                         unsafe {
                             *pixels.get_unchecked_mut(i * 4 + 0) = c as u8;
-                            *pixels.get_unchecked_mut(i * 4 + 1) = (x * c / TEXTURE_SIZE) as u8;
-                            *pixels.get_unchecked_mut(i * 4 + 2) = (y * c / TEXTURE_SIZE) as u8;
+                            *pixels.get_unchecked_mut(i * 4 + 1) = (x * c / texture_size) as u8;
+                            *pixels.get_unchecked_mut(i * 4 + 2) = (y * c / texture_size) as u8;
                             *pixels.get_unchecked_mut(i * 4 + 3) = 255;
                         }
                     }
@@ -61,6 +61,7 @@ pub fn build(rq: TileRequest) -> Vec<u8> {
 }
 
 fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(inc: f64, rq: TileRequest, pixels: &mut [u8], f: F) {
+    let texture_size = rq.params.resolution as usize;
     let rect = rq
         .pos
         .rect()
@@ -69,11 +70,11 @@ fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(inc: f64, rq: TileRequest, pixels: &m
     let zoom = rect.w;
 
     let iterations = rq.params.iterations as u32;
-    let inv_size = 1.0 / TEXTURE_SIZE as f64;
+    let inv_size = 1.0 / texture_size as f64;
     let inv_iter = 1.0 / iterations as f64;
 
-    for y in 0..TEXTURE_SIZE {
-        for x in 0..TEXTURE_SIZE {
+    for y in 0..texture_size {
+        for x in 0..texture_size {
             let mut c0 = Vector2::new(x as f64, y as f64);
 
             // screen coords 0 - 1
@@ -90,7 +91,7 @@ fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(inc: f64, rq: TileRequest, pixels: &m
             v = 1. - v;
 
             let rgb = hsv2rgb(itr as f64 / 64.0, v, v);
-            let idx = x + y * TEXTURE_SIZE;
+            let idx = x + y * texture_size;
             unsafe {
                 *pixels.get_unchecked_mut(idx * 4 + 0) = rgb[0];
                 *pixels.get_unchecked_mut(idx * 4 + 1) = rgb[1];

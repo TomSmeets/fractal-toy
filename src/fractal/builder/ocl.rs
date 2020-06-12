@@ -1,5 +1,4 @@
 use crate::fractal::builder::{TileRequest, TileType};
-use crate::fractal::TEXTURE_SIZE;
 use crate::tilemap::TileContent;
 use crossbeam_channel::{Receiver, Sender};
 use ocl::enums::{ImageChannelDataType, ImageChannelOrder, MemObjectType};
@@ -129,8 +128,10 @@ impl OCLWorker {
 
         let program = self.program.as_ref().unwrap();
 
-        let mut img = vec![0; TEXTURE_SIZE * TEXTURE_SIZE * 4];
-        let dims = (TEXTURE_SIZE, TEXTURE_SIZE);
+        let texture_size = p.params.resolution as usize;
+
+        let mut img = vec![0; texture_size * texture_size * 4];
+        let dims = (texture_size, texture_size);
 
         let dst_image = Image::<u8>::builder()
             .channel_order(ImageChannelOrder::Rgba)
