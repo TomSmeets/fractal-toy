@@ -1,8 +1,5 @@
 // TODO: remove all external deps
-use crate::fractal::builder::TileParams;
 use crate::fractal::builder::TileRequest;
-use crate::fractal::viewport::Viewport;
-use crate::fractal::TileTextureProvider;
 use crate::iter::compare::{CompareIter, ComparedValue};
 use std::collections::BTreeMap;
 
@@ -41,18 +38,6 @@ impl<T> TileStorage<T> {
         self.tiles.get_mut(k)
     }
 
-    // TODO: reduce argument count
-    pub fn update_tiles(
-        &mut self,
-        params: TileParams,
-        pos: &Viewport,
-        texture_creator: &mut impl TileTextureProvider<Texture = T>,
-    ) {
-        let new_iter = pos.get_pos_all().map(|pos| TileRequest { pos, params });
-        self.update_with(new_iter, |_, v| texture_creator.free(v));
-    }
-
-    // TODO: reduce argument count
     pub fn update_with<I, FDel>(&mut self, new_iter: I, mut delete: FDel)
     where
         I: Iterator<Item = TileRequest>,

@@ -89,20 +89,6 @@ impl<T> Fractal<T> {
         let queue = self.queue.as_mut().unwrap();
         queue.builder.update();
 
-        let mut todo_count = 0;
-        let mut doing_count = 0;
-        let mut done_count = 0;
-        for (_, t) in self.tiles.iter() {
-            match t {
-                Task::Todo => todo_count += 1,
-                Task::Doing => doing_count += 1,
-                Task::Done(_) => done_count += 1,
-            }
-        }
-        dbg!(todo_count);
-        dbg!(doing_count);
-        dbg!(done_count);
-
         // send todo to builders
         for (r, t) in self.tiles.iter_mut() {
             if let Task::Todo = t {
@@ -122,8 +108,13 @@ impl<T> Fractal<T> {
             }
         }
 
+        let params = self.params;
+        let new_iter = self
+            .pos
+            .get_pos_all()
+            .map(|pos| TileRequest { pos, params });
         self.tiles
-            .update_tiles(self.params, &self.pos, texture_creator);
+            .update_with(new_iter, |_, v| texture_creator.free(v));
     }
 
     pub fn do_input(&mut self, input: &Input, dt: DeltaTime) {
