@@ -61,8 +61,9 @@ pub fn build(rq: TileRequest) -> Vec<u8> {
 }
 
 fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(inc: f64, rq: TileRequest, pixels: &mut [u8], f: F) {
-    let [offset_x, offset_y, zoom] = rq.pos.to_f64_with_padding();
-    let offset = Vector2::new(offset_x, offset_y);
+    let rect = rq.pos.rect_padded();
+    let offset = rect.corner_min();
+    let zoom = rect.w;
 
     let iterations = rq.params.iterations as u32;
     let inv_size = 1.0 / TEXTURE_SIZE as f64;

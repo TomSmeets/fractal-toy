@@ -147,7 +147,7 @@ impl OCLWorker {
             .build()
             .unwrap();
 
-        let [offset_x, offset_y, zoom] = p.pos.to_f64_with_padding();
+        let rect = p.pos.rect_padded();
 
         let kernel = Kernel::builder()
             .program(&program)
@@ -156,9 +156,9 @@ impl OCLWorker {
             .global_work_size(&dims)
             .arg(&dst_image)
             .arg(p.params.iterations as f32)
-            .arg(offset_x)
-            .arg(offset_y)
-            .arg(zoom)
+            .arg(rect.x)
+            .arg(rect.y)
+            .arg(rect.w)
             .build()
             .unwrap();
 
