@@ -1,5 +1,4 @@
 use super::TilePos;
-use crate::math::FRect;
 use crate::math::V2;
 
 /// A rectangle but all sides are equal
@@ -42,17 +41,6 @@ impl Square {
     /// The center of this tile
     pub fn center(&self) -> V2 {
         V2::new(self.x + self.w * 0.5, self.y + self.w * 0.5)
-    }
-}
-
-impl Into<FRect> for Square {
-    fn into(self) -> FRect {
-        FRect {
-            x: self.x,
-            y: self.y,
-            w: self.w,
-            h: self.w,
-        }
     }
 }
 
