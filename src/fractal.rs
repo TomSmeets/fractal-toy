@@ -135,7 +135,7 @@ impl<T> Fractal<T> {
         }
 
         self.pos.translate({
-            let mut p = dt.0 as f64 * input.dir_move * 2.0 * self.pos.size_in_pixels.x;
+            let mut p = dt.0 as f64 * input.dir_move * 2.0 * self.pos.size_in_pixels().x;
             p.y *= -1.0;
             to_v2i(p)
         });

@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct Viewport {
-    pub zoom: f64,
-    pub offset: V2,
-    pub size_in_pixels: V2,
+    zoom: f64,
+    offset: V2,
+    size_in_pixels: V2,
 }
 
 impl Viewport {
@@ -151,6 +151,10 @@ impl Viewport {
         let min = self.world_to_screen(min);
         let max = self.world_to_screen(max);
         mk_rect(min, max)
+    }
+
+    pub fn size_in_pixels(&self) -> V2 {
+        self.size_in_pixels
     }
 }
 
