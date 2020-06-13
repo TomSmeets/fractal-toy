@@ -71,7 +71,7 @@ impl GLCtx {
         let mut texture = None;
         for (p, tile) in fractal.tiles.iter() {
             let tile = if let Task::Done(tile) = tile { tile } else { continue };
-            let r = fractal.pos.pos_to_rect(&p.pos);
+            let r = fractal.pos.pos_to_rect(p);
             let lx = r.pos.x;
             let ly = r.pos.y;
             let hx = lx + r.size.x;

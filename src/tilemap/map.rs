@@ -1,10 +1,10 @@
 // TODO: remove all external deps
-use crate::fractal::builder::TileRequest;
+use super::TilePos;
 use crate::iter::compare::{CompareIter, ComparedValue};
 use std::collections::BTreeMap;
 
-type Iter<'a, T> = std::collections::btree_map::Iter<'a, TileRequest, Task<T>>;
-type IterMut<'a, T> = std::collections::btree_map::IterMut<'a, TileRequest, Task<T>>;
+type Iter<'a, T> = std::collections::btree_map::Iter<'a, TilePos, Task<T>>;
+type IterMut<'a, T> = std::collections::btree_map::IterMut<'a, TilePos, Task<T>>;
 
 // TODO: move task out of here
 #[derive(Debug)]
@@ -12,17 +12,29 @@ pub enum Task<T> {
     Todo,
     Doing,
     Done(T),
+
+    Empty(Option<T>),
 }
 
 /// Remembers generated tiles, and adds new ones
 pub struct TileStorage<T> {
-    tiles: BTreeMap<TileRequest, Task<T>>,
+    tiles: BTreeMap<TilePos, Task<T>>,
 }
 
 impl<T> TileStorage<T> {
     pub fn new() -> Self {
         TileStorage {
             tiles: BTreeMap::new(),
+        }
+    }
+
+    pub fn clear(&mut self) {
+        for (_, t) in self.tiles.iter_mut() {
+            let x = std::mem::replace(t, Task::Empty(None));
+            match x {
+                Task::Done(v) => *t = Task::Empty(Some(v)),
+                _ => (),
+            }
         }
     }
 
@@ -34,14 +46,14 @@ impl<T> TileStorage<T> {
         self.tiles.iter_mut()
     }
 
-    pub fn get_mut(&mut self, k: &TileRequest) -> Option<&mut Task<T>> {
+    pub fn get_mut(&mut self, k: &TilePos) -> Option<&mut Task<T>> {
         self.tiles.get_mut(k)
     }
 
     pub fn update_with<I, FDel>(&mut self, new_iter: I, mut delete: FDel)
     where
-        I: Iterator<Item = TileRequest>,
-        FDel: FnMut(TileRequest, T),
+        I: Iterator<Item = TilePos>,
+        FDel: FnMut(TilePos, T),
     {
         // items we rendered last frame
         let tiles = std::mem::replace(&mut self.tiles, BTreeMap::new());
@@ -54,15 +66,21 @@ impl<T> TileStorage<T> {
             match i {
                 ComparedValue::Left((k, v)) => {
                     // only in old_iter, remove value
-                    if let Task::Done(v) = v {
-                        delete(k, v)
+                    match v {
+                        Task::Done(v) => delete(k, v),
+                        Task::Empty(Some(v)) => delete(k, v),
+                        _ => (),
                     }
                 },
                 ComparedValue::Right(r) => {
                     self.tiles.insert(r, Task::Todo);
                 },
-                ComparedValue::Both((k, v), _) => {
-                    self.tiles.insert(k, v);
+                ComparedValue::Both((k, v), _) => match v {
+                    Task::Empty(Some(v)) => delete(k, v),
+                    Task::Empty(None) => (),
+                    v => {
+                        self.tiles.insert(k, v);
+                    },
                 },
             }
         }

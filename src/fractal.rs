@@ -41,6 +41,7 @@ pub struct QueueHandler {
 pub struct Fractal<T> {
     // state
     pub pos: Viewport,
+    dirty: bool,
     pub params: TileParams,
 
     // this uses a workaround to prevent incorrect `T: Default` bounds.
@@ -58,6 +59,7 @@ impl<T> Fractal<T> {
             tiles: TileStorage::new(),
             pos: Viewport::new(size),
             queue: None,
+            dirty: false,
             params: TileParams {
                 kind: TileType::Mandelbrot,
                 iterations: 64,
@@ -68,6 +70,11 @@ impl<T> Fractal<T> {
     }
 
     pub fn update_tiles(&mut self, texture_creator: &mut impl TileTextureProvider<Texture = T>) {
+        if self.dirty {
+            self.tiles.clear();
+            self.dirty = false;
+        }
+
         // This recreates tile builders when entire struct is deserialized
         if self.queue.is_none() {
             // bounds is the amount of tiles that are built within one frame
@@ -94,7 +101,10 @@ impl<T> Fractal<T> {
         // send todo to builders
         for (r, t) in self.tiles.iter_mut() {
             if let Task::Todo = t {
-                if let Ok(_) = queue.tx.try_send(*r) {
+                if let Ok(_) = queue.tx.try_send(TileRequest {
+                    pos: *r,
+                    params: self.params,
+                }) {
                     *t = Task::Doing;
                 } else {
                     break;
@@ -104,17 +114,17 @@ impl<T> Fractal<T> {
 
         // read from builders
         while let Ok((r, t)) = queue.rx.try_recv() {
-            if let Some(v) = self.tiles.get_mut(&r) {
-                let t = texture_creator.alloc(&t.pixels);
-                *v = Task::Done(t);
+            if let Some(v) = self.tiles.get_mut(&r.pos) {
+                if r.params == self.params {
+                    let t = texture_creator.alloc(&t.pixels);
+                    if let Task::Doing = v {
+                        *v = Task::Done(t);
+                    }
+                }
             }
         }
 
-        let params = self.params;
-        let new_iter = self
-            .pos
-            .get_pos_all()
-            .map(|pos| TileRequest { pos, params });
+        let new_iter = self.pos.get_pos_all();
         self.tiles
             .update_with(new_iter, |_, v| texture_creator.free(v));
     }
@@ -135,15 +145,18 @@ impl<T> Fractal<T> {
         // TODO: in the future we want some kind of ui, or cli interface
         if input.iter_inc {
             self.params.iterations += 40;
+            self.tiles.clear();
         }
 
         if input.iter_dec {
             self.params.iterations -= 40;
             self.params.iterations = self.params.iterations.max(3);
+            self.tiles.clear();
         }
 
         if input.cycle {
             self.params.kind = self.params.kind.next();
+            self.tiles.clear();
         }
     }
 }
