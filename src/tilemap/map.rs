@@ -1,6 +1,6 @@
 // TODO: remove all external deps
 use super::TilePos;
-use crate::iter::compare::{CompareIter, ComparedValue};
+use crate::util::{CompareIter, ComparedValue};
 use std::collections::BTreeMap;
 
 type Iter<'a, T> = std::collections::btree_map::Iter<'a, TilePos, Task<T>>;
