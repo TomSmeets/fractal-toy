@@ -16,7 +16,7 @@ use self::builder::TileType;
 use self::queue::Queue;
 use self::viewport::Viewport;
 use crate::tilemap::Task;
-use crate::tilemap::TileStorage;
+use crate::tilemap::TileMap;
 
 // We are blending the textures
 pub const PADDING: u32 = 1;
@@ -44,8 +44,8 @@ pub struct Fractal<T> {
 
     // this uses a workaround to prevent incorrect `T: Default` bounds.
     // see: https://github.com/serde-rs/serde/issues/1541
-    #[serde(skip, default = "TileStorage::new")]
-    pub tiles: TileStorage<T>,
+    #[serde(skip, default = "TileMap::new")]
+    pub tiles: TileMap<T>,
 
     #[serde(skip)]
     pub builder: Option<Builder>,
@@ -54,7 +54,7 @@ pub struct Fractal<T> {
 impl<T> Fractal<T> {
     pub fn new(size: Vector2<u32>) -> Self {
         Fractal {
-            tiles: TileStorage::new(),
+            tiles: TileMap::new(),
             pos: Viewport::new(size),
             builder: None,
             params: TileParams {

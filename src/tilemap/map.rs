@@ -1,4 +1,3 @@
-// TODO: remove all external deps
 use super::TilePos;
 use crate::util::{CompareIter, ComparedValue};
 use std::collections::BTreeMap;
@@ -12,18 +11,17 @@ pub enum Task<T> {
     Todo,
     Doing,
     Done(T),
-
     Empty(Option<T>),
 }
 
 /// Remembers generated tiles, and adds new ones
-pub struct TileStorage<T> {
+pub struct TileMap<T> {
     tiles: BTreeMap<TilePos, Task<T>>,
 }
 
-impl<T> TileStorage<T> {
+impl<T> TileMap<T> {
     pub fn new() -> Self {
-        TileStorage {
+        TileMap {
             tiles: BTreeMap::new(),
         }
     }
@@ -87,7 +85,7 @@ impl<T> TileStorage<T> {
     }
 }
 
-impl<T> Default for TileStorage<T> {
+impl<T> Default for TileMap<T> {
     fn default() -> Self {
         Self::new()
     }

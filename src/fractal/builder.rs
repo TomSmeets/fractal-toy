@@ -118,7 +118,6 @@ pub struct TileParams {
 #[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Debug)]
 pub struct TileRequest {
     pub pos: TilePos,
-    // TODO: move out of here to save some memory?
     pub params: TileParams,
 }
 
