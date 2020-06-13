@@ -1,5 +1,5 @@
 use crate::fractal::builder::TileRequest;
-use crate::tilemap::TileContent;
+use crate::fractal::TileContent;
 use crossbeam_channel::{Receiver, Sender};
 use std::thread;
 

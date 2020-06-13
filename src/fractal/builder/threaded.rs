@@ -1,7 +1,7 @@
 mod worker;
 use self::worker::Worker;
 use crate::fractal::builder::TileRequest;
-use crate::tilemap::TileContent;
+use crate::fractal::TileContent;
 use crossbeam_channel::{Receiver, Sender};
 
 pub struct ThreadedTileBuilder {

@@ -145,9 +145,9 @@ impl Viewport {
             }
         }
 
-        let [x, y, z] = p.to_f64();
-        let min = V2::new(x, y);
-        let max = min + V2::new(z, z);
+        let rect = p.square();
+        let min = rect.corner_min();
+        let max = rect.corner_max();
         let min = self.world_to_screen(min);
         let max = self.world_to_screen(max);
         mk_rect(min, max)

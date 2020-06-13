@@ -64,10 +64,10 @@ fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(inc: f64, rq: TileRequest, pixels: &m
     let texture_size = rq.params.resolution as usize;
     let rect = rq
         .pos
-        .rect()
+        .square()
         .grow_relative(rq.params.padding as f64 / rq.params.resolution as f64);
     let offset = rect.corner_min();
-    let zoom = rect.w;
+    let zoom = rect.size();
 
     let iterations = rq.params.iterations as u32;
     let inv_size = 1.0 / texture_size as f64;

@@ -6,13 +6,15 @@ use serde::{Deserialize, Serialize};
 pub mod builder;
 pub mod viewport;
 
+mod content;
+pub use self::content::TileContent;
+
 use self::builder::TileBuilder;
 use self::builder::TileParams;
 use self::builder::TileRequest;
 use self::builder::TileType;
 use self::viewport::Viewport;
 use crate::tilemap::Task;
-use crate::tilemap::TileContent;
 use crate::tilemap::TileStorage;
 use crossbeam_channel::bounded;
 use crossbeam_channel::{Receiver, Sender};

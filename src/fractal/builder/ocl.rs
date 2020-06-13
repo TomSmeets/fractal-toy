@@ -1,5 +1,5 @@
 use crate::fractal::builder::{TileRequest, TileType};
-use crate::tilemap::TileContent;
+use crate::fractal::TileContent;
 use crossbeam_channel::{Receiver, Sender};
 use ocl::enums::{ImageChannelDataType, ImageChannelOrder, MemObjectType};
 use ocl::flags::CommandQueueProperties;
@@ -150,7 +150,7 @@ impl OCLWorker {
 
         let rect = p
             .pos
-            .rect()
+            .square()
             .grow_relative(p.params.padding as f64 / p.params.resolution as f64);
 
         let kernel = Kernel::builder()

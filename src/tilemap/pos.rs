@@ -1,4 +1,4 @@
-use crate::math::FRect;
+use super::Square;
 use crate::math::V2;
 use serde::{Deserialize, Serialize};
 
@@ -39,16 +39,11 @@ impl TilePos {
         1.0 / self.max_size() as f64
     }
 
-    pub fn rect(&self) -> FRect {
+    pub fn square(&self) -> Square {
         let s = self.tile_scale();
         let x = self.x as f64 * s;
         let y = self.y as f64 * s;
-        FRect::new(x, y, s, s)
-    }
-
-    pub fn to_f64(&self) -> [f64; 3] {
-        let s = self.tile_scale();
-        [self.x as f64 * s, self.y as f64 * s, s]
+        Square::new(x, y, s)
     }
 
     fn max_size(&self) -> u64 {
