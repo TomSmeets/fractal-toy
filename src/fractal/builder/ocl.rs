@@ -1,6 +1,6 @@
 use crate::fractal::builder::{TileRequest, TileType};
+use crate::fractal::queue::QueueHandle;
 use crate::fractal::TileContent;
-use crossbeam_channel::{Receiver, Sender};
 use ocl::enums::{ImageChannelDataType, ImageChannelOrder, MemObjectType};
 use ocl::flags::CommandQueueProperties;
 use ocl::{Context, Device, Image, Kernel, Program, Queue};
@@ -13,9 +13,9 @@ pub struct OCLTileBuilder {
 }
 
 impl OCLTileBuilder {
-    pub fn new(rx: Receiver<TileRequest>, tx: Sender<(TileRequest, TileContent)>) -> Self {
+    pub fn new(h: QueueHandle) -> Self {
         let handle = thread::spawn(|| {
-            let mut w = OCLWorker::new(rx, tx);
+            let mut w = OCLWorker::new(h);
             w.run();
         });
         OCLTileBuilder {
@@ -36,8 +36,7 @@ pub struct OCLWorker {
     cqueue: Queue,
     program: Option<Program>,
 
-    rx: Receiver<TileRequest>,
-    tx: Sender<(TileRequest, TileContent)>,
+    handle: QueueHandle,
 
     kind: TileType,
 }
@@ -96,7 +95,7 @@ impl OCLWorker {
             .unwrap()
     }
 
-    pub fn new(rx: Receiver<TileRequest>, tx: Sender<(TileRequest, TileContent)>) -> Self {
+    pub fn new(handle: QueueHandle) -> Self {
         let context = Context::builder()
             .devices(Device::specifier().first())
             .build()
@@ -114,8 +113,7 @@ impl OCLWorker {
             device,
             cqueue,
             program: None,
-            rx,
-            tx,
+            handle,
             kind: TileType::Empty,
         }
     }
@@ -177,9 +175,9 @@ impl OCLWorker {
     }
 
     pub fn run(&mut self) {
-        while let Ok(next) = self.rx.recv() {
+        while let Ok(next) = self.handle.recv() {
             if let Some(r) = self.process(next) {
-                self.tx.send((next, r)).unwrap();
+                self.handle.send(next, r).unwrap();
             }
         }
     }

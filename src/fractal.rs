@@ -3,21 +3,20 @@ use crate::time::DeltaTime;
 use crate::Input;
 use serde::{Deserialize, Serialize};
 
-pub mod builder;
-pub mod viewport;
-
+mod builder;
 mod content;
+mod queue;
+mod viewport;
+
 pub use self::content::TileContent;
 
 use self::builder::TileBuilder;
 use self::builder::TileParams;
-use self::builder::TileRequest;
 use self::builder::TileType;
+use self::queue::Queue;
 use self::viewport::Viewport;
 use crate::tilemap::Task;
 use crate::tilemap::TileStorage;
-use crossbeam_channel::bounded;
-use crossbeam_channel::{Receiver, Sender};
 
 // We are blending the textures
 pub const PADDING: u32 = 1;
@@ -30,9 +29,8 @@ pub trait TileTextureProvider {
     fn free(&mut self, texture: Self::Texture);
 }
 
-pub struct QueueHandler {
-    pub tx: Sender<TileRequest>,
-    pub rx: Receiver<(TileRequest, TileContent)>,
+pub struct Builder {
+    pub queue: Queue,
     pub builder: TileBuilder,
 }
 
@@ -41,8 +39,8 @@ pub struct QueueHandler {
 pub struct Fractal<T> {
     // state
     pub pos: Viewport,
-    dirty: bool,
-    pub params: TileParams,
+
+    params: TileParams,
 
     // this uses a workaround to prevent incorrect `T: Default` bounds.
     // see: https://github.com/serde-rs/serde/issues/1541
@@ -50,7 +48,7 @@ pub struct Fractal<T> {
     pub tiles: TileStorage<T>,
 
     #[serde(skip)]
-    pub queue: Option<QueueHandler>,
+    pub builder: Option<Builder>,
 }
 
 impl<T> Fractal<T> {
@@ -58,8 +56,7 @@ impl<T> Fractal<T> {
         Fractal {
             tiles: TileStorage::new(),
             pos: Viewport::new(size),
-            queue: None,
-            dirty: false,
+            builder: None,
             params: TileParams {
                 kind: TileType::Mandelbrot,
                 iterations: 64,
@@ -70,41 +67,21 @@ impl<T> Fractal<T> {
     }
 
     pub fn update_tiles(&mut self, texture_creator: &mut impl TileTextureProvider<Texture = T>) {
-        if self.dirty {
-            self.tiles.clear();
-            self.dirty = false;
-        }
-
         // This recreates tile builders when entire struct is deserialized
-        if self.queue.is_none() {
-            // bounds is the amount of tiles that are built within one frame
-            // it should be largen enough to saturate the tile builders
-            // however, all tiles insed this channel will be built, so making it too big will build
-            // tiles that might have left the screen
-            // TODO: either predict this boundst
-            // TODO: or dynamically change it
-            // TODO: or make it small and provide tiles more than once per frame
-            let (in_tx, in_rx) = bounded(32);
-            let (out_tx, out_rx) = bounded(32);
-            let q = QueueHandler {
-                tx: in_tx,
-                rx: out_rx,
-                builder: TileBuilder::new(in_rx, out_tx),
-            };
-            self.queue = Some(q);
+        if self.builder.is_none() {
+            let queue = Queue::new();
+            let builder = TileBuilder::new(queue.handle());
+            self.builder = Some(Builder { queue, builder });
             println!("created queue")
         }
 
-        let queue = self.queue.as_mut().unwrap();
+        let queue = self.builder.as_mut().unwrap();
         queue.builder.update();
 
         // send todo to builders
         for (r, t) in self.tiles.iter_mut() {
             if let Task::Todo = t {
-                if let Ok(_) = queue.tx.try_send(TileRequest {
-                    pos: *r,
-                    params: self.params,
-                }) {
+                if let Ok(_) = queue.queue.try_send(self.params, *r) {
                     *t = Task::Doing;
                 } else {
                     break;
@@ -113,9 +90,9 @@ impl<T> Fractal<T> {
         }
 
         // read from builders
-        while let Ok((r, t)) = queue.rx.try_recv() {
-            if let Some(v) = self.tiles.get_mut(&r.pos) {
-                if r.params == self.params {
+        while let Ok(r) = queue.queue.try_recv(self.params) {
+            if let Some((p, t)) = r {
+                if let Some(v) = self.tiles.get_mut(&p) {
                     let t = texture_creator.alloc(&t.pixels);
                     if let Task::Doing = v {
                         *v = Task::Done(t);

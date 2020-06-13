@@ -66,9 +66,8 @@ pub mod threaded;
 #[cfg(feature = "builder-ocl")]
 pub mod ocl;
 
-use crate::fractal::TileContent;
+use crate::fractal::queue::QueueHandle;
 use crate::tilemap::TilePos;
-use crossbeam_channel::{Receiver, Sender};
 use serde::{Deserialize, Serialize};
 
 #[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Serialize, Deserialize, Debug)]
@@ -134,13 +133,13 @@ pub struct TileBuilder {
 }
 
 impl TileBuilder {
-    pub fn new(rx: Receiver<TileRequest>, tx: Sender<(TileRequest, TileContent)>) -> Self {
+    pub fn new(h: QueueHandle) -> Self {
         TileBuilder {
             #[cfg(feature = "builder-threaded")]
-            threaded: self::threaded::ThreadedTileBuilder::new(rx.clone(), tx.clone()),
+            threaded: self::threaded::ThreadedTileBuilder::new(h.clone()),
 
             #[cfg(feature = "builder-ocl")]
-            ocl: self::ocl::OCLTileBuilder::new(rx.clone(), tx.clone()),
+            ocl: self::ocl::OCLTileBuilder::new(h.clone()),
         }
     }
 

@@ -1,6 +1,5 @@
-use crate::fractal::builder::TileRequest;
+use crate::fractal::queue::QueueHandle;
 use crate::fractal::TileContent;
-use crossbeam_channel::{Receiver, Sender};
 use std::thread;
 
 pub struct Worker {
@@ -8,8 +7,8 @@ pub struct Worker {
 }
 
 impl Worker {
-    pub fn new(rx: Receiver<TileRequest>, tx: Sender<(TileRequest, TileContent)>) -> Self {
-        let handle = thread::spawn(move || worker(rx, tx));
+    pub fn new(h: QueueHandle) -> Self {
+        let handle = thread::spawn(move || worker(h));
 
         Worker {
             handle: Some(handle),
@@ -17,10 +16,10 @@ impl Worker {
     }
 }
 
-fn worker(rx: Receiver<TileRequest>, tx: Sender<(TileRequest, TileContent)>) {
-    while let Ok(next) = rx.recv() {
+fn worker(h: QueueHandle) {
+    while let Ok(next) = h.recv() {
         let t = TileContent::new(super::super::cpu::build(next));
-        if let Err(_) = tx.send((next, t)) {
+        if let Err(_) = h.send(next, t) {
             break;
         }
     }
