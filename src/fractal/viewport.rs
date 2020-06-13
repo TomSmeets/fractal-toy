@@ -1,3 +1,4 @@
+// TODO: remove this?
 use super::TEXTURE_SIZE;
 use crate::math::*;
 use crate::tilemap::TilePos;
@@ -28,7 +29,7 @@ impl Viewport {
         p -= self.offset;
 
         // y / vp_width
-        p /= self.pixel_scale();
+        p /= self.pixel_size();
 
         // flip y
         p.y *= -1.0;
@@ -40,6 +41,7 @@ impl Viewport {
         Vector2::new(p.x as i32, p.y as i32)
     }
 
+    /// Convert a screen-space position to a world position as seen by this viewport
     pub fn screen_to_world(&self, p: V2i) -> V2 {
         let mut p = V2::new(p.x as f64, p.y as f64);
 
@@ -53,7 +55,7 @@ impl Viewport {
         // normalize pixel coordinates
 
         // zoom
-        p *= self.pixel_scale();
+        p *= self.pixel_size();
 
         // offset is in world space
         p += self.offset;
@@ -65,7 +67,7 @@ impl Viewport {
     pub fn translate(&mut self, offset: V2i) {
         let mut offset = to_v2(offset);
         offset.y *= -1.0;
-        offset *= self.pixel_scale();
+        offset *= self.pixel_size();
         self.offset += offset;
         self.offset.x = self.offset.x.min(3.0).max(-3.0);
         self.offset.y = self.offset.y.min(3.0).max(-3.0);
@@ -94,8 +96,8 @@ impl Viewport {
         0.5_f64.powf(self.zoom)
     }
 
-    /// scale of one pixel
-    pub fn pixel_scale(&self) -> f64 {
+    /// The size of one pixel in world space
+    pub fn pixel_size(&self) -> f64 {
         self.scale() / self.size_in_pixels.x
     }
 
@@ -110,7 +112,7 @@ impl Viewport {
         // tile_size = (0.5)^z
         // z = log(tile_size)/log(1/2)
         // z = -log2(tile_size)
-        let px_size = self.pixel_scale();
+        let px_size = self.pixel_size();
         let tile_size = px_size * TEXTURE_SIZE as f64;
         let z_max = -tile_size.log2();
         let z_max = z_max.max(0.0).ceil() as i32;
@@ -119,15 +121,15 @@ impl Viewport {
         // extra padding in poportion to tile size
         let pad = 1;
         let off = self.offset;
-        let s = 0.5 * px_size * self.size_in_pixels;
-
+        let viewport_half_size = 0.5 * px_size * self.size_in_pixels;
         (z_min as u8..z_max as u8 + 1).flat_map(move |z| {
-            let min = off - s;
-            let max = off + s;
+            let min = off - viewport_half_size;
+            let max = off + viewport_half_size;
             TilePos::between(min, max, z, pad)
         })
     }
 
+    /// Convert a TilePos to a screen-space Rectangle as seen by this viewport
     pub fn pos_to_rect(&self, p: &TilePos) -> Rect {
         fn mk_rect(a: V2i, b: V2i) -> Rect {
             let min_x = a.x.min(b.x);
