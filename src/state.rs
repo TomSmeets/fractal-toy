@@ -1,10 +1,8 @@
 use serde::{de::DeserializeOwned, Serialize};
-use std::{
-    fs,
-    fs::File,
-    io::*,
-    result::{Result, Result::*},
-};
+use std::fs;
+use std::fs::File;
+use std::io::*;
+use std::result::Result;
 
 static DIR: &str = "target/state";
 
@@ -15,8 +13,7 @@ fn path_for(name: &str) -> String {
 pub fn save<T: Serialize>(name: &str, m: &T) {
     fs::create_dir_all(DIR).unwrap();
     let file = File::create(path_for(name)).unwrap();
-    let mut writer = BufWriter::new(file);
-    serde_json::to_writer_pretty(&mut writer, &m).unwrap();
+    serde_json::to_writer_pretty(file, &m).unwrap();
 }
 
 pub fn load_in_place<T: DeserializeOwned>(name: &str, v: T) -> (T, Option<Error>) {
@@ -34,8 +31,7 @@ pub fn load_in_place<T: DeserializeOwned>(name: &str, v: T) -> (T, Option<Error>
 
 pub fn load<T: DeserializeOwned>(name: &str) -> Result<T, Error> {
     let file = File::open(path_for(name))?;
-    let mut reader = BufReader::new(file);
-    let d1: T = serde_json::from_reader(&mut reader)?;
+    let d1: T = serde_json::from_reader(file)?;
     Ok(d1)
 }
 
