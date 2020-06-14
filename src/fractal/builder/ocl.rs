@@ -118,7 +118,7 @@ impl OCLWorker {
         }
     }
 
-    fn process(&mut self, p: TileRequest) -> Option<TileContent> {
+    fn process(&mut self, p: TileRequest) -> TileContent {
         if p.params.kind != self.kind || self.program.is_none() {
             self.kind = p.params.kind;
             self.program = Some(self.compile());
@@ -170,15 +170,13 @@ impl OCLWorker {
 
         dst_image.read(&mut img).enq().unwrap();
 
-        let t = TileContent::new(img);
-        Some(t)
+        TileContent::new(img)
     }
 
     pub fn run(&mut self) {
         while let Ok(next) = self.handle.recv() {
-            if let Some(r) = self.process(next) {
-                self.handle.send(next, r).unwrap();
-            }
+            let tile = self.process(next);
+            self.handle.send(next, tile).unwrap();
         }
     }
 }

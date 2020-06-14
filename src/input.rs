@@ -2,15 +2,18 @@ use crate::math::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
+// TODO: fractal should be a library, input should not exists here?
 pub struct Input {
     pub mouse: V2i,
     pub old_mouse: V2i,
+
     // mouse drag in pixels
     pub drag: V2i,
     pub mouse_down: bool,
     pub mouse_click: bool,
 
-    // kind of zoom, but instant and not smooth, TODO: maybe remove
+    // Kind of like zoom, but instant and not smooth
+    // TODO: maybe remove
     pub scroll: i32,
     pub zoom: f32,
     pub dir_move: V2,
@@ -78,6 +81,7 @@ impl Input {
     }
 }
 
+// TODO: no, move this to sdl, or even the entire input struct
 #[cfg(feature = "platform-sdl")]
 use sdl2::{controller::Axis, controller::Button, event::*, keyboard::Keycode, mouse::MouseButton};
 

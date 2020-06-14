@@ -23,12 +23,14 @@ pub const PADDING: u32 = 1;
 pub const TEXTURE_SIZE: usize = 64 * 2;
 
 /// Something that can build textures from tile pixels
+// TODO: this is very ugly, kindly remove this
 pub trait TileTextureProvider {
     type Texture;
     fn alloc(&mut self, pixels_rgba: &[u8]) -> Self::Texture;
     fn free(&mut self, texture: Self::Texture);
 }
 
+// TODO: uuugh anothher stuct named `Builder`, rename it or whatever
 pub struct Builder {
     pub queue: Queue,
     pub builder: TileBuilder,
