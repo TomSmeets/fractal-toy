@@ -42,7 +42,7 @@ cgmath     = { version = "0.17", features = [ "serde" ] }
 rand       = { version = "0.7" }
 crossbeam-channel = { version = "0.4" }
 
-sdl2          = { version = "0.33", optional = true, features = [ "unsafe_textures" ] }
+sdl2          = { version = "0.34", optional = true, features = [ "unsafe_textures" ] }
 ocl           = { version = "0.19", optional = true }
 
 stdweb        = { version = "0.4",  optional = true }
