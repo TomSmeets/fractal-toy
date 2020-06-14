@@ -34,6 +34,14 @@ pub struct Builder {
     pub builder: TileBuilder,
 }
 
+impl Builder {
+    pub fn new() -> Self {
+        let queue = Queue::new();
+        let builder = TileBuilder::new(queue.handle());
+        Builder { queue, builder }
+    }
+}
+
 /// After so many updates, i am not entierly sure what this struct is supposed to become
 #[derive(Serialize, Deserialize)]
 pub struct Fractal<T> {
@@ -47,8 +55,8 @@ pub struct Fractal<T> {
     #[serde(skip, default = "TileMap::new")]
     pub tiles: TileMap<T>,
 
-    #[serde(skip)]
-    pub builder: Option<Builder>,
+    #[serde(skip, default = "Builder::new")]
+    pub builder: Builder,
 }
 
 impl<T> Fractal<T> {
@@ -56,7 +64,7 @@ impl<T> Fractal<T> {
         Fractal {
             tiles: TileMap::new(),
             pos: Viewport::new(size),
-            builder: None,
+            builder: Builder::new(),
             params: TileParams {
                 kind: TileType::Mandelbrot,
                 iterations: 64,
@@ -67,15 +75,7 @@ impl<T> Fractal<T> {
     }
 
     pub fn update_tiles(&mut self, texture_creator: &mut impl TileTextureProvider<Texture = T>) {
-        // This recreates tile builders when entire struct is deserialized
-        if self.builder.is_none() {
-            let queue = Queue::new();
-            let builder = TileBuilder::new(queue.handle());
-            self.builder = Some(Builder { queue, builder });
-            println!("created queue")
-        }
-
-        let queue = self.builder.as_mut().unwrap();
+        let queue = &mut self.builder;
         queue.builder.update();
 
         // send todo to builders
