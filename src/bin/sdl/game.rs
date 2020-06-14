@@ -13,7 +13,7 @@ use serial::{Fractal, Input};
 pub struct State {
     #[serde(skip)]
     sdl: Sdl,
-    #[serde(skip)]
+
     pub input: Input,
 
     fractal: Fractal<AtlasRegion>,
@@ -138,6 +138,11 @@ impl State {
 
         sdl.canvas.present();
 
-        input.quit
+        if input.quit {
+            input.quit = false;
+            true
+        } else {
+            false
+        }
     }
 }
