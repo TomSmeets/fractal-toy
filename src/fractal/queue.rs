@@ -49,11 +49,11 @@ impl Queue {
             .map_err(|_| ())
     }
 
-    pub fn try_recv(&self, params: TileParams) -> Result<Option<(TilePos, TileContent)>, ()> {
+    pub fn try_recv(&self, params: &TileParams) -> Result<Option<(TilePos, TileContent)>, ()> {
         let (r, v) = self.rx.try_recv().map_err(|_| ())?;
 
         // skip invalid responses
-        if r.params != params {
+        if &r.params != params {
             return Ok(None);
         }
 

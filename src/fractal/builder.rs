@@ -49,6 +49,7 @@ pub mod ocl;
 
 use crate::fractal::queue::QueueHandle;
 use crate::tilemap::TilePos;
+use crate::ColorScheme;
 use serde::{Deserialize, Serialize};
 
 #[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Serialize, Deserialize, Debug)]
@@ -86,7 +87,7 @@ impl TileType {
     }
 }
 
-#[derive(Eq, PartialEq, Copy, Clone, Serialize, Deserialize, Debug)]
+#[derive(Eq, PartialEq, Clone, Serialize, Deserialize, Debug)]
 pub struct TileParams {
     pub kind: TileType,
     pub iterations: i32,
@@ -94,9 +95,12 @@ pub struct TileParams {
     // TODO: pub padding: f64? but then it cannot be Ord and has to be moved out of TilePos
     pub resolution: u32,
     pub padding: u32,
+
+    #[serde(skip, default = "ColorScheme::new")]
+    pub color: ColorScheme,
 }
 
-#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+#[derive(Eq, PartialEq, Clone, Debug)]
 pub struct TileRequest {
     pub pos: TilePos,
     pub params: TileParams,

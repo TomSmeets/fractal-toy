@@ -17,6 +17,7 @@ use self::queue::Queue;
 use self::viewport::Viewport;
 use crate::tilemap::Task;
 use crate::tilemap::TileMap;
+use crate::ColorScheme;
 
 // We are blending the textures
 pub const PADDING: u32 = 1;
@@ -72,6 +73,7 @@ impl<T> Fractal<T> {
                 iterations: 64,
                 padding: 1,
                 resolution: TEXTURE_SIZE as u32,
+                color: ColorScheme::new(),
             },
         }
     }
@@ -83,7 +85,7 @@ impl<T> Fractal<T> {
         // send todo to builders
         for (r, t) in self.tiles.iter_mut() {
             if let Task::Todo = t {
-                if let Ok(_) = queue.queue.try_send(self.params, *r) {
+                if let Ok(_) = queue.queue.try_send(self.params.clone(), *r) {
                     *t = Task::Doing;
                 } else {
                     break;
@@ -92,7 +94,7 @@ impl<T> Fractal<T> {
         }
 
         // read from builders
-        while let Ok(r) = queue.queue.try_recv(self.params) {
+        while let Ok(r) = queue.queue.try_recv(&self.params) {
             if let Some((p, t)) = r {
                 if let Some(v) = self.tiles.get_mut(&p) {
                     let t = texture_creator.alloc(&t.pixels);

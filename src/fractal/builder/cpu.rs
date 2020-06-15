@@ -2,7 +2,7 @@ use super::{TileRequest, TileType};
 
 use crate::math::*;
 
-pub fn build(rq: TileRequest) -> Vec<u8> {
+pub fn build(rq: &TileRequest) -> Vec<u8> {
     let texture_size = rq.params.resolution as usize;
     let mut pixels = vec![0; texture_size * texture_size * 4];
 
@@ -60,7 +60,7 @@ pub fn build(rq: TileRequest) -> Vec<u8> {
     pixels
 }
 
-fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(inc: f64, rq: TileRequest, pixels: &mut [u8], f: F) {
+fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(inc: f64, rq: &TileRequest, pixels: &mut [u8], f: F) {
     let texture_size = rq.params.resolution as usize;
     let rect = rq
         .pos
@@ -86,6 +86,7 @@ fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(inc: f64, rq: TileRequest, pixels: &m
 
             let uv = mandel(inc, iterations, c0, f);
 
+            // let rgb = rq.params.color.get(itr as f64 , 0.8);
 
             let d = (uv.x * uv.x + uv.y * uv.y).sqrt();
             let rgb = hsv2rgb(uv.x.atan2(uv.y) / 3.161592 + 1.0, 1.0 - d, 1.0 - d);

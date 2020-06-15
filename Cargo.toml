@@ -47,7 +47,7 @@ ocl           = { version = "0.19", optional = true }
 
 stdweb        = { version = "0.4",  optional = true }
 stdweb-derive = { version = "0.5",  optional = true }
-png           = { version = "0.16", optional = true }
+png           = { version = "0.16" }
 base64        = { version = "0.12", optional = true }
 glutin    = { version = "0.24.0", optional = true }
 gilrs     = { version = "0.7.4", optional = true }

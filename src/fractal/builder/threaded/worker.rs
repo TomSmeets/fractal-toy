@@ -18,7 +18,7 @@ impl Worker {
 
 fn worker(h: QueueHandle) {
     while let Ok(next) = h.recv() {
-        let t = TileContent::new(super::super::cpu::build(next));
+        let t = TileContent::new(super::super::cpu::build(&next));
         if let Err(_) = h.send(next, t) {
             break;
         }

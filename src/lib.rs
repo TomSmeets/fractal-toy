@@ -11,3 +11,6 @@ pub mod tilemap;
 pub mod util;
 
 pub use self::{atlas::Atlas, fractal::Fractal, input::Input};
+
+mod colorscheme;
+pub use colorscheme::ColorScheme;
