@@ -84,13 +84,11 @@ fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(inc: f64, rq: TileRequest, pixels: &m
             // -1 , 1
             c0 = zoom * c0 + offset;
 
-            let itr = mandel(inc, iterations, c0, f);
+            let uv = mandel(inc, iterations, c0, f);
 
-            let mut v = itr * inv_iter;
-            v *= v;
-            v = 1. - v;
 
-            let rgb = hsv2rgb(itr as f64 / 64.0, v, v);
+            let d = (uv.x * uv.x + uv.y * uv.y).sqrt();
+            let rgb = hsv2rgb(uv.x.atan2(uv.y) / 3.161592 + 1.0, 1.0 - d, 1.0 - d);
             let idx = x + y * texture_size;
             unsafe {
                 *pixels.get_unchecked_mut(idx * 4 + 0) = rgb[0];
@@ -129,20 +127,32 @@ fn cpx_abs(a: V2) -> V2 {
 
 // some cool algorithms
 // nice: ((|re| + |im|i)^2 + c)^3 + c
-fn mandel<F: Fn(V2, V2) -> V2>(inc: f64, max: u32, c: V2, f: F) -> f64 {
+fn mandel<F: Fn(V2, V2) -> V2>(inc: f64, max: u32, c: V2, f: F) -> V2 {
     let mut z = V2::zero();
-    let mut n = 0.0;
+    let mut d = 10e10 as f64;
+    let mut z_min = V2::new(d, d);
+    let mut n = 0.0 as f64;
     let max = max as f64;
+
     loop {
         z = f(z, c);
 
+        if z.x.abs() < z_min.x.abs() {
+            z_min.x = z.x;
+        }
+        if z.y.abs() < z_min.y.abs() {
+            z_min.y = z.y;
+        }
+
         if n >= max {
-            return max;
+            // return V2::new(0.,0.); //  - (z.x * z.x + z.y * z.y).log2().log2() + 4.0;
+            return z_min;
         }
 
         if z.x * z.x + z.y * z.y > 64.0 * 64.0 {
             // mandel
-            return n as f64 - (z.x * z.x + z.y * z.y).log2().log2() + 4.0;
+            // return V2::new(0.,0.); //  - (z.x * z.x + z.y * z.y).log2().log2() + 4.0;
+            return z_min;
         }
 
         n += inc;
