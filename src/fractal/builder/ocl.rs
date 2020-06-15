@@ -118,7 +118,7 @@ impl OCLWorker {
         }
     }
 
-    fn process(&mut self, p: TileRequest) -> TileContent {
+    fn process(&mut self, p: &TileRequest) -> TileContent {
         if p.params.kind != self.kind || self.program.is_none() {
             self.kind = p.params.kind;
             self.program = Some(self.compile());
@@ -175,7 +175,7 @@ impl OCLWorker {
 
     pub fn run(&mut self) {
         while let Ok(next) = self.handle.recv() {
-            let tile = self.process(next);
+            let tile = self.process(&next);
             self.handle.send(next, tile).unwrap();
         }
     }
