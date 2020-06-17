@@ -7,8 +7,12 @@ use termion::raw::RawTerminal;
 use termion::screen::*;
 
 mod id;
+mod navigation;
+mod stack;
 mod ui;
 pub use self::id::Id;
+pub use self::navigation::Navigation;
+pub use self::stack::UIStack;
 pub use self::ui::Nav;
 pub use self::ui::RenderCommand;
 pub use self::ui::UI;
