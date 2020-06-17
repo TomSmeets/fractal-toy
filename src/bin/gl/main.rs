@@ -6,6 +6,7 @@ use serial::math::*;
 use serial::time::DeltaTime;
 use serial::Fractal;
 use serial::Input;
+use std::time::Instant;
 
 mod atlas;
 mod ctx;
@@ -75,6 +76,9 @@ fn handle_input(input: &mut Input, event: &WindowEvent) {
     }
 }
 
+use imgui::*;
+use imgui_winit_support::{HiDpiMode, WinitPlatform};
+
 fn main() {
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new();
@@ -85,9 +89,17 @@ fn main() {
     let dt = DeltaTime(1.0 / 60.0);
     let mut atlas = Atlas::new();
 
+    let mut imgui = Context::create();
+    let mut platform = WinitPlatform::init(&mut imgui); // step 1
+    platform.attach_window(imgui.io_mut(), ctx.ctx.window(), HiDpiMode::Default); // step 2
+    let renderer =
+        imgui_opengl_renderer::Renderer::new(&mut imgui, |s| ctx.ctx.get_proc_address(s) as _);
+
+    let mut last_frame = Instant::now();
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
 
+        platform.handle_event(imgui.io_mut(), ctx.ctx.window(), &event);
         match event {
             Event::WindowEvent { event, .. } => match event {
                 WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
@@ -95,13 +107,53 @@ fn main() {
                     fractal.pos.resize(Vector2::new(sz.width, sz.height));
                     ctx.resize(sz.width, sz.height);
                 },
-                e => handle_input(&mut input, &e),
+                e => {
+                    if !imgui.io().want_capture_mouse && !imgui.io().want_capture_keyboard {
+                        handle_input(&mut input, &e);
+                    }
+                },
             },
             Event::MainEventsCleared => {
+                last_frame = imgui.io_mut().update_delta_time(last_frame);
+
+                platform
+                    .prepare_frame(imgui.io_mut(), ctx.ctx.window())
+                    .unwrap();
+
                 fractal.do_input(&input, dt);
                 input.begin();
                 fractal.update_tiles(&mut atlas.provider(ctx.gl()));
+
+                let ui = imgui.frame();
+
+                ui.show_demo_window(&mut true);
+
+                Window::new(im_str!("Hello world"))
+                    .size([300.0, 100.0], Condition::FirstUseEver)
+                    .build(&ui, || {
+                        ui.text(im_str!("Hello world!"));
+                        ui.text(im_str!("こんにちは世界！"));
+                        ui.text(im_str!("This...is...imgui-rs!"));
+                        ui.separator();
+                        let mouse_pos = ui.io().mouse_pos;
+                        ui.text(format!(
+                            "Mouse Position: ({:.1},{:.1})",
+                            mouse_pos[0], mouse_pos[1]
+                        ));
+                    });
+
+                platform.prepare_render(&ui, ctx.ctx.window());
+
+                let gl = ctx.gl();
+                unsafe {
+                    gl.ClearColor(1.0, 1.0, 1.0, 0.0);
+                    gl.Clear(gl::COLOR_BUFFER_BIT);
+                }
+
                 ctx.draw(&atlas, &fractal);
+                renderer.render(ui);
+
+                ctx.ctx.swap_buffers().unwrap();
             },
             Event::RedrawRequested(_) => {},
             _ => (),

@@ -63,11 +63,6 @@ impl GLCtx {
     pub fn draw(&mut self, atlas: &Atlas, fractal: &Fractal<AtlasRegion>) {
         let gl = self.gl();
 
-        unsafe {
-            gl.ClearColor(1.0, 1.0, 1.0, 0.0);
-            gl.Clear(gl::COLOR_BUFFER_BIT);
-        }
-
         let mut texture = None;
         for (p, tile) in fractal.tiles.iter() {
             let tile = if let Task::Done(tile) = tile { tile } else { continue };
@@ -123,8 +118,6 @@ impl GLCtx {
         if let Some(texture) = texture {
             self.imm.draw(dbg!(atlas.texture[texture as usize]) as i32, gl);
         }
-
-        self.ctx.swap_buffers().unwrap();
     }
 }
 

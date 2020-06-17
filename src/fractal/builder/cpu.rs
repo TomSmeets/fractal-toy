@@ -90,7 +90,7 @@ fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(inc: f64, rq: &TileRequest, pixels: &
             v *= v;
             v = 1. - v;
 
-            // let rgb = rq.params.color.get(itr as f64 , 0.8);
+            // let rgb = rq.params.color.get(itr as f64 / 64.0 + 1.0 / 3.0, v);
 
             let rgb = hsv2rgb(itr as f64 / 64.0, v, v);
             let idx = x + y * texture_size;

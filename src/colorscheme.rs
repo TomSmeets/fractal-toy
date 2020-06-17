@@ -25,28 +25,28 @@ impl ColorScheme {
             }
         }
 
-        {
-            let file = File::create("./color.png").unwrap();
-            let ref mut w = BufWriter::new(file);
-            let mut encoder = png::Encoder::new(w, width as u32, height as u32); // Width is 2 pixels and height is 1.
-            encoder.set_color(png::ColorType::RGBA);
-            encoder.set_depth(png::BitDepth::Eight);
-            let mut writer = encoder.write_header().unwrap();
-            writer.write_image_data(&data).unwrap(); // Save
-        }
-
-        let decoder = png::Decoder::new(File::open("./color-in.png").unwrap());
-        let (info, mut reader) = decoder.read_info().unwrap();
-        // Allocate the output buffer.
-        let mut buf = vec![0; info.buffer_size()];
-        // Read the next frame. Currently this function should only called once.
-        // The default options
-        reader.next_frame(&mut buf).unwrap();
-
-        let width = info.width as usize;
-        let height = info.height as usize;
-        let data = buf;
-
+        //         {
+        //             let file = File::create("./color.png").unwrap();
+        //             let ref mut w = BufWriter::new(file);
+        //             let mut encoder = png::Encoder::new(w, width as u32, height as u32); // Width is 2 pixels and height is 1.
+        //             encoder.set_color(png::ColorType::RGBA);
+        //             encoder.set_depth(png::BitDepth::Eight);
+        //             let mut writer = encoder.write_header().unwrap();
+        //             writer.write_image_data(&data).unwrap(); // Save
+        //         }
+        //
+        //         let decoder = png::Decoder::new(File::open("./color-in.png").unwrap());
+        //         let (info, mut reader) = decoder.read_info().unwrap();
+        //         // Allocate the output buffer.
+        //         let mut buf = vec![0; info.buffer_size()];
+        //         // Read the next frame. Currently this function should only called once.
+        //         // The default options
+        //         reader.next_frame(&mut buf).unwrap();
+        //
+        //         let width = info.width as usize;
+        //         let height = info.height as usize;
+        //         let data = buf;
+        //
         let data = data.into_boxed_slice();
         ColorScheme {
             width,
