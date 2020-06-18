@@ -126,20 +126,24 @@ fn main() {
 
                 let ui = imgui.frame();
 
-                ui.show_demo_window(&mut true);
-
                 Window::new(im_str!("Hello world"))
                     .size([300.0, 100.0], Condition::FirstUseEver)
                     .build(&ui, || {
-                        ui.text(im_str!("Hello world!"));
-                        ui.text(im_str!("こんにちは世界！"));
-                        ui.text(im_str!("This...is...imgui-rs!"));
-                        ui.separator();
-                        let mouse_pos = ui.io().mouse_pos;
-                        ui.text(format!(
-                            "Mouse Position: ({:.1},{:.1})",
-                            mouse_pos[0], mouse_pos[1]
-                        ));
+                        ui.checkbox(im_str!("debug"), &mut input.debug);
+                        ui.checkbox(im_str!("pause"), &mut input.pause);
+
+                        let mut offset = [fractal.pos.offset.x as f32, fractal.pos.offset.y as f32];
+                        ui.drag_float2(im_str!("offset"), &mut offset).build();
+                        // fractal.pos.offset.x = offset[0] as f64;
+                        // fractal.pos.offset.y = offset[1] as f64;
+
+                        Slider::new(im_str!("zoom"), 0.0..=48.5).build(&ui, &mut fractal.pos.zoom);
+                        input.iter_inc = ui.button(im_str!("Iter+"), [60.0, 30.0]);
+                        input.iter_dec = ui.button(im_str!("Iter-"), [60.0, 30.0]);
+
+                        if ui.button(im_str!("next"), [60.0, 30.0]) {
+                            input.cycle = true;
+                        }
                     });
 
                 platform.prepare_render(&ui, ctx.ctx.window());
