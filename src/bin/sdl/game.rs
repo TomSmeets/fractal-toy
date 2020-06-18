@@ -16,7 +16,7 @@ pub struct State {
     #[serde(skip)]
     sdl: Sdl,
 
-    #[serde(skip)]
+    #[serde(skip, default = "UI::new")]
     ui: UI,
 
     pub input: Input,
@@ -92,7 +92,8 @@ impl State {
                 left: input.mouse_down,
                 right: false,
             };
-            ui.update(&input, fractal.pos.zoom);
+            ui.input(input);
+            ui.update(fractal.pos.zoom);
         }
 
         if !input.pause {
