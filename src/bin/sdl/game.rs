@@ -136,6 +136,53 @@ impl State {
             }
         }
 
+        // draw slider
+        {
+            let w = 45;
+            let pad = 10;
+            let rect = Rect::new(
+                window_size.x as i32 - w - pad,
+                pad,
+                w,
+                window_size.y as i32 - pad * 2,
+            );
+            let slider_x = window_size.x as i32 - w / 2 - pad;
+            {
+                let rect = Rect::new(slider_x - 10, rect.pos.y, 20, rect.size.y);
+                sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
+                sdl.canvas.fill_rect(rect.to_sdl()).unwrap();
+                sdl.canvas.set_draw_color(Color::RGB(0, 0, 0));
+                sdl.canvas.draw_rect(rect.to_sdl()).unwrap();
+            }
+
+            {
+                let z = (fractal.pos.zoom + 2.5) / (2.5 + 48.5);
+                let z = z.max(0.0).min(1.0);
+                let h = (z * rect.size.y as f64) as i32;
+                let slider_radius = 10;
+                let r_slider = Rect::new(
+                    rect.pos.x,
+                    rect.pos.y + h - slider_radius,
+                    rect.size.x,
+                    slider_radius * 2,
+                );
+                sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
+                sdl.canvas.fill_rect(r_slider.to_sdl()).unwrap();
+            }
+        }
+        {
+            let mut x = 0;
+            let w = 45;
+            let pad = 10;
+
+            sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
+            for _ in 0..6 {
+                let rect = Rect::new(x + pad, window_size.y as i32 - w - pad, w, w);
+                sdl.canvas.fill_rect(rect.to_sdl()).unwrap();
+                x += w + pad;
+            }
+        }
+
         sdl.canvas.present();
 
         if input.quit {

@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct Viewport {
-    zoom: f64,
-    offset: V2,
+    pub zoom: f64,
+    pub offset: V2,
     size_in_pixels: V2,
 }
 
