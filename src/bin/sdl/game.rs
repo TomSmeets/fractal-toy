@@ -75,7 +75,7 @@ impl State {
         }
 
         // update fractal tiles
-        fractal.do_input(input, time);
+        input.execute(fractal, time);
 
         if !input.pause {
             fractal.update_tiles(&mut atlas.provider(sdl));

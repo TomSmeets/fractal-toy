@@ -1,8 +1,10 @@
+use crate::fractal::Fractal;
 use crate::math::*;
+use crate::time::DeltaTime;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-// TODO: fractal should be a library, input should not exists here?
+// TODO(now): fractal should be a library, input should not exists here?
 pub struct Input {
     pub mouse: V2i,
     pub old_mouse: V2i,
@@ -78,6 +80,37 @@ impl Input {
         self.cycle = false;
         self.load = false;
         self.save = false;
+    }
+
+    pub fn execute<T>(&mut self, fractal: &mut Fractal<T>, dt: DeltaTime) {
+        if self.scroll != 0 {
+            fractal.pos.zoom_in_at(0.3 * self.scroll as f64, self.mouse);
+        }
+
+        fractal.pos.translate({
+            let mut p = dt.0 as f64 * self.dir_move * 2.0 * fractal.pos.size_in_pixels().x;
+            p.y *= -1.0;
+            to_v2i(p)
+        });
+        fractal.pos.zoom_in(dt.0 as f64 * self.zoom as f64 * 3.5);
+        fractal.pos.translate(-self.drag);
+
+        // TODO: in the future we want some kind of ui, or cli interface
+        if self.iter_inc {
+            fractal.params.iterations += 40;
+            fractal.tiles.clear();
+        }
+
+        if self.iter_dec {
+            fractal.params.iterations -= 40;
+            fractal.params.iterations = fractal.params.iterations.max(3);
+            fractal.tiles.clear();
+        }
+
+        if self.cycle {
+            fractal.params.kind = fractal.params.kind.next();
+            fractal.tiles.clear();
+        }
     }
 }
 

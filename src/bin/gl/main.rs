@@ -120,7 +120,7 @@ fn main() {
                     .prepare_frame(imgui.io_mut(), ctx.ctx.window())
                     .unwrap();
 
-                fractal.do_input(&input, dt);
+                input.execute(&mut fractal, dt);
                 input.begin();
                 fractal.update_tiles(&mut atlas.provider(ctx.gl()));
 

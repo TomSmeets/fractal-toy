@@ -1,6 +1,4 @@
 use crate::math::*;
-use crate::time::DeltaTime;
-use crate::Input;
 use serde::{Deserialize, Serialize};
 
 mod builder;
@@ -49,9 +47,9 @@ impl Builder {
 #[derive(Serialize, Deserialize)]
 pub struct Fractal<T> {
     // state
+    // NOTE: pos is public, so no need to forward its methods
     pub pos: Viewport,
-
-    params: TileParams,
+    pub params: TileParams,
 
     // this uses a workaround to prevent incorrect `T: Default` bounds.
     // see: https://github.com/serde-rs/serde/issues/1541
@@ -108,36 +106,5 @@ impl<T> Fractal<T> {
         let new_iter = self.pos.get_pos_all();
         self.tiles
             .update_with(new_iter, |_, v| texture_creator.free(v));
-    }
-
-    pub fn do_input(&mut self, input: &Input, dt: DeltaTime) {
-        if input.scroll != 0 {
-            self.pos.zoom_in_at(0.3 * input.scroll as f64, input.mouse);
-        }
-
-        self.pos.translate({
-            let mut p = dt.0 as f64 * input.dir_move * 2.0 * self.pos.size_in_pixels().x;
-            p.y *= -1.0;
-            to_v2i(p)
-        });
-        self.pos.zoom_in(dt.0 as f64 * input.zoom as f64 * 3.5);
-        self.pos.translate(-input.drag);
-
-        // TODO: in the future we want some kind of ui, or cli interface
-        if input.iter_inc {
-            self.params.iterations += 40;
-            self.tiles.clear();
-        }
-
-        if input.iter_dec {
-            self.params.iterations -= 40;
-            self.params.iterations = self.params.iterations.max(3);
-            self.tiles.clear();
-        }
-
-        if input.cycle {
-            self.params.kind = self.params.kind.next();
-            self.tiles.clear();
-        }
     }
 }
