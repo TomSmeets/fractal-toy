@@ -141,17 +141,29 @@ fn main() {
                         use serial::input::InputAction;
                         use serial::input::InputEvent;
                         if ui.button(im_str!("Iter+"), [60.0, 30.0]) {
-                            input.events.push(InputEvent::Action(InputAction::IterInc, true));
-                            input.events.push(InputEvent::Action(InputAction::IterInc, false));
+                            input
+                                .events
+                                .push(InputEvent::Action(InputAction::IterInc, true));
+                            input
+                                .events
+                                .push(InputEvent::Action(InputAction::IterInc, false));
                         }
                         if ui.button(im_str!("Iter-"), [60.0, 30.0]) {
-                            input.events.push(InputEvent::Action(InputAction::IterDec, true));
-                            input.events.push(InputEvent::Action(InputAction::IterDec, false));
+                            input
+                                .events
+                                .push(InputEvent::Action(InputAction::IterDec, true));
+                            input
+                                .events
+                                .push(InputEvent::Action(InputAction::IterDec, false));
                         }
 
                         if ui.button(im_str!("next"), [60.0, 30.0]) {
-                            input.events.push(InputEvent::Action(InputAction::NextFractal, true));
-                            input.events.push(InputEvent::Action(InputAction::NextFractal, false));
+                            input
+                                .events
+                                .push(InputEvent::Action(InputAction::NextFractal, true));
+                            input
+                                .events
+                                .push(InputEvent::Action(InputAction::NextFractal, false));
                         }
                     });
 

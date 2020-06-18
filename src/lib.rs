@@ -2,6 +2,7 @@
 pub mod atlas;
 pub mod math;
 pub mod state;
+pub mod ui;
 
 pub mod fractal;
 pub mod input;

@@ -1,5 +1,7 @@
 use crate::atlas::Atlas;
 use crate::sdl::Sdl;
+use crate::ui;
+use crate::ui::UI;
 use sdl2::event::{Event, WindowEvent};
 use sdl2::pixels::Color;
 use serde::{Deserialize, Serialize};
@@ -13,6 +15,9 @@ use serial::{Fractal, Input};
 pub struct State {
     #[serde(skip)]
     sdl: Sdl,
+
+    #[serde(skip)]
+    ui: UI,
 
     pub input: Input,
 
@@ -33,6 +38,7 @@ impl State {
     pub fn new() -> State {
         let sdl = Sdl::new();
         let input = Input::new();
+        let ui = UI::new();
 
         let window_size = sdl.output_size();
         let fractal = Fractal::new(window_size);
@@ -40,6 +46,7 @@ impl State {
         // TODO: get window size
         State {
             sdl,
+            ui,
             input,
             fractal,
             window_size,
@@ -50,6 +57,7 @@ impl State {
     pub fn update(&mut self) -> bool {
         let State {
             sdl,
+            ui,
             input,
             window_size,
             fractal,
@@ -76,6 +84,16 @@ impl State {
 
         // update fractal tiles
         input.execute(fractal, time);
+
+        {
+            let input = ui::Input {
+                viewport: V2i::new(window_size.x as i32, window_size.y as i32),
+                mouse: input.mouse,
+                left: input.mouse_down,
+                right: false,
+            };
+            ui.update(&input, fractal.pos.zoom);
+        }
 
         if !input.pause {
             fractal.update_tiles(&mut atlas.provider(sdl));
@@ -136,51 +154,10 @@ impl State {
             }
         }
 
-        // draw slider
-        {
-            let w = 45;
-            let pad = 10;
-            let rect = Rect::new(
-                window_size.x as i32 - w - pad,
-                pad,
-                w,
-                window_size.y as i32 - pad * 2,
-            );
-            let slider_x = window_size.x as i32 - w / 2 - pad;
-            {
-                let rect = Rect::new(slider_x - 10, rect.pos.y, 20, rect.size.y);
-                sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
-                sdl.canvas.fill_rect(rect.to_sdl()).unwrap();
-                sdl.canvas.set_draw_color(Color::RGB(0, 0, 0));
-                sdl.canvas.draw_rect(rect.to_sdl()).unwrap();
-            }
-
-            {
-                let z = (fractal.pos.zoom + 2.5) / (2.5 + 48.5);
-                let z = z.max(0.0).min(1.0);
-                let h = (z * rect.size.y as f64) as i32;
-                let slider_radius = 10;
-                let r_slider = Rect::new(
-                    rect.pos.x,
-                    rect.pos.y + h - slider_radius,
-                    rect.size.x,
-                    slider_radius * 2,
-                );
-                sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
-                sdl.canvas.fill_rect(r_slider.to_sdl()).unwrap();
-            }
-        }
-        {
-            let mut x = 0;
-            let w = 45;
-            let pad = 10;
-
-            sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
-            for _ in 0..6 {
-                let rect = Rect::new(x + pad, window_size.y as i32 - w - pad, w, w);
-                sdl.canvas.fill_rect(rect.to_sdl()).unwrap();
-                x += w + pad;
-            }
+        for (rect, rgb) in ui.rects.iter() {
+            sdl.canvas
+                .set_draw_color(Color::RGB(rgb[0], rgb[1], rgb[2]));
+            sdl.canvas.fill_rect(rect.to_sdl()).unwrap();
         }
 
         sdl.canvas.present();
