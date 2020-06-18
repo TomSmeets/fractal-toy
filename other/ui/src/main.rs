@@ -28,6 +28,7 @@ fn gui(ui: &mut UI) {
         gui(ui);
         ui.end();
     }
+
     if ui.begin("c") {
         gui(ui);
         ui.end();
