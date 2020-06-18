@@ -138,11 +138,20 @@ fn main() {
                         // fractal.pos.offset.y = offset[1] as f64;
 
                         Slider::new(im_str!("zoom"), 0.0..=48.5).build(&ui, &mut fractal.pos.zoom);
-                        input.iter_inc = ui.button(im_str!("Iter+"), [60.0, 30.0]);
-                        input.iter_dec = ui.button(im_str!("Iter-"), [60.0, 30.0]);
+                        use serial::input::InputAction;
+                        use serial::input::InputEvent;
+                        if ui.button(im_str!("Iter+"), [60.0, 30.0]) {
+                            input.events.push(InputEvent::Action(InputAction::IterInc, true));
+                            input.events.push(InputEvent::Action(InputAction::IterInc, false));
+                        }
+                        if ui.button(im_str!("Iter-"), [60.0, 30.0]) {
+                            input.events.push(InputEvent::Action(InputAction::IterDec, true));
+                            input.events.push(InputEvent::Action(InputAction::IterDec, false));
+                        }
 
                         if ui.button(im_str!("next"), [60.0, 30.0]) {
-                            input.cycle = true;
+                            input.events.push(InputEvent::Action(InputAction::NextFractal, true));
+                            input.events.push(InputEvent::Action(InputAction::NextFractal, false));
                         }
                     });
 
