@@ -76,6 +76,10 @@ impl<T> Fractal<T> {
         }
     }
 
+    pub fn reload(&mut self) {
+        self.tiles.clear();
+    }
+
     pub fn update_tiles(&mut self, texture_creator: &mut impl TileTextureProvider<Texture = T>) {
         let queue = &mut self.builder;
         queue.builder.update();

@@ -30,6 +30,44 @@ pub struct Input {
     pub pause: bool,
     pub load: bool,
     pub save: bool,
+
+    pub events: Vec<InputEvent>,
+}
+
+// These can be seriealized
+// We should handle all of these
+#[derive(Serialize, Deserialize)]
+pub enum MouseEvent {
+    Move(V2i),
+    Button(u32, bool),
+    Wheel(i32),
+}
+
+// TODO: In the future there should be a key binding for these
+#[derive(Serialize, Deserialize)]
+pub enum InputAction {
+    Quit,
+    Debug,
+    Pause,
+    Load,
+    Save,
+    IterInc,
+    IterDec,
+    MoveUp,
+    MoveDown,
+    MoveLeft,
+    MoveRight,
+    ZoomIn,
+    ZoomOut,
+    NextFractal,
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum InputEvent {
+    Mouse(MouseEvent),
+
+    // think keyboard key, but named
+    Action(InputAction, bool),
 }
 
 impl Default for Input {
@@ -62,6 +100,7 @@ impl Input {
             pause: false,
             load: false,
             save: false,
+            events: Vec::new(),
         }
     }
 
@@ -82,7 +121,59 @@ impl Input {
         self.save = false;
     }
 
+    // why not?
+    // How do we know how if a key is being held down?
+    pub fn run_events<T>(&mut self, fractal: &mut Fractal<T>) {
+        for ev in self.events.iter() {
+            match ev {
+                InputEvent::Action(act, down) => {
+                    if *down {
+                        match act {
+                            InputAction::Quit => self.quit = true,
+                            InputAction::Debug => self.debug = !self.debug,
+                            InputAction::Pause => self.pause = !self.pause,
+                            InputAction::Load => self.load = true,
+                            InputAction::Save => self.save = true,
+                            InputAction::NextFractal => {
+                                fractal.params.kind = fractal.params.kind.next();
+                                fractal.reload();
+                            },
+                            InputAction::IterInc => {
+                                fractal.params.iterations += 40;
+                                fractal.reload()
+                            },
+                            InputAction::IterDec => {
+                                fractal.params.iterations -= 40;
+                                fractal.params.iterations = fractal.params.iterations.max(3);
+                                fractal.reload()
+                            },
+                            _ => (),
+                        };
+                    }
+                    {
+                        let down_d = if *down { 1.0 } else { 0.0 };
+                        match act {
+                            InputAction::MoveUp => self.dir_move.y = down_d,
+                            InputAction::MoveDown => self.dir_move.y = -down_d,
+                            InputAction::MoveLeft => self.dir_move.x = down_d,
+                            InputAction::MoveRight => self.dir_move.x = -down_d,
+                            InputAction::ZoomIn => self.zoom = 1.0 * down_d as f32,
+                            InputAction::ZoomOut => self.zoom = -1.0 * down_d as f32,
+                            _ => (),
+                        };
+                    }
+                },
+                _ => (),
+            }
+        }
+
+        self.events.clear();
+    }
+
+    // TODO: in the future we want some kind of ui, or cli interface
     pub fn execute<T>(&mut self, fractal: &mut Fractal<T>, dt: DeltaTime) {
+        self.run_events(fractal);
+
         if self.scroll != 0 {
             fractal.pos.zoom_in_at(0.3 * self.scroll as f64, self.mouse);
         }
@@ -94,23 +185,6 @@ impl Input {
         });
         fractal.pos.zoom_in(dt.0 as f64 * self.zoom as f64 * 3.5);
         fractal.pos.translate(-self.drag);
-
-        // TODO: in the future we want some kind of ui, or cli interface
-        if self.iter_inc {
-            fractal.params.iterations += 40;
-            fractal.tiles.clear();
-        }
-
-        if self.iter_dec {
-            fractal.params.iterations -= 40;
-            fractal.params.iterations = fractal.params.iterations.max(3);
-            fractal.tiles.clear();
-        }
-
-        if self.cycle {
-            fractal.params.kind = fractal.params.kind.next();
-            fractal.tiles.clear();
-        }
     }
 }
 
@@ -120,51 +194,50 @@ use sdl2::{controller::Axis, controller::Button, event::*, keyboard::Keycode, mo
 
 #[cfg(feature = "platform-sdl")]
 impl Input {
+    fn trnalsate_sdl_key(&mut self, key: Keycode) -> Option<InputAction> {
+        Some(match key {
+            Keycode::Q => InputAction::Quit,
+
+            Keycode::W => InputAction::MoveUp,
+            Keycode::S => InputAction::MoveDown,
+            Keycode::D => InputAction::MoveLeft,
+            Keycode::A => InputAction::MoveRight,
+
+            Keycode::I => InputAction::ZoomIn,
+            Keycode::K => InputAction::ZoomOut,
+
+            Keycode::N => InputAction::NextFractal,
+            Keycode::L => InputAction::IterInc,
+            Keycode::J => InputAction::IterDec,
+
+            Keycode::Num1 => InputAction::Pause,
+            Keycode::Num2 => InputAction::Debug,
+            Keycode::Num5 => InputAction::Save,
+            Keycode::Num6 => InputAction::Load,
+            _ => return None,
+        })
+    }
+
     fn handle_sdl_key(&mut self, key: Keycode, down: bool) {
-        {
-            let down_f = if down { 1.0 } else { 0.0 };
-            let down_d = down_f as f64;
-            match key {
-                Keycode::Q => self.quit = true,
-
-                Keycode::W => self.dir_move.y = 1.0 * down_d,
-                Keycode::S => self.dir_move.y = -1.0 * down_d,
-                Keycode::D => self.dir_move.x = 1.0 * down_d,
-                Keycode::A => self.dir_move.x = -1.0 * down_d,
-
-                Keycode::I => self.zoom = 1.0 * down_f,
-                Keycode::K => self.zoom = -1.0 * down_f,
-                _ => (),
-            }
-        }
-
-        if down {
-            match key {
-                Keycode::N => self.cycle = true,
-                Keycode::L => self.iter_inc = true,
-                Keycode::J => self.iter_dec = true,
-
-                Keycode::Num1 => self.pause = !self.pause,
-                Keycode::Num2 => self.debug = !self.debug,
-                Keycode::Num5 => self.save = true,
-                Keycode::Num6 => self.load = true,
-                _ => (),
-            }
+        if let Some(act) = self.trnalsate_sdl_key(key) {
+            self.events.push(InputEvent::Action(act, down));
         }
     }
 
     fn controller_button(&mut self, button: Button, down: bool) {
-        if down {
-            match button {
-                Button::RightShoulder => self.iter_inc = true,
-                Button::LeftShoulder => self.iter_dec = true,
-                Button::A => self.cycle = true,
-                Button::DPadUp => self.debug = !self.debug,
-                Button::DPadDown => self.pause = !self.pause,
-                Button::DPadLeft => self.save = true,
-                Button::DPadRight => self.load = true,
-                _ => (),
-            }
+        let act = match button {
+            Button::RightShoulder => Some(InputAction::IterInc),
+            Button::LeftShoulder => Some(InputAction::IterDec),
+            Button::A => Some(InputAction::NextFractal),
+            Button::DPadUp => Some(InputAction::Debug),
+            Button::DPadDown => Some(InputAction::Pause),
+            Button::DPadLeft => Some(InputAction::Save),
+            Button::DPadRight => Some(InputAction::Load),
+            _ => None,
+        };
+
+        if let Some(act) = act {
+            self.events.push(InputEvent::Action(act, down));
         }
     }
 
