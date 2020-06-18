@@ -20,10 +20,6 @@ pub struct Input {
     pub zoom: f32,
     pub dir_move: V2,
 
-    pub iter_inc: bool,
-    pub iter_dec: bool,
-    pub cycle: bool,
-
     // TODO: these are not part of fractal, maybe move out?
     pub quit: bool,
     pub debug: bool,
@@ -92,10 +88,6 @@ impl Input {
 
             quit: false,
 
-            iter_inc: false,
-            iter_dec: false,
-            cycle: false,
-
             debug: false,
             pause: false,
             load: false,
@@ -114,9 +106,6 @@ impl Input {
         self.old_mouse = self.mouse;
         self.scroll = 0;
         self.mouse_click = false;
-        self.iter_inc = false;
-        self.iter_dec = false;
-        self.cycle = false;
         self.load = false;
         self.save = false;
     }
