@@ -79,7 +79,7 @@ impl Sdl {
     pub fn create_texture_static_rgba8(&mut self, w: u32, h: u32) -> sdl2::render::Texture {
         self.canvas
             .texture_creator()
-            .create_texture_static(PixelFormatEnum::ARGB8888, w, h)
+            .create_texture_static(PixelFormatEnum::ABGR8888, w, h)
             .unwrap()
     }
 }
