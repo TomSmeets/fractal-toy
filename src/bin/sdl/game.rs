@@ -55,26 +55,18 @@ impl State {
     }
 
     pub fn update(&mut self) -> bool {
-        let State {
-            sdl,
-            ui,
-            input,
-            window_size,
-            fractal,
-            atlas,
-        } = self;
         let time = DeltaTime(1.0 / 60.0);
 
         // input stuff
-        let events: Vec<_> = sdl.event.poll_iter().collect();
-        input.begin();
-        input.handle_sdl(&events);
+        let events: Vec<_> = self.sdl.event.poll_iter().collect();
+        self.input.begin();
+        self.input.handle_sdl(&events);
         for e in events.iter() {
             match e {
                 Event::Window { win_event, .. } => match win_event {
                     WindowEvent::Resized(x, y) => {
-                        *window_size = Vector2::new((*x as u32).max(1), (*y as u32).max(1));
-                        fractal.pos.resize(*window_size);
+                        self.window_size = Vector2::new((*x as u32).max(1), (*y as u32).max(1));
+                        self.fractal.pos.resize(self.window_size);
                     },
                     _ => (),
                 },
@@ -83,88 +75,91 @@ impl State {
         }
 
         // update fractal tiles
-        input.execute(fractal, time);
+        self.input.execute(&mut self.fractal, time);
 
         {
             let input = ui::Input {
-                viewport: V2i::new(window_size.x as i32, window_size.y as i32),
-                mouse: input.mouse,
-                left: input.mouse_down,
+                viewport: V2i::new(self.window_size.x as i32, self.window_size.y as i32),
+                mouse: self.input.mouse,
+                left: self.input.mouse_down,
                 right: false,
             };
-            ui.input(input);
-            ui.update(fractal.pos.zoom);
+            self.ui.input(input);
+            self.ui.update(&mut self.fractal);
         }
 
-        if !input.pause {
-            fractal.update_tiles(&mut atlas.provider(sdl));
+        if !self.input.pause {
+            self.fractal
+                .update_tiles(&mut self.atlas.provider(&mut self.sdl));
         }
 
         // start drawing
-        sdl.canvas.set_draw_color(Color::RGB(0, 0, 0));
-        sdl.canvas.clear();
+        self.sdl.canvas.set_draw_color(Color::RGB(0, 0, 0));
+        self.sdl.canvas.clear();
 
         // draw tiles
-        sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
-        for (p, tile) in fractal.tiles.iter() {
-            let r = fractal.pos.pos_to_rect(p);
+        self.sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
+        for (p, tile) in self.fractal.tiles.iter() {
+            let r = self.fractal.pos.pos_to_rect(p);
             match tile {
                 Task::Done(tile) => {
                     // atlas.draw(sdl, tile, r);
-                    sdl.canvas_copy(
-                        &atlas.texture[tile.index.z as usize],
+                    self.sdl.canvas_copy(
+                        &self.atlas.texture[tile.index.z as usize],
                         Some(tile.rect_padded().to_sdl()),
                         Some(r.to_sdl()),
                     );
 
-                    if input.debug {
-                        sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
-                        sdl.canvas.draw_rect(r.to_sdl()).unwrap();
+                    if self.input.debug {
+                        self.sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
+                        self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
                     }
                 },
 
                 Task::Todo => {
-                    if input.debug {
-                        sdl.canvas.set_draw_color(Color::RGB(0, 0, 255));
-                        sdl.canvas.draw_rect(r.to_sdl()).unwrap();
+                    if self.input.debug {
+                        self.sdl.canvas.set_draw_color(Color::RGB(0, 0, 255));
+                        self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
                     }
                 },
                 Task::Doing => {
-                    if input.debug {
-                        sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
-                        sdl.canvas.draw_rect(r.to_sdl()).unwrap();
+                    if self.input.debug {
+                        self.sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
+                        self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
                     }
                 },
 
                 Task::Empty(_) => {
-                    if input.debug {
-                        sdl.canvas.set_draw_color(Color::RGB(255, 0, 255));
-                        sdl.canvas.draw_rect(r.to_sdl()).unwrap();
+                    if self.input.debug {
+                        self.sdl.canvas.set_draw_color(Color::RGB(255, 0, 255));
+                        self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
                     }
                 },
             }
         }
 
         // draw debug
-        if input.debug {
+        if self.input.debug {
             // Show atlas
             // TODO: show in ui window?
-            let w = window_size.x as i32 / atlas.texture.len().max(4) as i32;
-            for (i, t) in atlas.texture.iter().enumerate() {
-                sdl.canvas_copy(t, None, Some(Rect::new(i as i32 * w, 0, w, w).to_sdl()));
+            let w = self.window_size.x as i32 / self.atlas.texture.len().max(4) as i32;
+            for (i, t) in self.atlas.texture.iter().enumerate() {
+                self.sdl
+                    .canvas_copy(t, None, Some(Rect::new(i as i32 * w, 0, w, w).to_sdl()));
             }
         }
 
-        for (rect, rgb) in ui.rects.iter() {
-            sdl.canvas
+        for (rect, rgb) in self.ui.rects.iter() {
+            self.sdl
+                .canvas
                 .set_draw_color(Color::RGB(rgb[0], rgb[1], rgb[2]));
-            sdl.canvas.fill_rect(rect.to_sdl()).unwrap();
+            self.sdl.canvas.fill_rect(rect.to_sdl()).unwrap();
         }
 
-        sdl.canvas.present();
+        self.sdl.canvas.present();
 
-        if input.quit {
-            input.quit = false;
+        if self.input.quit {
+            self.input.quit = false;
             true
         } else {
             false

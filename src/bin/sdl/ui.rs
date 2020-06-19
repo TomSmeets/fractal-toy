@@ -102,7 +102,8 @@ impl UI {
         went_down
     }
 
-    pub fn update(&mut self, zoom: f64) {
+    pub fn update<T>(&mut self, fractal: &mut Fractal<T>) {
+        let zoom = fractal.pos.zoom;
         self.rects.clear();
 
         if !self.input.left && self.active != 0 {
