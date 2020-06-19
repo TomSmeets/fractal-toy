@@ -3,6 +3,7 @@ use crate::fractal::queue::QueueHandle;
 use crate::fractal::TileContent;
 use ocl::enums::{ImageChannelDataType, ImageChannelOrder, MemObjectType};
 use ocl::flags::CommandQueueProperties;
+use ocl::Result as OCLResult;
 use ocl::{Context, Device, Image, Kernel, Program, Queue};
 use std::thread;
 
@@ -13,14 +14,12 @@ pub struct OCLTileBuilder {
 }
 
 impl OCLTileBuilder {
-    pub fn new(h: QueueHandle) -> Self {
-        let handle = thread::spawn(|| {
-            let mut w = OCLWorker::new(h);
-            w.run();
-        });
-        OCLTileBuilder {
+    pub fn new(h: QueueHandle) -> OCLResult<Self> {
+        let mut w = OCLWorker::new(h)?;
+        let handle = thread::spawn(move || w.run());
+        Ok(OCLTileBuilder {
             handle: Some(handle),
-        }
+        })
     }
 }
 
@@ -42,6 +41,28 @@ pub struct OCLWorker {
 }
 
 impl OCLWorker {
+    // will return Err(_) when unavaliable, or verision mismatch
+    pub fn new(handle: QueueHandle) -> OCLResult<Self> {
+        let context = Context::builder()
+            .devices(Device::specifier().first())
+            .build()?;
+        let device = context.devices()[0];
+        let cqueue = Queue::new(
+            &context,
+            device,
+            Some(CommandQueueProperties::new() /* .out_of_order() */),
+        )?;
+
+        Ok(OCLWorker {
+            context,
+            device,
+            cqueue,
+            program: None,
+            handle,
+            kind: TileType::Empty,
+        })
+    }
+
     pub fn compile(&mut self) -> Program {
         let pow2 = r#"
             tmp = z;
@@ -93,29 +114,6 @@ impl OCLWorker {
             .devices(self.device)
             .build(&self.context)
             .unwrap()
-    }
-
-    pub fn new(handle: QueueHandle) -> Self {
-        let context = Context::builder()
-            .devices(Device::specifier().first())
-            .build()
-            .unwrap();
-        let device = context.devices()[0];
-        let cqueue = Queue::new(
-            &context,
-            device,
-            Some(CommandQueueProperties::new() /* .out_of_order() */),
-        )
-        .unwrap();
-
-        OCLWorker {
-            context,
-            device,
-            cqueue,
-            program: None,
-            handle,
-            kind: TileType::Empty,
-        }
     }
 
     fn process(&mut self, p: &TileRequest) -> TileContent {

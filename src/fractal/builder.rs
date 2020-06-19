@@ -113,7 +113,7 @@ pub struct TileBuilder {
 
     #[cfg(feature = "builder-ocl")]
     #[allow(dead_code)]
-    ocl: self::ocl::OCLTileBuilder,
+    ocl: Option<self::ocl::OCLTileBuilder>,
 }
 
 impl TileBuilder {
@@ -123,7 +123,13 @@ impl TileBuilder {
             threaded: self::threaded::ThreadedTileBuilder::new(h.clone()),
 
             #[cfg(feature = "builder-ocl")]
-            ocl: self::ocl::OCLTileBuilder::new(h.clone()),
+            ocl: match self::ocl::OCLTileBuilder::new(h.clone()) {
+                Ok(ocl) => Some(ocl),
+                Err(e) => {
+                    println!("no ocl: {}", e);
+                    None
+                },
+            },
         }
     }
 
