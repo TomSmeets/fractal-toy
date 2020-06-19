@@ -176,7 +176,10 @@ impl OCLWorker {
     pub fn run(&mut self) {
         while let Ok(next) = self.handle.recv() {
             let tile = self.process(&next);
-            self.handle.send(next, tile).unwrap();
+
+            if let Err(_) = self.handle.send(next, tile) {
+                break;
+            }
         }
     }
 }
