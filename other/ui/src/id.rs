@@ -20,7 +20,7 @@ impl Id {
         Id(checksum)
     }
 
-    pub fn new(data: &str, seed: Id) -> Self {
+    pub fn from_str(data: &str, seed: Id) -> Self {
         Self::from_bytes(data.as_bytes(), seed)
     }
 }
@@ -28,8 +28,8 @@ impl Id {
 #[test]
 fn test_id() {
     let i0 = Id::root();
-    let i1 = Id::new("hello", i0);
-    let i2 = Id::new("world", i0);
+    let i1 = Id::from_str("hello", i0);
+    let i2 = Id::from_str("world", i0);
     assert_ne!(i0, i1);
     assert_ne!(i1, i2);
 }
@@ -37,16 +37,16 @@ fn test_id() {
 #[test]
 fn test_id_empty() {
     let i0 = Id::root();
-    let i1 = Id::new("", i0);
+    let i1 = Id::from_str("", i0);
     assert_ne!(i0, i1);
 }
 
 #[test]
 fn test_id_nest() {
     let i0 = Id::root();
-    let i1 = Id::new("helloworld", i0);
-    let i2 = Id::new("hello", Id::new("world", i0));
-    let i3 = Id::new("world", Id::new("hello", i0));
+    let i1 = Id::from_str("helloworld", i0);
+    let i2 = Id::from_str("hello", Id::from_str("world", i0));
+    let i3 = Id::from_str("world", Id::from_str("hello", i0));
     assert_ne!(i1, i2);
     assert_ne!(i1, i3);
 }
