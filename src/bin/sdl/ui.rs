@@ -16,10 +16,10 @@ pub struct Input {
     pub right: bool,
 }
 
-struct ButtonState {
-    hot: bool,
-    active: bool,
-    click: bool,
+pub struct ButtonState {
+    pub hot: bool,
+    pub active: bool,
+    pub click: bool,
 }
 
 impl Input {
