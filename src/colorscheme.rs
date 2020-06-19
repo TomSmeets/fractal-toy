@@ -1,6 +1,3 @@
-use std::fs::File;
-use std::io::BufWriter;
-
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub struct ColorScheme {
     width: usize,

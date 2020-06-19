@@ -1,5 +1,4 @@
 use crate::atlas::Atlas;
-use crate::gl;
 use crate::gl::Gl;
 use crate::imm::GfxImmState;
 use crate::imm::Vertex;

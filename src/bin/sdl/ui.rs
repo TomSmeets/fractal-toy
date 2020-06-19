@@ -30,7 +30,7 @@ pub struct UI {
     pub input: Input,
     pub rects: Vec<(Rect, [u8; 3])>,
 
-    pub active: Option<Id>,
+    active: Option<Id>,
     stack: UIStack,
 }
 
@@ -79,7 +79,7 @@ impl UI {
         let id = self.stack.begin(name);
 
         let mut is_active = false;
-        let mut is_hot = self.is_hot(rect);
+        let is_hot = self.is_hot(rect);
         let mut went_down = false;
 
         if self.active.is_none() {

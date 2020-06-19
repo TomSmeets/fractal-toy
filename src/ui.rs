@@ -1,8 +1,2 @@
-use crate::math::Rect;
-
-#[derive(Default)]
-pub struct UI {
-    rects: Vec<Rect>,
-}
-
+pub struct UI {}
 impl UI {}
