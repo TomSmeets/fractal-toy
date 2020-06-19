@@ -1,7 +1,6 @@
 mod atlas;
 mod game;
 mod sdl;
-mod ui;
 
 use self::game::State;
 use serial::state::{load, load_in_place, save};

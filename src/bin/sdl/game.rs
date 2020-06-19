@@ -1,7 +1,5 @@
 use crate::atlas::Atlas;
 use crate::sdl::Sdl;
-use crate::ui;
-use crate::ui::UI;
 use sdl2::event::{Event, WindowEvent};
 use sdl2::pixels::Color;
 use serde::{Deserialize, Serialize};
@@ -9,6 +7,8 @@ use serial::atlas::AtlasRegion;
 use serial::math::*;
 use serial::tilemap::Task;
 use serial::time::DeltaTime;
+use serial::ui;
+use serial::ui::UI;
 use serial::{Fractal, Input};
 
 #[derive(Serialize, Deserialize)]
@@ -149,7 +149,7 @@ impl State {
             }
         }
 
-        self.ui.draw_sdl(&mut self.sdl);
+        draw_ui(&self.ui, &mut self.sdl);
 
         self.sdl.canvas.present();
 
@@ -159,5 +159,13 @@ impl State {
         } else {
             false
         }
+    }
+}
+
+fn draw_ui(ui: &UI, sdl: &mut Sdl) {
+    for (rect, rgb) in ui.rects.iter() {
+        sdl.canvas
+            .set_draw_color(Color::RGB(rgb[0], rgb[1], rgb[2]));
+        sdl.canvas.fill_rect(rect.to_sdl()).unwrap();
     }
 }
