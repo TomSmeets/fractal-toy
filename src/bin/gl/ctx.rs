@@ -121,34 +121,35 @@ impl GLCtx {
             self.imm.draw(atlas.texture[texture as usize] as i32, gl);
         }
 
+        // TODO: this is very wrong
         if ! atlas.texture.is_empty() {
-            println!("ui: {}", ui.rects.len());
-        for (rect, rgb) in ui.rects.iter() {
-            let lx = (rect.pos.x ) as f32;
-            let ly = (rect.pos.y ) as f32;
-            let hx = (rect.pos.x + rect.size.x) as f32;
-            let hy = (rect.pos.y + rect.size.y) as f32;
+            for (rect, rgb) in ui.rects.iter() {
+                let lx = (rect.pos.x ) as f32;
+                let ly = (rect.pos.y ) as f32;
+                let hx = (rect.pos.x + rect.size.x) as f32;
+                let hy = (rect.pos.y + rect.size.y) as f32;
 
-            let size_x = self.size.x as f32;
-            let size_y = self.size.y as f32;
+                let size_x = self.size.x as f32;
+                let size_y = self.size.y as f32;
 
-            let lx = lx as f32 / size_x * 2.0 - 1.0;
-            let ly = ly as f32 / size_y * 2.0 - 1.0;
-            let hx = hx as f32 / size_x * 2.0 - 1.0;
-            let hy = hy as f32 / size_y * 2.0 - 1.0;
+                let lx = lx as f32 / size_x * 2.0 - 1.0;
+                let ly = ly as f32 / size_y * 2.0 - 1.0;
+                let hx = hx as f32 / size_x * 2.0 - 1.0;
+                let hy = hy as f32 / size_y * 2.0 - 1.0;
 
-            let ly = - ly;
-            let hy = - hy;
+                let ly = - ly;
+                let hy = - hy;
 
-            let col = [ rgb[0] as f32 / 255.0, rgb[1] as f32 / 255.0, rgb[2] as f32 / 255.0 ];
-            self.imm.push(Vertex { pos: [hx, hy], col, tex: [ 1.0, 1.0 ] });
-            self.imm.push(Vertex { pos: [hx, ly], col, tex: [ 1.0, 0.0 ] });
-            self.imm.push(Vertex { pos: [lx, ly], col, tex: [ 0.0, 0.0 ] });
-            self.imm.push(Vertex { pos: [lx, hy], col, tex: [ 0.0, 1.0 ] });
-            self.imm.push(Vertex { pos: [hx, hy], col, tex: [ 1.0, 1.0 ] });
-            self.imm.push(Vertex { pos: [lx, ly], col, tex: [ 0.0, 0.0 ] });
-            self.imm.draw(atlas.texture[0] as i32, gl);
-        }
+                let col = [ rgb[0] as f32 / 255.0, rgb[1] as f32 / 255.0, rgb[2] as f32 / 255.0 ];
+                // TODO: ui should not be here?, in the future it should use its own texture atlas.
+                self.imm.push(Vertex { pos: [hx, hy], col, tex: [ 1.0, 1.0 ] });
+                self.imm.push(Vertex { pos: [hx, ly], col, tex: [ 1.0, 0.0 ] });
+                self.imm.push(Vertex { pos: [lx, ly], col, tex: [ 0.0, 0.0 ] });
+                self.imm.push(Vertex { pos: [lx, hy], col, tex: [ 0.0, 1.0 ] });
+                self.imm.push(Vertex { pos: [hx, hy], col, tex: [ 1.0, 1.0 ] });
+                self.imm.push(Vertex { pos: [lx, ly], col, tex: [ 0.0, 0.0 ] });
+                self.imm.draw(atlas.texture[0] as i32, gl);
+            }
         }
     }
 }
