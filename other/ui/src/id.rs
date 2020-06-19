@@ -8,12 +8,20 @@ impl Id {
         Id(0)
     }
 
-    pub fn new(data: &str, seed: Id) -> Self {
+    pub fn from_bytes(data: &[u8], seed: Id) -> Self {
         let mut hasher = Hasher::new_with_initial(seed.0);
+
+        // This is some kind of marker to represent a new depth level
+        // It can be anything
         hasher.update(&[0]);
-        hasher.update(data.as_bytes());
+
+        hasher.update(data);
         let checksum = hasher.finalize();
         Id(checksum)
+    }
+
+    pub fn new(data: &str, seed: Id) -> Self {
+        Self::from_bytes(data.as_bytes(), seed)
     }
 }
 

@@ -24,8 +24,8 @@ impl UIStack {
         self.stack.last().map(|x| *x)
     }
 
-    pub fn begin(&mut self, name: &str) -> Id {
-        let id = Id::new(name, self.id().unwrap_or(Id::root()));
+    pub fn begin_raw(&mut self, name: &[u8]) -> Id {
+        let id = Id::from_bytes(name, self.id().unwrap_or(Id::root()));
         self.stack.push(id);
 
         if self.active == None {
@@ -33,6 +33,10 @@ impl UIStack {
         }
 
         id
+    }
+
+    pub fn begin(&mut self, name: &str) -> Id {
+        self.begin_raw(name.as_bytes())
     }
 
     pub fn end(&mut self) {

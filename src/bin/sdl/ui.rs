@@ -173,12 +173,16 @@ impl UI {
             let w = 45;
             let pad = 10;
 
-            for i in 0..6 {
+            for i in 0_i32..6 {
+                self.stack.begin_raw(&i.to_ne_bytes());
+
                 let rect = Rect::new(x + pad, self.input.viewport.y as i32 - w - pad, w, w);
-                if self.button(&format!("button-{}", i), rect) {
+                if self.button("button", rect) {
                     println!("button: {}", i);
                 }
                 x += w + pad;
+
+                self.stack.end();
             }
         }
     }
