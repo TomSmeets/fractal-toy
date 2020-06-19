@@ -2,13 +2,21 @@ use crate::Id;
 
 #[derive(Default)]
 pub struct UIStack {
+    current: Id,
     stack: Vec<Id>,
-    pub active: Option<Id>,
 }
 
 impl UIStack {
+    pub fn new() -> Self {
+        UIStack {
+            current: Id::root(),
+            stack: Vec::new(),
+        }
+    }
+
     // TODO: this should not be needed,
     pub fn clear(&mut self) {
+        self.current = Id::root();
         self.stack.clear();
     }
 
@@ -16,23 +24,15 @@ impl UIStack {
         self.stack.len() as u32
     }
 
-    pub fn is_active(&self) -> bool {
-        self.active.is_some() && self.id() == self.active
-    }
-
-    pub fn id(&self) -> Option<Id> {
-        self.stack.last().map(|x| *x)
+    /// Returns current active id
+    pub fn id(&self) -> Id {
+        self.current
     }
 
     pub fn begin_raw(&mut self, name: &[u8]) -> Id {
-        let id = Id::from_bytes(name, self.id().unwrap_or(Id::root()));
-        self.stack.push(id);
-
-        if self.active == None {
-            self.active = Some(id);
-        }
-
-        id
+        self.stack.push(self.current);
+        self.current = Id::from_bytes(name, self.current);
+        self.current
     }
 
     pub fn begin(&mut self, name: &str) -> Id {
@@ -40,6 +40,7 @@ impl UIStack {
     }
 
     pub fn end(&mut self) {
-        let _ = self.stack.pop().unwrap();
+        // TODO: handle to many ends?
+        self.current = self.stack.pop().unwrap();
     }
 }

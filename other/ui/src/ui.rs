@@ -26,6 +26,7 @@ pub enum Nav {
 pub struct UI {
     stack: UIStack,
     nav: Navigation,
+    active: Option<Id>,
 
     pub data: BTreeMap<Id, ElementData>,
     draw: Vec<RenderCommand>,
@@ -46,14 +47,14 @@ impl UI {
     }
 
     pub fn current_id(&self) -> Id {
-        self.stack.id().unwrap_or(Id::root())
+        self.stack.id()
     }
 
     pub fn begin(&mut self, n: &str) -> bool {
         self.beg(n);
 
         let id = self.current_id();
-        let active = self.stack.is_active();
+        let active = Some(id) == self.active;
         let indent = self.stack.depth();
 
         if active {
@@ -90,13 +91,17 @@ impl UI {
     }
 
     pub fn beg(&mut self, n: &str) {
-        self.stack.begin(n);
+        let id = self.stack.begin(n);
 
-        self.nav.begin(&self.stack);
+        if self.active == None {
+            self.active = Some(id);
+        }
+
+        self.nav.begin(&self.stack, self.active);
     }
 
     pub fn end(&mut self) {
-        if self.stack.is_active() {
+        if Some(self.stack.id()) == self.active {
             self.draw.push(RenderCommand::Other(false));
         }
 
@@ -105,7 +110,7 @@ impl UI {
     }
 
     pub fn do_nav(&mut self, nav: Nav) {
-        if let Some(mut data) = self.data.get_mut(&self.stack.active.unwrap()) {
+        if let Some(mut data) = self.data.get_mut(&self.active.unwrap()) {
             match nav {
                 Nav::Right => {
                     if !data.open {
@@ -126,7 +131,7 @@ impl UI {
 
             _ => None,
         } {
-            self.stack.active = Some(n);
+            self.active = Some(n);
         }
     }
 }

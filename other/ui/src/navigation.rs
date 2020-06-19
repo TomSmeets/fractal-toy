@@ -18,14 +18,12 @@ impl Navigation {
         self.path = Vec::new();
     }
 
-    pub fn begin(&mut self, stack: &UIStack) {
-        let id = stack.id().unwrap();
-
-        if stack.is_active() {
+    pub fn begin(&mut self, stack: &UIStack, active: Option<Id>) {
+        if Some(stack.id()) == active {
             self.active = self.path.len();
         }
 
-        self.path.push(Operation::Push(id));
+        self.path.push(Operation::Push(stack.id()));
     }
 
     pub fn end(&mut self) {
