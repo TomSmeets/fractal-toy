@@ -11,6 +11,7 @@ use glutin::{ContextBuilder, ContextWrapper, PossiblyCurrent};
 use serial::atlas::AtlasRegion;
 use serial::math::*;
 use serial::tilemap::Task;
+use serial::ui::UI;
 use serial::Fractal;
 
 pub struct GLCtx {
@@ -59,7 +60,7 @@ impl GLCtx {
     }
 
     #[rustfmt::skip]
-    pub fn draw(&mut self, atlas: &Atlas, fractal: &Fractal<AtlasRegion>) {
+    pub fn draw(&mut self, ui: &UI, atlas: &Atlas, fractal: &Fractal<AtlasRegion>) {
         let gl = self.gl();
 
         let mut texture = None;
@@ -92,6 +93,7 @@ impl GLCtx {
                 None => texture = Some(tile.index.z),
                 Some(t) => {
                     if t != tile.index.z {
+                        self.imm.draw(atlas.texture[t as usize] as i32, gl);
                         texture = Some(tile.index.z);
                     }
                 }
@@ -104,18 +106,49 @@ impl GLCtx {
             let thy = thy as f32 / pixel_size as f32;
 
 
+            // TODO: make spesific, remove color
             self.imm.push(Vertex { pos: [hx, hy], col: [1.0, 1.0, 1.0], tex: [ thx, thy ] });
-            self.imm.push(Vertex { pos: [hx, ly], col: [1.0, 0.0, 1.0], tex: [ thx, tly ] });
-            self.imm.push(Vertex { pos: [lx, ly], col: [0.0, 0.0, 1.0], tex: [ tlx, tly ] });
+            self.imm.push(Vertex { pos: [hx, ly], col: [1.0, 1.0, 1.0], tex: [ thx, tly ] });
+            self.imm.push(Vertex { pos: [lx, ly], col: [1.0, 1.0, 1.0], tex: [ tlx, tly ] });
 
-            self.imm.push(Vertex { pos: [lx, hy], col: [0.0, 1.0, 1.0], tex: [ tlx, thy ] });
+            self.imm.push(Vertex { pos: [lx, hy], col: [1.0, 1.0, 1.0], tex: [ tlx, thy ] });
             self.imm.push(Vertex { pos: [hx, hy], col: [1.0, 1.0, 1.0], tex: [ thx, thy ] });
-            self.imm.push(Vertex { pos: [lx, ly], col: [0.0, 0.0, 1.0], tex: [ tlx, tly ] });
-            self.imm.draw(atlas.texture[tile.index.z as usize] as i32, gl);
+            self.imm.push(Vertex { pos: [lx, ly], col: [1.0, 1.0, 1.0], tex: [ tlx, tly ] });
         }
 
+        // what is this?
         if let Some(texture) = texture {
-            self.imm.draw(dbg!(atlas.texture[texture as usize]) as i32, gl);
+            self.imm.draw(atlas.texture[texture as usize] as i32, gl);
+        }
+
+        if ! atlas.texture.is_empty() {
+            println!("ui: {}", ui.rects.len());
+        for (rect, rgb) in ui.rects.iter() {
+            let lx = (rect.pos.x ) as f32;
+            let ly = (rect.pos.y ) as f32;
+            let hx = (rect.pos.x + rect.size.x) as f32;
+            let hy = (rect.pos.y + rect.size.y) as f32;
+
+            let size_x = self.size.x as f32;
+            let size_y = self.size.y as f32;
+
+            let lx = lx as f32 / size_x * 2.0 - 1.0;
+            let ly = ly as f32 / size_y * 2.0 - 1.0;
+            let hx = hx as f32 / size_x * 2.0 - 1.0;
+            let hy = hy as f32 / size_y * 2.0 - 1.0;
+
+            let ly = - ly;
+            let hy = - hy;
+
+            let col = [ rgb[0] as f32 / 255.0, rgb[1] as f32 / 255.0, rgb[2] as f32 / 255.0 ];
+            self.imm.push(Vertex { pos: [hx, hy], col, tex: [ 1.0, 1.0 ] });
+            self.imm.push(Vertex { pos: [hx, ly], col, tex: [ 1.0, 0.0 ] });
+            self.imm.push(Vertex { pos: [lx, ly], col, tex: [ 0.0, 0.0 ] });
+            self.imm.push(Vertex { pos: [lx, hy], col, tex: [ 0.0, 1.0 ] });
+            self.imm.push(Vertex { pos: [hx, hy], col, tex: [ 1.0, 1.0 ] });
+            self.imm.push(Vertex { pos: [lx, ly], col, tex: [ 0.0, 0.0 ] });
+            self.imm.draw(atlas.texture[0] as i32, gl);
+        }
         }
     }
 }

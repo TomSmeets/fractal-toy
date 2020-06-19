@@ -4,6 +4,7 @@ use glutin::window::WindowBuilder;
 use serial::atlas::AtlasRegion;
 use serial::math::*;
 use serial::time::DeltaTime;
+use serial::ui::UI;
 use serial::Fractal;
 use serial::Input;
 use std::time::Instant;
@@ -90,6 +91,7 @@ fn main() {
     let mut atlas = Atlas::new();
 
     let mut imgui = Context::create();
+    let mut gui = UI::new();
     let mut platform = WinitPlatform::init(&mut imgui); // step 1
     platform.attach_window(imgui.io_mut(), ctx.ctx.window(), HiDpiMode::Default); // step 2
     let renderer =
@@ -123,6 +125,16 @@ fn main() {
                 input.execute(&mut fractal, dt);
                 input.begin();
                 fractal.update_tiles(&mut atlas.provider(ctx.gl()));
+
+                let ui_input = serial::ui::Input {
+                    viewport: V2i::new(ctx.size.x as i32, ctx.size.y as i32),
+                    mouse: input.mouse,
+                    left: input.mouse_down,
+                    right: false,
+                };
+
+                gui.input(ui_input);
+                gui.update(&mut fractal);
 
                 let ui = imgui.frame();
 
@@ -175,7 +187,7 @@ fn main() {
                     gl.Clear(gl::COLOR_BUFFER_BIT);
                 }
 
-                ctx.draw(&atlas, &fractal);
+                ctx.draw(&gui, &atlas, &fractal);
                 renderer.render(ui);
 
                 ctx.ctx.swap_buffers().unwrap();
