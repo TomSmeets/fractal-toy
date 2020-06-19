@@ -1,6 +1,7 @@
 use crate::sdl::Sdl;
 use sdl2::pixels::Color;
 use serial::fractal::Fractal;
+use serial::fractal::TileType;
 use serial::math::Rect;
 use serial::math::V2i;
 
@@ -173,12 +174,19 @@ impl UI {
             let w = 45;
             let pad = 10;
 
-            for i in 0_i32..6 {
-                self.stack.begin_raw(&i.to_ne_bytes());
+            let types = [
+                (TileType::Mandelbrot, "Mandelbrot"),
+                (TileType::BurningShip, "BurningShip"),
+                (TileType::ShipHybrid, "ShipHybrid"),
+                (TileType::Empty, "Empty"),
+            ];
+            for (t, name) in types.iter() {
+                self.stack.begin(name);
 
                 let rect = Rect::new(x + pad, self.input.viewport.y as i32 - w - pad, w, w);
                 if self.button("button", rect) {
-                    println!("button: {}", i);
+                    fractal.params.kind = *t;
+                    fractal.reload();
                 }
                 x += w + pad;
 

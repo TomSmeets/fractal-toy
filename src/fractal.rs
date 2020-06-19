@@ -10,7 +10,7 @@ pub use self::content::TileContent;
 
 use self::builder::TileBuilder;
 use self::builder::TileParams;
-use self::builder::TileType;
+pub use self::builder::TileType;
 use self::queue::Queue;
 use self::viewport::Viewport;
 use crate::tilemap::Task;
