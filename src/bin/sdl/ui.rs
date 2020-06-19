@@ -1,3 +1,5 @@
+use crate::sdl::Sdl;
+use sdl2::pixels::Color;
 use serial::fractal::Fractal;
 use serial::math::Rect;
 use serial::math::V2i;
@@ -100,6 +102,14 @@ impl UI {
         self.draw_rect(rect, col);
 
         went_down
+    }
+
+    pub fn draw_sdl(&self, sdl: &mut Sdl) {
+        for (rect, rgb) in self.rects.iter() {
+            sdl.canvas
+                .set_draw_color(Color::RGB(rgb[0], rgb[1], rgb[2]));
+            sdl.canvas.fill_rect(rect.to_sdl()).unwrap();
+        }
     }
 
     pub fn update<T>(&mut self, fractal: &mut Fractal<T>) {

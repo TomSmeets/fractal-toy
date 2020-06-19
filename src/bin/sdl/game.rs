@@ -149,12 +149,7 @@ impl State {
             }
         }
 
-        for (rect, rgb) in self.ui.rects.iter() {
-            self.sdl
-                .canvas
-                .set_draw_color(Color::RGB(rgb[0], rgb[1], rgb[2]));
-            self.sdl.canvas.fill_rect(rect.to_sdl()).unwrap();
-        }
+        self.ui.draw_sdl(&mut self.sdl);
 
         self.sdl.canvas.present();
 
