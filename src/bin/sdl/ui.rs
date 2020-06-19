@@ -4,6 +4,9 @@ use serial::fractal::Fractal;
 use serial::math::Rect;
 use serial::math::V2i;
 
+use ::ui::Id;
+use ::ui::UIStack;
+
 #[derive(Clone, Copy)]
 pub struct Input {
     pub viewport: V2i,
@@ -27,7 +30,8 @@ pub struct UI {
     pub input: Input,
     pub rects: Vec<(Rect, [u8; 3])>,
 
-    pub active: u32,
+    pub active: Option<Id>,
+    stack: UIStack,
 }
 
 impl UI {
@@ -35,7 +39,8 @@ impl UI {
         UI {
             input: Input::new(),
             rects: Vec::new(),
-            active: 0xffffffff,
+            active: None,
+            stack: UIStack::default(),
         }
     }
 
@@ -70,18 +75,20 @@ impl UI {
         in_x && in_y
     }
 
-    fn button(&mut self, id: u32, rect: Rect) -> bool {
+    fn button(&mut self, name: &str, rect: Rect) -> bool {
+        let id = self.stack.begin(name);
+
         let mut is_active = false;
         let mut is_hot = self.is_hot(rect);
         let mut went_down = false;
 
-        if self.active == 0 {
+        if self.active.is_none() {
             if is_hot && self.input.left {
-                self.active = id;
+                self.active = Some(id);
                 is_active = true;
                 went_down = true;
             }
-        } else if self.active == id {
+        } else if self.active == Some(id) {
             is_active = true;
         }
 
@@ -101,6 +108,8 @@ impl UI {
 
         self.draw_rect(rect, col);
 
+        self.stack.end();
+
         went_down
     }
 
@@ -112,12 +121,19 @@ impl UI {
         }
     }
 
+    // TODO: urghh, i don't like that 'T' here
     pub fn update<T>(&mut self, fractal: &mut Fractal<T>) {
+        // TODO: how should `hot` be handled with repsect to depth?
+        // if self.input.left && self.active.is_none() {
+        //     self.active = Some(Id::new("BG", Id::root()));
+        // }
+
+        // begin
         let zoom = fractal.pos.zoom;
         self.rects.clear();
 
-        if !self.input.left && self.active != 0 {
-            self.active = 0;
+        if !self.input.left && self.active.is_some() {
+            self.active = None;
         }
 
         // draw slider
@@ -147,7 +163,7 @@ impl UI {
                     rect.size.x,
                     slider_radius * 2,
                 );
-                self.button(1, r_slider);
+                self.button("zoom-slider", r_slider);
             }
         }
 
@@ -159,7 +175,7 @@ impl UI {
 
             for i in 0..6 {
                 let rect = Rect::new(x + pad, self.input.viewport.y as i32 - w - pad, w, w);
-                if self.button(i + 2, rect) {
+                if self.button(&format!("button-{}", i), rect) {
                     println!("button: {}", i);
                 }
                 x += w + pad;
