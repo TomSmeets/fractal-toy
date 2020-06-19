@@ -74,18 +74,18 @@ impl State {
             }
         }
 
-        // update fractal tiles
-        self.input.execute(&mut self.fractal, time);
+        let ui_input = ui::Input {
+            viewport: V2i::new(self.window_size.x as i32, self.window_size.y as i32),
+            mouse: self.input.mouse,
+            left: self.input.mouse_down,
+            right: false,
+        };
+        self.ui.input(ui_input);
+        self.ui.update(&mut self.fractal);
 
-        {
-            let input = ui::Input {
-                viewport: V2i::new(self.window_size.x as i32, self.window_size.y as i32),
-                mouse: self.input.mouse,
-                left: self.input.mouse_down,
-                right: false,
-            };
-            self.ui.input(input);
-            self.ui.update(&mut self.fractal);
+        if !self.ui.has_focus() {
+            // update fractal tiles
+            self.input.execute(&mut self.fractal, time);
         }
 
         if !self.input.pause {

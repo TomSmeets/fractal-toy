@@ -16,6 +16,12 @@ pub struct Input {
     pub right: bool,
 }
 
+struct ButtonState {
+    hot: bool,
+    active: bool,
+    click: bool,
+}
+
 impl Input {
     pub fn new() -> Self {
         Input {
@@ -43,6 +49,10 @@ impl UI {
             active: None,
             stack: UIStack::default(),
         }
+    }
+
+    pub fn has_focus(&self) -> bool {
+        self.active.is_some()
     }
 
     pub fn input(&mut self, input: Input) {
@@ -76,7 +86,7 @@ impl UI {
         in_x && in_y
     }
 
-    fn button(&mut self, name: &str, rect: Rect) -> bool {
+    fn button(&mut self, name: &str, rect: Rect) -> ButtonState {
         let id = self.stack.begin(name);
 
         let mut is_active = false;
@@ -111,7 +121,11 @@ impl UI {
 
         self.stack.end();
 
-        went_down
+        ButtonState {
+            hot: is_hot,
+            active: is_active,
+            click: went_down,
+        }
     }
 
     pub fn draw_sdl(&self, sdl: &mut Sdl) {
@@ -164,7 +178,14 @@ impl UI {
                     rect.size.x,
                     slider_radius * 2,
                 );
-                self.button("zoom-slider", r_slider);
+
+                if self.button("zoom-slider", r_slider).active {
+                    let z = self.input.mouse.y - rect.pos.y;
+                    let z = z as f64 / rect.size.y as f64;
+                    let z = z.max(0.0).min(1.0);
+                    let z = z * (2.5 + 48.5) - 2.5;
+                    fractal.pos.zoom = z;
+                }
             }
         }
 
@@ -184,7 +205,7 @@ impl UI {
                 self.stack.begin(name);
 
                 let rect = Rect::new(x + pad, self.input.viewport.y as i32 - w - pad, w, w);
-                if self.button("button", rect) {
+                if self.button("button", rect).click {
                     fractal.params.kind = *t;
                     fractal.reload();
                 }
