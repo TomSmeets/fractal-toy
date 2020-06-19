@@ -22,7 +22,6 @@ pub enum Nav {
     Close,
 }
 
-
 #[derive(Default)]
 pub struct UI {
     stack: UIStack,

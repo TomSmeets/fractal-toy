@@ -6,7 +6,7 @@ use termion::raw::IntoRawMode;
 use termion::raw::RawTerminal;
 use termion::screen::*;
 
-use ::ui::{Nav, Navigation, UIStack, Id, RenderCommand, UI};
+use ui::{Nav, RenderCommand, UI};
 
 type Screen = AlternateScreen<RawTerminal<Stdout>>;
 

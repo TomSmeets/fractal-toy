@@ -10,5 +10,7 @@ edition = "2018"
 path = "src/lib.rs"
 
 [dependencies]
-termion = "1.5"
 crc32fast = "1.2"
+
+[dev-dependencies]
+termion = "1.5"
