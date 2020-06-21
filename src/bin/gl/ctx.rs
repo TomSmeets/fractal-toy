@@ -123,7 +123,7 @@ impl GLCtx {
 
         // TODO: this is very wrong
         if ! atlas.texture.is_empty() {
-            for (rect, rgb) in ui.rects.iter() {
+            for (rect, _) in ui.rects.iter() {
                 let lx = (rect.pos.x ) as f32;
                 let ly = (rect.pos.y ) as f32;
                 let hx = (rect.pos.x + rect.size.x) as f32;
@@ -140,7 +140,7 @@ impl GLCtx {
                 let ly = - ly;
                 let hy = - hy;
 
-                let col = [ rgb[0] as f32 / 255.0, rgb[1] as f32 / 255.0, rgb[2] as f32 / 255.0 ];
+                let col = [ 1.0, 1.0, 1.0];
                 // TODO: ui should not be here?, in the future it should use its own texture atlas.
                 self.imm.push(Vertex { pos: [hx, hy], col, tex: [ 1.0, 1.0 ] });
                 self.imm.push(Vertex { pos: [hx, ly], col, tex: [ 1.0, 0.0 ] });

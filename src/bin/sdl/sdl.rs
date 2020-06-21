@@ -49,7 +49,7 @@ impl Sdl {
         unsafe {
             sdl2::sys::SDL_SetHint(
                 sdl2::sys::SDL_HINT_RENDER_SCALE_QUALITY.as_ptr() as *const i8,
-                (b"1").as_ptr() as *const i8,
+                (b"0").as_ptr() as *const i8,
             );
         }
 
