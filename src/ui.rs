@@ -56,7 +56,7 @@ impl UI {
     }
 
     pub fn has_focus(&self) -> bool {
-        self.active.is_some()
+        self.active.is_some() && self.active != Some(Id::root())
     }
 
     pub fn input(&mut self, input: Input) {
@@ -190,6 +190,10 @@ impl UI {
 
                 self.stack.end();
             }
+        }
+
+        if self.input.left && self.active == None {
+            self.active = Some(Id::root());
         }
     }
 }
