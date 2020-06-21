@@ -222,7 +222,7 @@ impl UITextures {
 fn draw_ui(txt: &mut Option<UITextures>, ui: &UI, sdl: &mut Sdl) {
     if txt.is_none() {
         let mut t = UITextures { map: HashMap::new() };
-        t.map.insert(String::from("missing"),           UIImage::from_path(Path::new("./res/color.png"),               sdl));
+        t.map.insert(String::from("missing"),           UIImage::from_path(Path::new("./res/missing.png"),             sdl));
         t.map.insert(String::from("button_back"),       UIImage::from_path(Path::new("./res/button_back.png"),         sdl));
         t.map.insert(String::from("button_front_norm"), UIImage::from_path(Path::new("./res/button_front_norm.png"),   sdl));
         t.map.insert(String::from("button_front_down"), UIImage::from_path(Path::new("./res/button_front_down.png"),   sdl));
