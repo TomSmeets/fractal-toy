@@ -93,12 +93,21 @@ pub struct TileParams {
     pub iterations: i32,
 
     // TODO: pub padding: f64? but then it cannot be Ord and has to be moved out of TilePos
-    // TODO: don't store these when serializing, that won't work
+    // We are not storing these, as they are constants and not somehting that should be stored
+    #[serde(skip, default = "texture_size")]
     pub resolution: u32,
+    #[serde(skip, default = "padding")]
     pub padding: u32,
 
     #[serde(skip, default = "ColorScheme::new")]
     pub color: ColorScheme,
+}
+
+fn texture_size() -> u32 {
+    crate::fractal::TEXTURE_SIZE as u32
+}
+fn padding() -> u32 {
+    crate::fractal::PADDING
 }
 
 #[derive(Eq, PartialEq, Clone, Debug)]
