@@ -1,7 +1,7 @@
+mod compare_iter;
 mod map;
 mod pos;
 mod square;
-mod compare_iter;
 
 pub use self::map::TileMap;
 pub use self::pos::TilePos;
