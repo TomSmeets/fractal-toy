@@ -10,7 +10,7 @@ use glutin::window::WindowBuilder;
 use glutin::{ContextBuilder, ContextWrapper, PossiblyCurrent};
 use serial::atlas::AtlasRegion;
 use serial::math::*;
-use serial::tilemap::Task;
+use tilemap::Task;
 use serial::ui::UI;
 use serial::Fractal;
 

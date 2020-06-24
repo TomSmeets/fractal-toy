@@ -1,7 +1,7 @@
 use crate::fractal::builder::TileParams;
 use crate::fractal::builder::TileRequest;
 use crate::fractal::TileContent;
-use crate::tilemap::TilePos;
+use tilemap::TilePos;
 use crossbeam_channel::bounded;
 use crossbeam_channel::{Receiver, Sender};
 

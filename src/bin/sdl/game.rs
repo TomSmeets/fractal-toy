@@ -6,7 +6,7 @@ use sdl2::render::Texture;
 use serde::{Deserialize, Serialize};
 use serial::atlas::AtlasRegion;
 use serial::math::*;
-use serial::tilemap::Task;
+use tilemap::Task;
 use serial::time::DeltaTime;
 use serial::ui;
 use serial::ui::UI;

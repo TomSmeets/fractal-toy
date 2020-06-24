@@ -1,7 +1,7 @@
 // TODO: If we want to make texture_size dynamic then we need to this import
 use super::TEXTURE_SIZE;
 use crate::math::*;
-use crate::tilemap::TilePos;
+use tilemap::TilePos;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]

@@ -5,6 +5,7 @@ authors = ["TomSmeets <tom@tsmeets.nl>"]
 edition = "2018"
 default-run = "sdl"
 
+# TODO: use workspaces to share 'target' and run tests
 [lib]
 path = "src/lib.rs"
 
@@ -39,6 +40,7 @@ static = [ "sdl2/static-link", "sdl2/bundled" ]
 imgui = "0.4"
 imgui-winit-support = "0.4"
 imgui-opengl-renderer = "0.8"
+tilemap = { path = "./other/tilemap" }
 
 ui = { path = "./other/ui/" }
 

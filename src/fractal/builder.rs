@@ -48,7 +48,7 @@ pub mod threaded;
 pub mod ocl;
 
 use crate::fractal::queue::QueueHandle;
-use crate::tilemap::TilePos;
+use tilemap::TilePos;
 use crate::ColorScheme;
 use serde::{Deserialize, Serialize};
 
@@ -93,6 +93,7 @@ pub struct TileParams {
     pub iterations: i32,
 
     // TODO: pub padding: f64? but then it cannot be Ord and has to be moved out of TilePos
+    // TODO: don't store these when serializing, that won't work
     pub resolution: u32,
     pub padding: u32,
 
