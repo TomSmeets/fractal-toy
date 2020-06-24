@@ -13,9 +13,9 @@ use self::builder::TileParams;
 pub use self::builder::TileType;
 use self::queue::Queue;
 use self::viewport::Viewport;
+use crate::ColorScheme;
 use tilemap::Task;
 use tilemap::TileMap;
-use crate::ColorScheme;
 
 // We are blending the textures
 pub const PADDING: u32 = 1;

@@ -10,9 +10,9 @@ use glutin::window::WindowBuilder;
 use glutin::{ContextBuilder, ContextWrapper, PossiblyCurrent};
 use serial::atlas::AtlasRegion;
 use serial::math::*;
-use tilemap::Task;
 use serial::ui::UI;
 use serial::Fractal;
+use tilemap::Task;
 
 pub struct GLCtx {
     pub size: Vector2<u32>,

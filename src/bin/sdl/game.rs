@@ -6,11 +6,11 @@ use sdl2::render::Texture;
 use serde::{Deserialize, Serialize};
 use serial::atlas::AtlasRegion;
 use serial::math::*;
-use tilemap::Task;
 use serial::time::DeltaTime;
 use serial::ui;
 use serial::ui::UI;
 use serial::{Fractal, Input};
+use tilemap::Task;
 
 #[derive(Serialize, Deserialize)]
 pub struct State {

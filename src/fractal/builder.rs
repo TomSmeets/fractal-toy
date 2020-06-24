@@ -48,9 +48,9 @@ pub mod threaded;
 pub mod ocl;
 
 use crate::fractal::queue::QueueHandle;
-use tilemap::TilePos;
 use crate::ColorScheme;
 use serde::{Deserialize, Serialize};
+use tilemap::TilePos;
 
 #[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Serialize, Deserialize, Debug)]
 pub enum TileType {
