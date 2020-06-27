@@ -44,6 +44,7 @@ impl Builder {
 }
 
 /// After so many updates, i am not entierly sure what this struct is supposed to become
+// TODO: use microserde? but we need derives
 #[derive(Serialize, Deserialize)]
 pub struct Fractal<T> {
     // state
@@ -53,6 +54,9 @@ pub struct Fractal<T> {
 
     // this uses a workaround to prevent incorrect `T: Default` bounds.
     // see: https://github.com/serde-rs/serde/issues/1541
+    // TODO: maybe go back to locks?, i want to be able to clear a channel, that is not possible
+    // as far as i know, also we have to be able to select when to recieve a position
+    // TODO: params contain a version number
     #[serde(skip, default = "TileMap::new")]
     pub tiles: TileMap<T>,
 

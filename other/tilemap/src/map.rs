@@ -16,6 +16,7 @@ pub enum Task<T> {
 
 /// Remembers generated tiles, and adds new ones
 pub struct TileMap<T> {
+    // TODO: index with (Version, TilePos)
     tiles: BTreeMap<TilePos, Task<T>>,
 }
 

@@ -52,6 +52,12 @@ use crate::ColorScheme;
 use serde::{Deserialize, Serialize};
 use tilemap::TilePos;
 
+trait IsTileBuilder {
+    fn configure(p: &TileParams) -> bool;
+    fn build(p: TilePos) -> Vec<u8>;
+}
+
+
 #[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Serialize, Deserialize, Debug)]
 pub enum TileType {
     /// Used mostly for debugging
