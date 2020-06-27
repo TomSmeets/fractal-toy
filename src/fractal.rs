@@ -86,11 +86,11 @@ impl<T> Fractal<T> {
 
     pub fn reload(&mut self) {
         self.clear = true;
-        self.builder.queue.set_params(&self.params);
     }
 
     pub fn update_tiles(&mut self, texture_creator: &mut impl TileTextureProvider<Texture = T>) {
         if self.clear {
+            self.builder.queue.set_params(&self.params);
             let tiles = std::mem::replace(&mut self.tiles, TileMap::new());
             for (_, t) in tiles.tiles.into_iter() {
                 texture_creator.free(t);
