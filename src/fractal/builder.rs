@@ -108,6 +108,18 @@ pub struct TileParams {
     pub color: ColorScheme,
 }
 
+impl Default for TileParams {
+    fn default() -> Self {
+        TileParams {
+            kind: TileType::Mandelbrot,
+            iterations: 64,
+            padding: padding(),
+            resolution: texture_size(),
+            color: ColorScheme::new(),
+        }
+    }
+}
+
 fn texture_size() -> u32 {
     crate::fractal::TEXTURE_SIZE as u32
 }
@@ -118,6 +130,7 @@ fn padding() -> u32 {
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub struct TileRequest {
     pub pos: TilePos,
+    pub version: usize,
     pub params: TileParams,
 }
 

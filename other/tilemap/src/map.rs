@@ -64,10 +64,9 @@ impl<T> TileMap<T> {
                     delete(k, v);
                 },
                 ComparedValue::Right(r) => {
-                    match insert(r) {
-                        Some(v) => self.tiles.insert(r, v),
-                        None => None,
-                    };
+                    if let Some(v) =  insert(r) {
+                        self.tiles.insert(r, v);
+                    }
                 },
                 ComparedValue::Both((k, v), _) => {
                     self.tiles.insert(k, v);

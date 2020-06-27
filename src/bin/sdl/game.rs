@@ -118,26 +118,25 @@ impl State {
                 self.sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
                 self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
             }
+        }
 
-            // Task::Todo => {
-            // if self.input.debug {
-            // self.sdl.canvas.set_draw_color(Color::RGB(0, 0, 255));
-            // self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
-            // }
-            // },
-            // Task::Doing => {
-            // if self.input.debug {
-            // self.sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
-            // self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
-            // }
-            // },
-            //
-            // Task::Empty(_) => {
-            // if self.input.debug {
-            // self.sdl.canvas.set_draw_color(Color::RGB(255, 0, 255));
-            // self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
-            // }
-            // },
+        if self.input.debug {
+            let ts = self.fractal.builder.queue.tiles.lock().unwrap();
+
+            for (k, v) in ts.map.iter() {
+                let r = self.fractal.pos.pos_to_rect(k);
+                match v {
+                    Task::Todo => {
+                        self.sdl.canvas.set_draw_color(Color::RGB(0, 0, 255));
+                        self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
+                    },
+                    Task::Doing => {
+                        self.sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
+                        self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
+                    },
+                    _ => (),
+                }
+            }
         }
 
         // draw debug
@@ -216,19 +215,25 @@ impl UITextures {
     }
 }
 
+#[rustfmt::skip]
 fn draw_ui(txt: &mut Option<UITextures>, ui: &UI, sdl: &mut Sdl) {
     if txt.is_none() {
-        let mut t = UITextures { map: HashMap::new() };
-        t.map.insert(String::from("missing"),           UIImage::from_path(Path::new("./res/missing.png"),             sdl));
-        t.map.insert(String::from("button_back"),       UIImage::from_path(Path::new("./res/button_back.png"),         sdl));
-        t.map.insert(String::from("button_front_norm"), UIImage::from_path(Path::new("./res/button_front_norm.png"),   sdl));
-        t.map.insert(String::from("button_front_down"), UIImage::from_path(Path::new("./res/button_front_down.png"),   sdl));
-        t.map.insert(String::from("button_front_hot"),  UIImage::from_path(Path::new("./res/button_front_hot.png"),    sdl));
-        t.map.insert(String::from("slider"),            UIImage::from_path(Path::new("./res/slider.png"),              sdl));
-        t.map.insert(String::from("fractal_mandel"),    UIImage::from_path(Path::new("./res/fractal_mandel.png"),      sdl));
-        t.map.insert(String::from("fractal_ship"),      UIImage::from_path(Path::new("./res/fractal_ship.png"),        sdl));
-        t.map.insert(String::from("fractal_hybrid"),    UIImage::from_path(Path::new("./res/fractal_hybrid.png"),      sdl));
-        t.map.insert(String::from("fractal_missing"),    UIImage::from_path(Path::new("./res/fractal_missing.png"),      sdl));
+        let mut t = UITextures {
+            map: HashMap::new(),
+        };
+
+        // TODO: improve better :)
+        t.map.insert(String::from("missing"),           UIImage::from_path(Path::new("./res/missing.png"), sdl));
+        t.map.insert(String::from("button_back"),       UIImage::from_path(Path::new("./res/button_back.png"), sdl));
+        t.map.insert(String::from("button_front_norm"), UIImage::from_path(Path::new("./res/button_front_norm.png"), sdl));
+        t.map.insert(String::from("button_front_down"), UIImage::from_path(Path::new("./res/button_front_down.png"), sdl));
+        t.map.insert(String::from("button_front_hot"),  UIImage::from_path(Path::new("./res/button_front_hot.png"), sdl));
+        t.map.insert(String::from("slider"),            UIImage::from_path(Path::new("./res/slider.png"), sdl));
+        t.map.insert(String::from("fractal_mandel"),    UIImage::from_path(Path::new("./res/fractal_mandel.png"), sdl));
+        t.map.insert(String::from("fractal_ship"),      UIImage::from_path(Path::new("./res/fractal_ship.png"), sdl));
+        t.map.insert(String::from("fractal_hybrid"),    UIImage::from_path(Path::new("./res/fractal_hybrid.png"), sdl));
+        t.map.insert(String::from("fractal_missing"),   UIImage::from_path(Path::new("./res/fractal_missing.png"), sdl));
+
         *txt = Some(t);
     }
 

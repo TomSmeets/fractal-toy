@@ -17,10 +17,21 @@ impl Worker {
 }
 
 fn worker(h: QueueHandle) {
-    while let Ok(next) = h.recv() {
-        let t = TileContent::new(super::super::cpu::build(&next));
-        if let Err(_) = h.send(next, t) {
-            break;
+    loop {
+        match h.recv() {
+            Err(_) => break,
+            Ok(None) => h.wait(),
+            Ok(Some(next)) => {
+                let t = TileContent::new(super::super::cpu::build(&next));
+                use crate::fractal::queue::TileResponse;
+                if let Err(_) = h.send(TileResponse {
+                    pos: next.pos,
+                    version: next.version,
+                    content: t,
+                }) {
+                    break;
+                }
+            },
         }
     }
 }

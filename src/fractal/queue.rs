@@ -1,23 +1,65 @@
 use crate::fractal::builder::TileParams;
 use crate::fractal::builder::TileRequest;
+use crate::fractal::TaskMap;
 use crate::fractal::TileContent;
 use crossbeam_channel::bounded;
 use crossbeam_channel::{Receiver, Sender};
 use tilemap::TilePos;
 
+use std::sync::{Arc, Mutex};
+
+pub struct TaskMapWithParams {
+    pub quit: bool,
+    pub map: TaskMap,
+    pub params: TileParams,
+    pub params_version: usize,
+}
+
+pub struct TileResponse {
+    pub pos: TilePos,
+    pub version: usize,
+    pub content: TileContent,
+}
+
 pub struct Queue {
-    tx: Sender<TileRequest>,
-    rx: Receiver<(TileRequest, TileContent)>,
+    pub tiles: Arc<Mutex<TaskMapWithParams>>,
+    rx: Receiver<TileResponse>,
+
+    // NOTE: clone to create handles, could be done differently
     handle: QueueHandle,
 }
 
 #[derive(Clone)]
 pub struct QueueHandle {
-    tx: Sender<(TileRequest, TileContent)>,
-    rx: Receiver<TileRequest>,
+    tx: Sender<TileResponse>,
+    tiles: Arc<Mutex<TaskMapWithParams>>,
 }
 
+use crate::fractal::Task;
+use crate::fractal::Viewport;
+
 impl Queue {
+    pub fn set_params(&mut self, p: &TileParams) {
+        // update params
+        let mut m = self.tiles.lock().unwrap();
+        m.params = p.clone();
+        m.params_version = m.params_version.wrapping_add(1);
+        println!("set params {}", m.params_version);
+
+        // clear map
+        m.map.clear();
+    }
+
+    pub fn update(&mut self, vp: &Viewport) -> usize {
+        // update params
+        let mut m = self.tiles.lock().unwrap();
+
+        let new_iter = vp.get_pos_all();
+        m.map.update_with(new_iter, |_, _| (), |_| Some(Task::Todo));
+
+        m.params_version
+    }
+
     pub fn new() -> Queue {
         // bounds is the amount of tiles that are built within one frame
         // it should be largen enough to saturate the tile builders
@@ -26,15 +68,19 @@ impl Queue {
         // TODO: either predict this boundst
         // TODO: or dynamically change it
         // TODO: or make it small and provide tiles more than once per frame
-        let (in_tx, in_rx) = bounded(32);
         let (out_tx, out_rx) = bounded(32);
+
+        let tiles = Arc::new(Mutex::new(TaskMapWithParams {
+            quit: false,
+            map: TaskMap::new(),
+            params_version: 0,
+            params: TileParams::default(),
+        }));
+
         let q = Queue {
-            tx: in_tx,
+            tiles: tiles.clone(),
             rx: out_rx,
-            handle: QueueHandle {
-                rx: in_rx,
-                tx: out_tx,
-            },
+            handle: QueueHandle { tx: out_tx, tiles },
         };
         q
     }
@@ -43,30 +89,58 @@ impl Queue {
         self.handle.clone()
     }
 
-    pub fn try_send(&self, params: TileParams, pos: TilePos) -> Result<(), ()> {
-        self.tx
-            .try_send(TileRequest { pos, params })
-            .map_err(|_| ())
+    pub fn try_recv(&self) -> Result<TileResponse, ()> {
+        self.rx.try_recv().map_err(|_| ())
     }
+}
 
-    pub fn try_recv(&self, params: &TileParams) -> Result<Option<(TilePos, TileContent)>, ()> {
-        let (r, v) = self.rx.try_recv().map_err(|_| ())?;
-
-        // skip invalid responses
-        if &r.params != params {
-            return Ok(None);
-        }
-
-        Ok(Some((r.pos, v)))
+impl Drop for Queue {
+    fn drop(&mut self) {
+        self.tiles.lock().unwrap().quit = true;
     }
 }
 
 impl QueueHandle {
-    pub fn recv(&self) -> Result<TileRequest, ()> {
-        self.rx.recv().map_err(|_| ())
+    pub fn wait(&self) {
+        // TODO: thread parking? what is the performance? (we will have to do this every frame)
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        std::thread::yield_now();
     }
 
-    pub fn send(&self, rq: TileRequest, px: TileContent) -> Result<(), ()> {
-        self.tx.send((rq, px)).map_err(|_| ())
+    pub fn recv(&self) -> Result<Option<TileRequest>, ()> {
+        println!("recv");
+        let mut ts = self.tiles.lock().unwrap();
+
+        if ts.quit {
+            return Err(());
+        }
+
+        let pos = ts
+            .map
+            .iter_mut()
+            .filter_map(|(k, v)| match v {
+                Task::Todo => {
+                    *v = Task::Doing;
+                    Some(*k)
+                },
+                _ => None,
+            })
+            .next();
+
+        let pos = match pos {
+            Some(n) => n,
+            None => return Ok(None),
+        };
+
+        Ok(Some(TileRequest {
+            // TODO: don't clone params, just return pos
+            params: ts.params.clone(),
+            version: ts.params_version,
+            pos,
+        }))
+    }
+
+    pub fn send(&self, t: TileResponse) -> Result<(), ()> {
+        self.tx.send(t).map_err(|_| ())
     }
 }

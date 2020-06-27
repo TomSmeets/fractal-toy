@@ -1,5 +1,6 @@
 use crate::fractal::builder::{TileRequest, TileType};
 use crate::fractal::queue::QueueHandle;
+use crate::fractal::queue::TileResponse;
 use crate::fractal::TileContent;
 use ocl::enums::{ImageChannelDataType, ImageChannelOrder, MemObjectType};
 use ocl::flags::CommandQueueProperties;
@@ -172,11 +173,21 @@ impl OCLWorker {
     }
 
     pub fn run(&mut self) {
-        while let Ok(next) = self.handle.recv() {
-            let tile = self.process(&next);
+        loop {
+            match self.handle.recv() {
+                Err(_) => break,
+                Ok(None) => self.handle.wait(),
+                Ok(Some(next)) => {
+                    let tile = self.process(&next);
 
-            if let Err(_) = self.handle.send(next, tile) {
-                break;
+                    if let Err(_) = self.handle.send(TileResponse {
+                        pos: next.pos,
+                        version: next.version,
+                        content: tile,
+                    }) {
+                        break;
+                    }
+                },
             }
         }
     }
