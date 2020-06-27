@@ -44,8 +44,9 @@ impl Builder {
 
 pub type TaskMap = TileMap<Task<TileContent>>;
 
-
-pub fn fn_true() -> bool { true }
+pub fn fn_true() -> bool {
+    true
+}
 
 /// After so many updates, i am not entierly sure what this struct is supposed to become
 // TODO: use microserde? but we need derives
