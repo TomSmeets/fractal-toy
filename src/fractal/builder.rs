@@ -57,7 +57,6 @@ trait IsTileBuilder {
     fn build(p: TilePos) -> Vec<u8>;
 }
 
-
 #[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Serialize, Deserialize, Debug)]
 pub enum TileType {
     /// Used mostly for debugging
@@ -148,6 +147,4 @@ impl TileBuilder {
             },
         }
     }
-
-    pub fn update(&mut self) {}
 }

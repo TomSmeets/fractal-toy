@@ -43,6 +43,15 @@ impl Builder {
     }
 }
 
+// main < done(p, px) < distributor
+// main > params      > distributor
+// main > viewport    > distributor
+// distributor > params > worker
+// distributor < status < worker
+// distributor > pos    > worker
+
+pub type TaskMap = TileMap<Task<TileContent>>;
+
 /// After so many updates, i am not entierly sure what this struct is supposed to become
 // TODO: use microserde? but we need derives
 #[derive(Serialize, Deserialize)]
@@ -51,6 +60,7 @@ pub struct Fractal<T> {
     // NOTE: pos is public, so no need to forward its methods
     pub pos: Viewport,
     pub params: TileParams,
+    pub clear: bool,
 
     // this uses a workaround to prevent incorrect `T: Default` bounds.
     // see: https://github.com/serde-rs/serde/issues/1541
@@ -60,6 +70,9 @@ pub struct Fractal<T> {
     #[serde(skip, default = "TileMap::new")]
     pub tiles: TileMap<T>,
 
+    #[serde(skip, default = "TileMap::new")]
+    pub tasks: TaskMap,
+
     #[serde(skip, default = "Builder::new")]
     pub builder: Builder,
 }
@@ -68,8 +81,10 @@ impl<T> Fractal<T> {
     pub fn new(size: Vector2<u32>) -> Self {
         Fractal {
             tiles: TileMap::new(),
+            tasks: TaskMap::new(),
             pos: Viewport::new(size),
             builder: Builder::new(),
+            clear: false,
             params: TileParams {
                 kind: TileType::Mandelbrot,
                 iterations: 64,
@@ -81,38 +96,57 @@ impl<T> Fractal<T> {
     }
 
     pub fn reload(&mut self) {
-        self.tiles.clear();
+        self.clear = true;
+    }
+
+    pub fn distributor(&mut self) {
+        // create new tiles
+        let new_iter = self.pos.get_pos_all();
+        self.tasks
+            .update_with(new_iter, |_, _| (), |_| Some(Task::Todo));
+
+        // Send tiles to builder
+        // TODO: move to distributor
+        for (p, t) in self.tasks.iter_mut() {
+            match t {
+                Task::Todo => match self.builder.queue.try_send(self.params.clone(), *p) {
+                    Ok(_) => {
+                        *t = Task::Doing;
+                        println!("send");
+                    },
+                    Err(_) => break,
+                },
+                Task::Doing => (),
+                Task::Done(_) => (),
+            }
+        }
     }
 
     pub fn update_tiles(&mut self, texture_creator: &mut impl TileTextureProvider<Texture = T>) {
-        let queue = &mut self.builder;
-        queue.builder.update();
-
-        // send todo to builders
-        for (r, t) in self.tiles.iter_mut() {
-            if let Task::Todo = t {
-                if let Ok(_) = queue.queue.try_send(self.params.clone(), *r) {
-                    *t = Task::Doing;
-                } else {
-                    break;
-                }
+        if self.clear {
+            let tiles = std::mem::replace(&mut self.tiles, TileMap::new());
+            for (_, t) in tiles.tiles.into_iter() {
+                texture_creator.free(t);
             }
+            self.tasks.clear();
+            self.clear = false;
         }
+
+        self.distributor();
 
         // read from builders
-        while let Ok(r) = queue.queue.try_recv(&self.params) {
+        while let Ok(r) = self.builder.queue.try_recv(&self.params) {
+            println!("recev");
             if let Some((p, t)) = r {
-                if let Some(v) = self.tiles.get_mut(&p) {
-                    let t = texture_creator.alloc(&t.pixels);
-                    if let Task::Doing = v {
-                        *v = Task::Done(t);
-                    }
-                }
+                println!("ok");
+                let t = texture_creator.alloc(&t.pixels);
+                self.tiles.tiles.insert(p, t);
             }
         }
 
+        // Free textures
         let new_iter = self.pos.get_pos_all();
         self.tiles
-            .update_with(new_iter, |_, v| texture_creator.free(v));
+            .update_with(new_iter, |_, v| texture_creator.free(v), |_| None);
     }
 }

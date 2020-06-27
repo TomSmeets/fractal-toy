@@ -106,41 +106,38 @@ impl State {
         self.sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
         for (p, tile) in self.fractal.tiles.iter() {
             let r = self.fractal.pos.pos_to_rect(p);
-            match tile {
-                Task::Done(tile) => {
-                    // atlas.draw(sdl, tile, r);
-                    self.sdl.canvas_copy(
-                        &self.atlas.texture[tile.index.z as usize],
-                        Some(tile.rect_padded().to_sdl()),
-                        Some(r.to_sdl()),
-                    );
 
-                    if self.input.debug {
-                        self.sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
-                        self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
-                    }
-                },
+            // atlas.draw(sdl, tile, r);
+            self.sdl.canvas_copy(
+                &self.atlas.texture[tile.index.z as usize],
+                Some(tile.rect_padded().to_sdl()),
+                Some(r.to_sdl()),
+            );
 
-                Task::Todo => {
-                    if self.input.debug {
-                        self.sdl.canvas.set_draw_color(Color::RGB(0, 0, 255));
-                        self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
-                    }
-                },
-                Task::Doing => {
-                    if self.input.debug {
-                        self.sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
-                        self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
-                    }
-                },
-
-                Task::Empty(_) => {
-                    if self.input.debug {
-                        self.sdl.canvas.set_draw_color(Color::RGB(255, 0, 255));
-                        self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
-                    }
-                },
+            if self.input.debug {
+                self.sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
+                self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
             }
+
+            // Task::Todo => {
+            // if self.input.debug {
+            // self.sdl.canvas.set_draw_color(Color::RGB(0, 0, 255));
+            // self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
+            // }
+            // },
+            // Task::Doing => {
+            // if self.input.debug {
+            // self.sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
+            // self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
+            // }
+            // },
+            //
+            // Task::Empty(_) => {
+            // if self.input.debug {
+            // self.sdl.canvas.set_draw_color(Color::RGB(255, 0, 255));
+            // self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
+            // }
+            // },
         }
 
         // draw debug
