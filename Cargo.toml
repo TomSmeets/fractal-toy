@@ -1,7 +1,7 @@
 [package]
 name = "fractal-toy"
 version = "0.1.0"
-authors = ["TomSmeets <tom@tsmeets.nl>"]
+authors = ["TomSmeets <tom.tsmeets@gmail.com>"]
 edition = "2018"
 default-run = "sdl"
 
