@@ -44,6 +44,9 @@ impl Builder {
 
 pub type TaskMap = TileMap<Task<TileContent>>;
 
+
+pub fn fn_true() -> bool { true }
+
 /// After so many updates, i am not entierly sure what this struct is supposed to become
 // TODO: use microserde? but we need derives
 #[derive(Serialize, Deserialize)]
@@ -52,6 +55,8 @@ pub struct Fractal<T> {
     // NOTE: pos is public, so no need to forward its methods
     pub pos: Viewport,
     pub params: TileParams,
+
+    #[serde(skip, default = "fn_true")]
     pub clear: bool,
 
     // this uses a workaround to prevent incorrect `T: Default` bounds.
@@ -94,12 +99,6 @@ impl<T> Fractal<T> {
 
         // blocking
         let version = self.builder.queue.update(&self.pos);
-
-        // TODO: not the best way to handle reloading from serde
-        // TODO: not the best way to handle reloading from serde
-        if version == 0 {
-            self.reload();
-        }
 
         // read from builders
         while let Ok(r) = self.builder.queue.try_recv() {
