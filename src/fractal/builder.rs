@@ -134,30 +134,50 @@ pub struct TileRequest {
     pub params: TileParams,
 }
 
-pub struct TileBuilder {
-    #[cfg(feature = "builder-threaded")]
-    #[allow(dead_code)]
-    threaded: self::threaded::ThreadedTileBuilder,
+use std::thread::JoinHandle;
 
-    #[cfg(feature = "builder-ocl")]
-    #[allow(dead_code)]
-    ocl: Option<self::ocl::OCLTileBuilder>,
+pub struct TileBuilder {
+    workers: Vec<JoinHandle<()>>,
 }
 
 impl TileBuilder {
     pub fn new(h: QueueHandle) -> Self {
-        TileBuilder {
-            #[cfg(feature = "builder-threaded")]
-            threaded: self::threaded::ThreadedTileBuilder::new(h.clone()),
+        let mut workers = Vec::new();
 
-            #[cfg(feature = "builder-ocl")]
-            ocl: match self::ocl::OCLTileBuilder::new(h.clone()) {
-                Ok(ocl) => Some(ocl),
-                Err(e) => {
-                    println!("no ocl: {}", e);
-                    None
-                },
-            },
+        #[cfg(feature = "builder-threaded")]
+        {
+            #[cfg(feature = "platform-sdl")]
+            let ncpu = (sdl2::cpuinfo::cpu_count() - 1).max(1);
+
+            #[cfg(not(feature = "platform-sdl"))]
+            let ncpu = 4;
+
+            for _ in 0..ncpu {
+                let h = h.clone();
+                workers.push(std::thread::spawn(move || {
+                    crate::fractal::builder::threaded::worker::worker(h)
+                }));
+            }
+        }
+
+        #[cfg(feature = "builder-ocl")]
+        {
+            use self::ocl::OCLWorker;
+            if let Ok(mut w) = OCLWorker::new(h.clone()) {
+                workers.push(std::thread::spawn(move || w.run()));
+            }
+        }
+
+        TileBuilder { workers }
+    }
+}
+
+impl Drop for TileBuilder {
+    fn drop(&mut self) {
+        // TODO: We have to be sure that this gets called after quit is set, otherwise it will
+        // block forever
+        for w in self.workers.drain(..) {
+            w.join().unwrap();
         }
     }
 }

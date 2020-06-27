@@ -1,22 +1,7 @@
 use crate::fractal::queue::QueueHandle;
 use crate::fractal::TileContent;
-use std::thread;
 
-pub struct Worker {
-    handle: Option<std::thread::JoinHandle<()>>,
-}
-
-impl Worker {
-    pub fn new(h: QueueHandle) -> Self {
-        let handle = thread::spawn(move || worker(h));
-
-        Worker {
-            handle: Some(handle),
-        }
-    }
-}
-
-fn worker(h: QueueHandle) {
+pub fn worker(h: QueueHandle) {
     loop {
         match h.recv() {
             Err(_) => break,
@@ -33,11 +18,5 @@ fn worker(h: QueueHandle) {
                 }
             },
         }
-    }
-}
-
-impl Drop for Worker {
-    fn drop(&mut self) {
-        self.handle.take().unwrap().join().unwrap();
     }
 }

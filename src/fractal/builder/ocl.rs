@@ -6,29 +6,8 @@ use ocl::enums::{ImageChannelDataType, ImageChannelOrder, MemObjectType};
 use ocl::flags::CommandQueueProperties;
 use ocl::Result as OCLResult;
 use ocl::{Context, Device, Image, Kernel, Program, Queue};
-use std::thread;
 
 static SOURCE_TEMPLATE: &str = include_str!("kernel.cl");
-
-pub struct OCLTileBuilder {
-    handle: Option<std::thread::JoinHandle<()>>,
-}
-
-impl OCLTileBuilder {
-    pub fn new(h: QueueHandle) -> OCLResult<Self> {
-        let mut w = OCLWorker::new(h)?;
-        let handle = thread::spawn(move || w.run());
-        Ok(OCLTileBuilder {
-            handle: Some(handle),
-        })
-    }
-}
-
-impl Drop for OCLTileBuilder {
-    fn drop(&mut self) {
-        self.handle.take().unwrap().join().unwrap();
-    }
-}
 
 pub struct OCLWorker {
     context: Context,

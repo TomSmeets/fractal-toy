@@ -102,8 +102,6 @@ impl<T> Fractal<T> {
 
         // read from builders
         while let Ok(r) = self.builder.queue.try_recv() {
-            println!("recev");
-
             if r.version != version {
                 continue;
             }

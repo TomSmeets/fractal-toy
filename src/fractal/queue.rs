@@ -108,7 +108,6 @@ impl QueueHandle {
     }
 
     pub fn recv(&self) -> Result<Option<TileRequest>, ()> {
-        println!("recv");
         let mut ts = self.tiles.lock().unwrap();
 
         if ts.quit {
