@@ -1,18 +1,17 @@
-use serial::fractal::TileTextureProvider;
-use serial::fractal::TEXTURE_SIZE;
-use serial::time::DeltaTime;
-use serial::Fractal;
-use serial::Input;
+use fractal_toy::fractal::TileTextureProvider;
+use fractal_toy::fractal::TEXTURE_SIZE;
+use fractal_toy::math::*;
+use fractal_toy::time::DeltaTime;
+use fractal_toy::Fractal;
+use fractal_toy::Input;
+use std::cell::RefCell;
+use std::rc::Rc;
 use stdweb::js;
 use stdweb::unstable::TryInto;
 use stdweb::web::event::ClickEvent;
 use stdweb::web::html_element::ImageElement;
 use stdweb::web::html_element::InputElement;
 use stdweb::web::*;
-
-use serial::math::*;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 struct Provider {}
 impl TileTextureProvider for Provider {

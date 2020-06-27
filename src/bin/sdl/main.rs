@@ -3,7 +3,7 @@ mod game;
 mod sdl;
 
 use self::game::State;
-use serial::state::{load, load_in_place, save};
+use fractal_toy::state::{load, load_in_place, save};
 
 fn main() {
     let mut s = match load("auto") {
@@ -32,5 +32,5 @@ fn main() {
         }
     }
 
-    serial::state::save("auto", &s);
+    fractal_toy::state::save("auto", &s);
 }

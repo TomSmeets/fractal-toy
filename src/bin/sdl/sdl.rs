@@ -1,12 +1,12 @@
+use fractal_toy::atlas::AtlasTextureProvider;
+use fractal_toy::fractal::TEXTURE_SIZE;
+use fractal_toy::math::Rect as MRect;
+use fractal_toy::math::*;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::rect::Rect;
 use sdl2::render::Texture;
 use sdl2::render::{BlendMode, Canvas};
 use sdl2::video::Window;
-use serial::atlas::AtlasTextureProvider;
-use serial::fractal::TEXTURE_SIZE;
-use serial::math::Rect as MRect;
-use serial::math::*;
 
 pub struct Sdl {
     /// ~~SDL_Quit is called when dropped, so it has to be kept alive~~

@@ -1,5 +1,5 @@
 [package]
-name = "serial"
+name = "fractal-toy"
 version = "0.1.0"
 authors = ["TomSmeets <tom@tsmeets.nl>"]
 edition = "2018"

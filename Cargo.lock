@@ -585,6 +585,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "00b0228411908ca8685dba7fc2cdd70ec9990a6e753e89b6ac91a84c40fbaf4b"
 
 [[package]]
+name = "fractal-toy"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "cgmath",
+ "criterion",
+ "crossbeam-channel",
+ "gilrs",
+ "gl_generator 0.14.0",
+ "glutin",
+ "imgui",
+ "imgui-opengl-renderer",
+ "imgui-winit-support",
+ "memoffset",
+ "ocl",
+ "png",
+ "rand 0.7.3",
+ "sdl2",
+ "serde",
+ "serde_json",
+ "stdweb",
+ "stdweb-derive",
+ "tilemap",
+ "ui",
+]
+
+[[package]]
 name = "fuchsia-cprng"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1855,33 +1882,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "serial"
-version = "0.1.0"
-dependencies = [
- "base64",
- "cgmath",
- "criterion",
- "crossbeam-channel",
- "gilrs",
- "gl_generator 0.14.0",
- "glutin",
- "imgui",
- "imgui-opengl-renderer",
- "imgui-winit-support",
- "memoffset",
- "ocl",
- "png",
- "rand 0.7.3",
- "sdl2",
- "serde",
- "serde_json",
- "stdweb",
- "stdweb-derive",
- "tilemap",
- "ui",
 ]
 
 [[package]]

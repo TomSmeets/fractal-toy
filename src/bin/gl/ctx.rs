@@ -4,14 +4,14 @@ use crate::imm::GfxImmState;
 use crate::imm::Vertex;
 use crate::static_gl;
 use crate::GL;
+use fractal_toy::atlas::AtlasRegion;
+use fractal_toy::math::*;
+use fractal_toy::ui::UI;
+use fractal_toy::Fractal;
 use glutin::event_loop::EventLoop;
 use glutin::window::Window;
 use glutin::window::WindowBuilder;
 use glutin::{ContextBuilder, ContextWrapper, PossiblyCurrent};
-use serial::atlas::AtlasRegion;
-use serial::math::*;
-use serial::ui::UI;
-use serial::Fractal;
 
 pub struct GLCtx {
     pub size: Vector2<u32>,

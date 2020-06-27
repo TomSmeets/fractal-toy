@@ -1,15 +1,15 @@
 use crate::atlas::Atlas;
 use crate::sdl::Sdl;
+use fractal_toy::atlas::AtlasRegion;
+use fractal_toy::math::*;
+use fractal_toy::time::DeltaTime;
+use fractal_toy::ui;
+use fractal_toy::ui::UI;
+use fractal_toy::{Fractal, Input};
 use sdl2::event::{Event, WindowEvent};
 use sdl2::pixels::Color;
 use sdl2::render::Texture;
 use serde::{Deserialize, Serialize};
-use serial::atlas::AtlasRegion;
-use serial::math::*;
-use serial::time::DeltaTime;
-use serial::ui;
-use serial::ui::UI;
-use serial::{Fractal, Input};
 use tilemap::Task;
 
 #[derive(Serialize, Deserialize)]

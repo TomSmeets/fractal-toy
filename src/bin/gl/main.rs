@@ -1,12 +1,12 @@
+use fractal_toy::atlas::AtlasRegion;
+use fractal_toy::math::*;
+use fractal_toy::time::DeltaTime;
+use fractal_toy::ui::UI;
+use fractal_toy::Fractal;
+use fractal_toy::Input;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::{ControlFlow, EventLoop};
 use glutin::window::WindowBuilder;
-use serial::atlas::AtlasRegion;
-use serial::math::*;
-use serial::time::DeltaTime;
-use serial::ui::UI;
-use serial::Fractal;
-use serial::Input;
 use std::time::Instant;
 
 mod atlas;
@@ -126,7 +126,7 @@ fn main() {
                 input.begin();
                 fractal.update_tiles(&mut atlas.provider(ctx.gl()));
 
-                let ui_input = serial::ui::Input {
+                let ui_input = fractal_toy::ui::Input {
                     viewport: V2i::new(ctx.size.x as i32, ctx.size.y as i32),
                     mouse: input.mouse,
                     left: input.mouse_down,
@@ -150,8 +150,8 @@ fn main() {
                         // fractal.pos.offset.y = offset[1] as f64;
 
                         Slider::new(im_str!("zoom"), 0.0..=48.5).build(&ui, &mut fractal.pos.zoom);
-                        use serial::input::InputAction;
-                        use serial::input::InputEvent;
+                        use fractal_toy::input::InputAction;
+                        use fractal_toy::input::InputEvent;
                         if ui.button(im_str!("Iter+"), [60.0, 30.0]) {
                             input
                                 .events

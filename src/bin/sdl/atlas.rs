@@ -1,9 +1,9 @@
 use crate::sdl::Sdl;
+use fractal_toy::atlas::AtlasRegion;
+use fractal_toy::atlas::SimpleAtlas;
+use fractal_toy::fractal::TileTextureProvider;
+use fractal_toy::fractal::TEXTURE_SIZE;
 use sdl2::render::Texture;
-use serial::atlas::AtlasRegion;
-use serial::atlas::SimpleAtlas;
-use serial::fractal::TileTextureProvider;
-use serial::fractal::TEXTURE_SIZE;
 
 pub struct Atlas {
     pub simple: SimpleAtlas,

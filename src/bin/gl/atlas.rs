@@ -1,9 +1,9 @@
 use crate::gl;
 use crate::gl::types::GLuint;
 use crate::gl::Gl;
-use serial::atlas::AtlasRegion;
-use serial::atlas::SimpleAtlas;
-use serial::fractal::TileTextureProvider;
+use fractal_toy::atlas::AtlasRegion;
+use fractal_toy::atlas::SimpleAtlas;
+use fractal_toy::fractal::TileTextureProvider;
 
 pub struct Atlas {
     pub simple: SimpleAtlas,
