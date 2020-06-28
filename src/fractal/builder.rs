@@ -48,6 +48,7 @@ pub mod threaded;
 pub mod ocl;
 
 use crate::fractal::queue::QueueHandle;
+use crate::state::Reload;
 use crate::ColorScheme;
 use serde::{Deserialize, Serialize};
 use tilemap::TilePos;
@@ -98,6 +99,22 @@ pub struct TileParamsSave {
     iterations: i32,
 }
 
+impl Reload for TileParams {
+    type Storage = TileParamsSave;
+
+    fn load(&mut self, data: TileParamsSave) {
+        self.kind = data.kind;
+        self.iterations = data.iterations;
+    }
+
+    fn save(&self) -> TileParamsSave {
+        TileParamsSave {
+            kind: self.kind,
+            iterations: self.iterations,
+        }
+    }
+}
+
 #[derive(Eq, PartialEq, Clone, Debug)]
 pub struct TileParams {
     pub kind: TileType,
@@ -108,20 +125,6 @@ pub struct TileParams {
     pub resolution: u32,
     pub padding: u32,
     pub color: ColorScheme,
-}
-
-impl TileParams {
-    pub fn load(&mut self, data: TileParamsSave) {
-        self.kind = data.kind;
-        self.iterations = data.iterations;
-    }
-
-    pub fn save(&self) -> TileParamsSave {
-        TileParamsSave {
-            kind: self.kind,
-            iterations: self.iterations,
-        }
-    }
 }
 
 impl Default for TileParams {

@@ -4,6 +4,7 @@ mod sdl;
 
 use self::game::State;
 use fractal_toy::state::Persist;
+use fractal_toy::state::Reload;
 
 fn main() {
     let p = Persist::new();

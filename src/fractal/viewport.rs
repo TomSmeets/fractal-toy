@@ -1,6 +1,7 @@
 // TODO: If we want to make texture_size dynamic then we need to get rid of this import
 use super::TEXTURE_SIZE;
 use crate::math::*;
+use crate::state::Reload;
 use serde::{Deserialize, Serialize};
 use tilemap::TilePos;
 
@@ -10,25 +11,26 @@ pub struct ViewportSave {
     offset: V2,
 }
 
-pub struct Viewport {
-    pub zoom: f64,
-    pub offset: V2,
-    size_in_pixels: V2,
-}
+impl Reload for Viewport {
+    type Storage = ViewportSave;
 
-impl Viewport {
-    // TODO: make this a trait with a type
-    pub fn load(&mut self, data: ViewportSave) {
+    fn load(&mut self, data: ViewportSave) {
         self.zoom = data.zoom;
         self.offset = data.offset;
     }
 
-    pub fn save(&self) -> ViewportSave {
+    fn save(&self) -> ViewportSave {
         ViewportSave {
             zoom: self.zoom,
             offset: self.offset,
         }
     }
+}
+
+pub struct Viewport {
+    pub zoom: f64,
+    pub offset: V2,
+    size_in_pixels: V2,
 }
 
 impl Viewport {

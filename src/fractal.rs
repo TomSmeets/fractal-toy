@@ -13,6 +13,7 @@ pub use self::builder::TileType;
 use self::builder::{TileParams, TileParamsSave};
 use self::queue::Queue;
 use self::viewport::{Viewport, ViewportSave};
+use crate::state::Reload;
 use tilemap::Task;
 use tilemap::TileMap;
 
@@ -47,26 +48,7 @@ pub struct Fractal<T> {
     pub builder: TileBuilder,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct FractalSave {
-    pub pos: ViewportSave,
-    pub params: TileParamsSave,
-}
-
 impl<T> Fractal<T> {
-    pub fn load(&mut self, data: FractalSave) {
-        self.pos.load(data.pos);
-        self.params.load(data.params);
-        self.clear = true;
-    }
-
-    pub fn save(&self) -> FractalSave {
-        FractalSave {
-            pos: self.pos.save(),
-            params: self.params.save(),
-        }
-    }
-
     pub fn new(size: Vector2<u32>) -> Self {
         let queue = Queue::new();
         let builder = TileBuilder::new(queue.handle());
@@ -111,5 +93,28 @@ impl<T> Fractal<T> {
         let new_iter = self.pos.get_pos_all();
         self.tiles
             .update_with(new_iter, |_, v| texture_creator.free(v), |_| None);
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct FractalSave {
+    pub pos: ViewportSave,
+    pub params: TileParamsSave,
+}
+
+impl<T> Reload for Fractal<T> {
+    type Storage = FractalSave;
+
+    fn load(&mut self, data: Self::Storage) {
+        self.pos.load(data.pos);
+        self.params.load(data.params);
+        self.clear = true;
+    }
+
+    fn save(&self) -> Self::Storage {
+        FractalSave {
+            pos: self.pos.save(),
+            params: self.params.save(),
+        }
     }
 }

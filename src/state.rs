@@ -52,3 +52,10 @@ impl Persist {
         .collect()
     }
 }
+
+pub trait Reload {
+    type Storage;
+
+    fn load(&mut self, data: Self::Storage);
+    fn save(&self) -> Self::Storage;
+}
