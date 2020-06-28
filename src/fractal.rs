@@ -12,7 +12,7 @@ use self::builder::TileBuilder;
 use self::builder::TileParams;
 pub use self::builder::TileType;
 use self::queue::Queue;
-use self::viewport::Viewport;
+use self::viewport::{Viewport, ViewportSave};
 use tilemap::Task;
 use tilemap::TileMap;
 
@@ -56,28 +56,36 @@ pub fn fn_true() -> bool {
 
 /// After so many updates, i am not entierly sure what this struct is supposed to become
 // TODO: use nano/microserde? it allows for derives, however no enums :(
-#[derive(Serialize, Deserialize)]
 pub struct Fractal<T> {
     // state
     // NOTE: pos is public, so no need to forward its methods
     pub pos: Viewport,
     pub params: TileParams,
-
-    // NOTE: these default things in serde have to be a function :/
-    #[serde(skip, default = "fn_true")]
     pub clear: bool,
-
-    // this uses a workaround to prevent incorrect `T: Default` bounds.
-    // see: https://github.com/serde-rs/serde/issues/1541
-    // NOTE: These are rendered tiles
-    #[serde(skip, default = "TileMap::default")]
     pub tiles: TileMap<T>,
-
-    #[serde(skip)]
     pub builder: Builder,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct FractalSave {
+    pub pos: ViewportSave,
+    pub params: TileParams,
+}
+
 impl<T> Fractal<T> {
+    pub fn load(&mut self, data: FractalSave) {
+        self.pos.load(data.pos);
+        self.params = data.params;
+        self.clear = true;
+    }
+
+    pub fn save(&self) -> FractalSave {
+        FractalSave {
+            pos: self.pos.save(),
+            params: self.params.clone(),
+        }
+    }
+
     pub fn new(size: Vector2<u32>) -> Self {
         Fractal {
             tiles: TileMap::new(),

@@ -1,6 +1,7 @@
 use crate::atlas::Atlas;
 use crate::sdl::Sdl;
 use fractal_toy::atlas::AtlasRegion;
+use fractal_toy::fractal::FractalSave;
 use fractal_toy::math::*;
 use fractal_toy::time::DeltaTime;
 use fractal_toy::ui;
@@ -13,28 +14,42 @@ use serde::{Deserialize, Serialize};
 use tilemap::Task;
 
 #[derive(Serialize, Deserialize)]
+pub struct StateSave {
+    fractal: FractalSave,
+    input: Input,
+}
+
 pub struct State {
-    #[serde(skip)]
     sdl: Sdl,
-
-    #[serde(skip, default = "UI::new")]
     ui: UI,
-
-    #[serde(skip)]
     uitxt: Option<UITextures>,
 
     pub input: Input,
 
     fractal: Fractal<AtlasRegion>,
 
-    #[serde(skip)]
     atlas: Atlas,
+
     window_size: Vector2<u32>,
 }
 
 impl Default for State {
     fn default() -> State {
         State::new()
+    }
+}
+
+impl State {
+    pub fn load(&mut self, data: StateSave) {
+        self.input = data.input;
+        self.fractal.load(data.fractal);
+    }
+
+    pub fn save(&self) -> StateSave {
+        StateSave {
+            input: self.input.clone(),
+            fractal: self.fractal.save(),
+        }
     }
 }
 

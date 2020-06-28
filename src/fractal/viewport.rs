@@ -5,10 +5,30 @@ use serde::{Deserialize, Serialize};
 use tilemap::TilePos;
 
 #[derive(Serialize, Deserialize)]
+pub struct ViewportSave {
+    zoom: f64,
+    offset: V2,
+}
+
 pub struct Viewport {
     pub zoom: f64,
     pub offset: V2,
     size_in_pixels: V2,
+}
+
+impl Viewport {
+    // TODO: make this a trait with a type
+    pub fn load(&mut self, data: ViewportSave) {
+        self.zoom = data.zoom;
+        self.offset = data.offset;
+    }
+
+    pub fn save(&self) -> ViewportSave {
+        ViewportSave {
+            zoom: self.zoom,
+            offset: self.offset,
+        }
+    }
 }
 
 impl Viewport {

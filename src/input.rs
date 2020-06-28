@@ -3,7 +3,7 @@ use crate::math::*;
 use crate::time::DeltaTime;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 // TODO: fractal should be a library, input should not exists here?
 pub struct Input {
     pub mouse: V2i,
@@ -32,7 +32,7 @@ pub struct Input {
 
 // These can be seriealized
 // We should handle all of these
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum MouseEvent {
     Move(V2i),
     Button(u32, bool),
@@ -40,7 +40,7 @@ pub enum MouseEvent {
 }
 
 // TODO: In the future there should be a key binding for these
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum InputAction {
     Quit,
     Debug,
@@ -58,7 +58,7 @@ pub enum InputAction {
     NextFractal,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum InputEvent {
     Mouse(MouseEvent),
 
