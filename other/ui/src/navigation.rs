@@ -57,9 +57,9 @@ impl Navigation {
     }
 
     pub fn prev(&self) -> Option<Id> {
-        let mut it = self.path[0..self.active].iter().rev();
+        let it = self.path[0..self.active].iter().rev();
         let mut depth = 0;
-        while let Some(i) = it.next() {
+        for i in it {
             match i {
                 Operation::Push(_) => depth -= 1,
                 Operation::Pop => depth += 1,
@@ -73,13 +73,13 @@ impl Navigation {
             }
         }
 
-        return None;
+        None
     }
 
     pub fn parent(&self) -> Option<Id> {
-        let mut it = self.path[0..self.active].iter().rev();
+        let it = self.path[0..self.active].iter().rev();
         let mut depth = 0;
-        while let Some(i) = it.next() {
+        for i in it {
             match i {
                 Operation::Push(_) => depth -= 1,
                 Operation::Pop => depth += 1,
@@ -93,6 +93,6 @@ impl Navigation {
             }
         }
 
-        return None;
+        None
     }
 }

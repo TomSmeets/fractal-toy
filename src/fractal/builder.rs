@@ -168,6 +168,9 @@ impl TileBuilder {
             }
         }
 
+        // supress all warnings about cloning h
+        drop(h);
+
         TileBuilder { workers }
     }
 }

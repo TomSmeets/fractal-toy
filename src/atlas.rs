@@ -52,7 +52,7 @@ impl SimpleAtlas {
     }
 
     pub fn alloc(&mut self) -> AtlasRegion {
-        let r = match self.free.pop() {
+        match self.free.pop() {
             Some(i) => AtlasRegion {
                 index: i,
                 res: self.res,
@@ -62,13 +62,18 @@ impl SimpleAtlas {
                 self.alloc_page();
                 self.alloc()
             },
-        };
-        r
+        }
     }
 
     pub fn remove(&mut self, mut r: AtlasRegion) {
         self.free.push(r.index);
         r.free = true;
+    }
+}
+
+impl Default for SimpleAtlas {
+    fn default() -> Self {
+        SimpleAtlas::new()
     }
 }
 

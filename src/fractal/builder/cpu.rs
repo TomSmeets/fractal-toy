@@ -12,6 +12,7 @@ pub fn build(rq: &TileRequest) -> Vec<u8> {
                 for x in 0..texture_size {
                     let i = y * texture_size + x;
                     if x <= 4 || y <= 4 || x >= texture_size - 5 || y >= texture_size - 5 {
+                        #[allow(clippy::identity_op)]
                         unsafe {
                             *pixels.get_unchecked_mut(i * 4 + 0) = 64;
                             *pixels.get_unchecked_mut(i * 4 + 1) = 64;
@@ -24,6 +25,7 @@ pub fn build(rq: &TileRequest) -> Vec<u8> {
                         let r = dx * dx + dy * dy;
                         let l = texture_size as i32;
                         let c = if r < l * l { 255 } else { 0 };
+                        #[allow(clippy::identity_op)]
                         unsafe {
                             *pixels.get_unchecked_mut(i * 4 + 0) = c as u8;
                             *pixels.get_unchecked_mut(i * 4 + 1) = (x * c / texture_size) as u8;
@@ -94,6 +96,7 @@ fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(inc: f64, rq: &TileRequest, pixels: &
 
             let rgb = hsv2rgb(itr as f64 / 64.0, v, v);
             let idx = x + y * texture_size;
+            #[allow(clippy::identity_op)]
             unsafe {
                 *pixels.get_unchecked_mut(idx * 4 + 0) = rgb[0];
                 *pixels.get_unchecked_mut(idx * 4 + 1) = rgb[1];

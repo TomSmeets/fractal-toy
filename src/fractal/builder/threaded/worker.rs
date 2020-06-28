@@ -9,11 +9,13 @@ pub fn worker(h: QueueHandle) {
             Ok(Some(next)) => {
                 let t = TileContent::new(super::super::cpu::build(&next));
                 use crate::fractal::queue::TileResponse;
-                if let Err(_) = h.send(TileResponse {
+                if h.send(TileResponse {
                     pos: next.pos,
                     version: next.version,
                     content: t,
-                }) {
+                })
+                .is_err()
+                {
                     break;
                 }
             },

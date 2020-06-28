@@ -31,6 +31,12 @@ impl Input {
     }
 }
 
+impl Default for Input {
+    fn default() -> Self {
+        Input::new()
+    }
+}
+
 pub enum Image {
     Rect,
     ButtonBack,
@@ -197,5 +203,11 @@ impl UI {
         if self.input.left && self.active == None {
             self.active = Some(Id::root());
         }
+    }
+}
+
+impl Default for UI {
+    fn default() -> Self {
+        UI::new()
     }
 }

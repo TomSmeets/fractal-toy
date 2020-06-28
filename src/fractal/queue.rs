@@ -73,12 +73,11 @@ impl Queue {
             params: TileParams::default(),
         }));
 
-        let q = Queue {
+        Queue {
             tiles: tiles.clone(),
             rx: out_rx,
             handle: QueueHandle { tx: out_tx, tiles },
-        };
-        q
+        }
     }
 
     pub fn handle(&self) -> QueueHandle {
@@ -93,6 +92,12 @@ impl Queue {
 impl Drop for Queue {
     fn drop(&mut self) {
         self.tiles.lock().unwrap().quit = true;
+    }
+}
+
+impl Default for Queue {
+    fn default() -> Self {
+        Queue::new()
     }
 }
 

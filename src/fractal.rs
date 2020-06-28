@@ -42,6 +42,12 @@ impl Builder {
     }
 }
 
+impl Default for Builder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub type TaskMap = TileMap<Task<TileContent>>;
 
 pub fn fn_true() -> bool {
@@ -64,10 +70,10 @@ pub struct Fractal<T> {
     // this uses a workaround to prevent incorrect `T: Default` bounds.
     // see: https://github.com/serde-rs/serde/issues/1541
     // NOTE: These are rendered tiles
-    #[serde(skip, default = "TileMap::new")]
+    #[serde(skip, default = "TileMap::default")]
     pub tiles: TileMap<T>,
 
-    #[serde(skip, default = "Builder::new")]
+    #[serde(skip)]
     pub builder: Builder,
 }
 

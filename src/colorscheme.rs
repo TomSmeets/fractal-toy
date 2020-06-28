@@ -124,3 +124,9 @@ fn hsv2rgb(hue: f64, sat: f64, val: f64) -> [u8; 3] {
         _ => [max, max, max],
     }
 }
+
+impl Default for ColorScheme {
+    fn default() -> Self {
+        ColorScheme::new()
+    }
+}
