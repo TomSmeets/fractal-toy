@@ -37,6 +37,8 @@ pub enum Image {
     ButtonFront { down: bool, hot: bool },
 }
 
+// TODO: we should also have a reliable debug terminal interface
+// It should contain debug counters and messages and commands to do everything
 pub struct UI {
     pub input: Input,
     pub rects: Vec<(Rect, &'static str)>,
@@ -120,7 +122,7 @@ impl UI {
 
     // TODO: urghh, i don't like that 'T' here
     pub fn update<T>(&mut self, fractal: &mut Fractal<T>) {
-        // TODO: how should `hot` be handled with repsect to depth?
+        // TODO: how should `hot` be handled with repsect to depth? just prevent overlap?
         // if self.input.left && self.active.is_none() {
         //     self.active = Some(Id::new("BG", Id::root()));
         // }

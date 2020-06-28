@@ -4,7 +4,7 @@ use crate::time::DeltaTime;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-// TODO(now): fractal should be a library, input should not exists here?
+// TODO: fractal should be a library, input should not exists here?
 pub struct Input {
     pub mouse: V2i,
     pub old_mouse: V2i,

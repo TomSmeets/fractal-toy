@@ -49,7 +49,7 @@ pub fn fn_true() -> bool {
 }
 
 /// After so many updates, i am not entierly sure what this struct is supposed to become
-// TODO: use microserde? but we need derives
+// TODO: use nano/microserde? it allows for derives, however no enums :(
 #[derive(Serialize, Deserialize)]
 pub struct Fractal<T> {
     // state
@@ -57,14 +57,12 @@ pub struct Fractal<T> {
     pub pos: Viewport,
     pub params: TileParams,
 
+    // NOTE: these default things in serde have to be a function :/
     #[serde(skip, default = "fn_true")]
     pub clear: bool,
 
     // this uses a workaround to prevent incorrect `T: Default` bounds.
     // see: https://github.com/serde-rs/serde/issues/1541
-    // TODO: maybe go back to locks?, i want to be able to clear a channel, that is not possible
-    // as far as i know, also we have to be able to select when to recieve a position
-    // TODO: params contain a version number
     // NOTE: These are rendered tiles
     #[serde(skip, default = "TileMap::new")]
     pub tiles: TileMap<T>,

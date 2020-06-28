@@ -15,7 +15,7 @@ pub enum Task<T> {
 
 /// Remembers generated tiles, and adds new ones
 pub struct TileMap<T> {
-    // TODO: index with (Version, TilePos)
+    // NOTE: it is a BTree because it has to be sorted
     pub tiles: BTreeMap<TilePos, T>,
 }
 

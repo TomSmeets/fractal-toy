@@ -47,7 +47,6 @@ impl State {
         let window_size = sdl.output_size();
         let fractal = Fractal::new(window_size);
 
-        // TODO: get window size
         State {
             sdl,
             ui,

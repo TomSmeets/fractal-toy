@@ -104,7 +104,7 @@ impl GLCtx {
             let thy = thy as f32 / pixel_size as f32;
 
 
-            // TODO: make spesific, remove color
+            // TODO: Thre is no need for color in here, remove it
             self.imm.push(Vertex { pos: [hx, hy], col: [1.0, 1.0, 1.0], tex: [ thx, thy ] });
             self.imm.push(Vertex { pos: [hx, ly], col: [1.0, 1.0, 1.0], tex: [ thx, tly ] });
             self.imm.push(Vertex { pos: [lx, ly], col: [1.0, 1.0, 1.0], tex: [ tlx, tly ] });
@@ -119,7 +119,8 @@ impl GLCtx {
             self.imm.draw(atlas.texture[texture as usize] as i32, gl);
         }
 
-        // TODO: this is very wrong
+        // TODO: this is very wrong and does not work, use a seperate shader for ui
+        // ui should not be here?, in the future it should use its own texture atlas.
         if ! atlas.texture.is_empty() {
             for (rect, _) in ui.rects.iter() {
                 let lx = (rect.pos.x ) as f32;
@@ -139,7 +140,7 @@ impl GLCtx {
                 let hy = - hy;
 
                 let col = [ 1.0, 1.0, 1.0];
-                // TODO: ui should not be here?, in the future it should use its own texture atlas.
+
                 self.imm.push(Vertex { pos: [hx, hy], col, tex: [ 1.0, 1.0 ] });
                 self.imm.push(Vertex { pos: [hx, ly], col, tex: [ 1.0, 0.0 ] });
                 self.imm.push(Vertex { pos: [lx, ly], col, tex: [ 0.0, 0.0 ] });

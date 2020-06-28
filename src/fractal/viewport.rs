@@ -1,4 +1,4 @@
-// TODO: If we want to make texture_size dynamic then we need to this import
+// TODO: If we want to make texture_size dynamic then we need to get rid of this import
 use super::TEXTURE_SIZE;
 use crate::math::*;
 use serde::{Deserialize, Serialize};

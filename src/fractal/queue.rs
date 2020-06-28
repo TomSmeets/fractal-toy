@@ -61,14 +61,10 @@ impl Queue {
     }
 
     pub fn new() -> Queue {
-        // bounds is the amount of tiles that are built within one frame
-        // it should be largen enough to saturate the tile builders
-        // however, all tiles insed this channel will be built, so making it too big will build
-        // tiles that might have left the screen
-        // TODO: either predict this boundst
-        // TODO: or dynamically change it
-        // TODO: or make it small and provide tiles more than once per frame
-        let (out_tx, out_rx) = bounded(32);
+        // This channel contains newly finished tiles
+        // These get cleard each frame wich is around 60 times per second
+        // The exact size does not matter much
+        let (out_tx, out_rx) = bounded(64);
 
         let tiles = Arc::new(Mutex::new(TaskMapWithParams {
             quit: false,
