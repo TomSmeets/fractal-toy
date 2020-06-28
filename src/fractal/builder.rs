@@ -92,20 +92,36 @@ impl TileType {
     }
 }
 
-#[derive(Eq, PartialEq, Clone, Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
+pub struct TileParamsSave {
+    kind: TileType,
+    iterations: i32,
+}
+
+#[derive(Eq, PartialEq, Clone, Debug)]
 pub struct TileParams {
     pub kind: TileType,
     pub iterations: i32,
 
     // TODO: pub padding: f64? but then it cannot be Ord and has to be moved out of TilePos
     // We are not storing these, as they are constants and not somehting that should be stored
-    #[serde(skip, default = "texture_size")]
     pub resolution: u32,
-    #[serde(skip, default = "padding")]
     pub padding: u32,
-
-    #[serde(skip, default = "ColorScheme::new")]
     pub color: ColorScheme,
+}
+
+impl TileParams {
+    pub fn load(&mut self, data: TileParamsSave) {
+        self.kind = data.kind;
+        self.iterations = data.iterations;
+    }
+
+    pub fn save(&self) -> TileParamsSave {
+        TileParamsSave {
+            kind: self.kind,
+            iterations: self.iterations,
+        }
+    }
 }
 
 impl Default for TileParams {

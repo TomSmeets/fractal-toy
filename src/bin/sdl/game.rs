@@ -135,7 +135,7 @@ impl State {
         }
 
         if self.input.debug {
-            let ts = self.fractal.builder.queue.tiles.lock().unwrap();
+            let ts = self.fractal.queue.tiles.lock().unwrap();
 
             for (k, v) in ts.map.iter() {
                 let r = self.fractal.pos.pos_to_rect(k);

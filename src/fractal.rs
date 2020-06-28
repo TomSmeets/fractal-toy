@@ -9,8 +9,8 @@ mod viewport;
 pub use self::content::TileContent;
 
 use self::builder::TileBuilder;
-use self::builder::TileParams;
 pub use self::builder::TileType;
+use self::builder::{TileParams, TileParamsSave};
 use self::queue::Queue;
 use self::viewport::{Viewport, ViewportSave};
 use tilemap::Task;
@@ -28,26 +28,6 @@ pub trait TileTextureProvider {
     fn free(&mut self, texture: Self::Texture);
 }
 
-// TODO: uuugh anothher stuct named `Builder`, rename it or whatever
-pub struct Builder {
-    pub queue: Queue,
-    pub builder: TileBuilder,
-}
-
-impl Builder {
-    pub fn new() -> Self {
-        let queue = Queue::new();
-        let builder = TileBuilder::new(queue.handle());
-        Builder { queue, builder }
-    }
-}
-
-impl Default for Builder {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 pub type TaskMap = TileMap<Task<TileContent>>;
 
 pub fn fn_true() -> bool {
@@ -63,34 +43,38 @@ pub struct Fractal<T> {
     pub params: TileParams,
     pub clear: bool,
     pub tiles: TileMap<T>,
-    pub builder: Builder,
+    pub queue: Queue,
+    pub builder: TileBuilder,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct FractalSave {
     pub pos: ViewportSave,
-    pub params: TileParams,
+    pub params: TileParamsSave,
 }
 
 impl<T> Fractal<T> {
     pub fn load(&mut self, data: FractalSave) {
         self.pos.load(data.pos);
-        self.params = data.params;
+        self.params.load(data.params);
         self.clear = true;
     }
 
     pub fn save(&self) -> FractalSave {
         FractalSave {
             pos: self.pos.save(),
-            params: self.params.clone(),
+            params: self.params.save(),
         }
     }
 
     pub fn new(size: Vector2<u32>) -> Self {
+        let queue = Queue::new();
+        let builder = TileBuilder::new(queue.handle());
         Fractal {
+            queue,
+            builder,
             tiles: TileMap::new(),
             pos: Viewport::new(size),
-            builder: Builder::new(),
             clear: false,
             params: TileParams::default(),
         }
@@ -102,7 +86,7 @@ impl<T> Fractal<T> {
 
     pub fn update_tiles(&mut self, texture_creator: &mut impl TileTextureProvider<Texture = T>) {
         if self.clear {
-            self.builder.queue.set_params(&self.params);
+            self.queue.set_params(&self.params);
             let tiles = std::mem::replace(&mut self.tiles, TileMap::new());
             for (_, t) in tiles.tiles.into_iter() {
                 texture_creator.free(t);
@@ -111,10 +95,10 @@ impl<T> Fractal<T> {
         }
 
         // blocking
-        let version = self.builder.queue.update(&self.pos);
+        let version = self.queue.update(&self.pos);
 
         // read from builders
-        while let Ok(r) = self.builder.queue.try_recv() {
+        while let Ok(r) = self.queue.try_recv() {
             if r.version != version {
                 continue;
             }
