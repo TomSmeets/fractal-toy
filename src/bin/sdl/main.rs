@@ -3,12 +3,13 @@ mod game;
 mod sdl;
 
 use self::game::State;
-use fractal_toy::state::{load, save};
+use fractal_toy::state::Persist;
 
 fn main() {
+    let p = Persist::new();
     let mut s = State::new();
 
-    if let Ok(x) = load("auto") {
+    if let Ok(x) = p.load("auto") {
         s.load(x);
     }
 
@@ -17,20 +18,18 @@ fn main() {
             break;
         }
 
-        let do_save = s.input.save;
-        let do_load = s.input.load;
-
-        if do_save {
-            save("manual", &s.save());
+        if s.input.save {
+            s.input.save = false;
+            p.save("manual", &s.save()).unwrap();
         }
 
-        if do_load {
-            match load("manual") {
+        if s.input.load {
+            match p.load("manual") {
                 Ok(x) => s.load(x),
                 Err(e) => eprintln!("{}", e),
             };
         }
     }
 
-    fractal_toy::state::save("auto", &s.save());
+    p.save("auto", &s.save()).unwrap();
 }
