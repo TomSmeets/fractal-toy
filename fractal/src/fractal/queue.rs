@@ -58,6 +58,7 @@ pub struct TileResponse {
 }
 
 pub struct Queue {
+    pub params_version: usize,
     pub tiles: Arc<PrioMutex<TaskMapWithParams>>,
     rx: Receiver<TileResponse>,
 
@@ -77,20 +78,19 @@ impl Queue {
         let mut m = self.tiles.lock_high();
         m.params = p.clone();
         m.params_version = m.params_version.wrapping_add(1);
+        self.params_version = m.params_version;
         println!("set params {}", m.params_version);
 
         // clear map
         m.map.clear();
     }
 
-    pub fn update(&mut self, vp: &Viewport) -> usize {
+    pub fn update(&mut self, vp: &Viewport) {
         // update params
-        let mut m = self.tiles.lock_high();
-
-        let new_iter = vp.get_pos_all();
-        m.map.update_with(new_iter, |_, _| (), |_| Some(Task::Todo));
-
-        m.params_version
+        if let Ok(mut m) = self.tiles.m.try_lock() {
+            let new_iter = vp.get_pos_all();
+            m.map.update_with(new_iter, |_, _| (), |_| Some(Task::Todo));
+        }
     }
 
     pub fn new(params: TileParams) -> Queue {
@@ -107,6 +107,7 @@ impl Queue {
         }));
 
         Queue {
+            params_version: 0,
             tiles: tiles.clone(),
             rx: out_rx,
             handle: QueueHandle { tx: out_tx, tiles },

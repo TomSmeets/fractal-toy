@@ -72,12 +72,11 @@ impl<T> Fractal<T> {
             self.clear = false;
         }
 
-        // blocking
-        let version = self.queue.update(&self.pos);
+        self.queue.update(&self.pos);
 
         // read from builders
         while let Ok(r) = self.queue.try_recv() {
-            if r.version != version {
+            if r.version != self.queue.params_version {
                 continue;
             }
 
