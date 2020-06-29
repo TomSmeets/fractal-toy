@@ -4,6 +4,7 @@ use fractal_toy::atlas::SimpleAtlas;
 use fractal_toy::fractal::TileTextureProvider;
 use fractal_toy::fractal::TEXTURE_SIZE;
 use sdl2::render::Texture;
+use crate::rect_to_sdl;
 
 pub struct Atlas {
     pub simple: SimpleAtlas,
@@ -32,7 +33,7 @@ impl Atlas {
 
         texture
             .update(
-                Some(region.rect().to_sdl()),
+                Some(rect_to_sdl(region.rect())),
                 pixels,
                 4 * TEXTURE_SIZE as usize,
             )

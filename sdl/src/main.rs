@@ -1,10 +1,21 @@
 mod atlas;
 mod game;
 mod sdl;
+mod input;
 
 use self::game::State;
 use fractal_toy::state::Persist;
 use fractal_toy::state::Reload;
+use fractal_toy::math::Rect;
+
+pub fn rect_to_sdl(r: Rect) -> sdl2::rect::Rect {
+    sdl2::rect::Rect::new(
+        r.pos.x,
+        r.pos.y,
+        r.size.x as u32,
+        r.size.y as u32,
+    )
+}
 
 fn main() {
     let p = Persist::new();
@@ -19,12 +30,12 @@ fn main() {
             break;
         }
 
-        if s.input.save {
-            s.input.save = false;
+        if s.input.input.save {
+            s.input.input.save = false;
             p.save("manual", &s.save()).unwrap();
         }
 
-        if s.input.load {
+        if s.input.input.load {
             match p.load("manual") {
                 Ok(x) => s.load(x),
                 Err(e) => eprintln!("{}", e),

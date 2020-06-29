@@ -157,11 +157,11 @@ impl TileBuilder {
 
         #[cfg(feature = "builder-threaded")]
         {
-            #[cfg(feature = "platform-sdl")]
-            let ncpu = (sdl2::cpuinfo::cpu_count() - 1).max(1);
-
-            #[cfg(not(feature = "platform-sdl"))]
-            let ncpu = 4;
+            // TODO: use cpu_count when avaliable!
+            // ncpu = (sdl2::cpuinfo::cpu_count() - 1).max(1);
+            // TODO: implement some kind of priority locking for rendering
+            // this will prevent frame lag with many workers
+            let ncpu = 7;
 
             for _ in 0..ncpu {
                 let h = h.clone();

@@ -13,13 +13,15 @@ use sdl2::pixels::Color;
 use sdl2::render::Texture;
 use serde::{Deserialize, Serialize};
 use tilemap::Task;
+use crate::rect_to_sdl;
+use crate::input::SDLInput;
 
 pub struct State {
     sdl: Sdl,
     ui: UI,
     uitxt: Option<UITextures>,
 
-    pub input: Input,
+    pub input: SDLInput,
 
     fractal: Fractal<AtlasRegion>,
 
@@ -37,7 +39,7 @@ impl Default for State {
 impl State {
     pub fn new() -> State {
         let sdl = Sdl::new();
-        let input = Input::new();
+        let input = SDLInput { input: Input::new() };
         let ui = UI::new();
 
         let window_size = sdl.output_size();
@@ -59,7 +61,7 @@ impl State {
 
         // input stuff
         let events: Vec<_> = self.sdl.event.poll_iter().collect();
-        self.input.begin();
+        self.input.input.begin();
         self.input.handle_sdl(&events);
         for e in events.iter() {
             match e {
@@ -76,8 +78,8 @@ impl State {
 
         let ui_input = ui::Input {
             viewport: V2i::new(self.window_size.x as i32, self.window_size.y as i32),
-            mouse: self.input.mouse,
-            left: self.input.mouse_down,
+            mouse: self.input.input.mouse,
+            left: self.input.input.mouse_down,
             right: false,
         };
         self.ui.input(ui_input);
@@ -85,10 +87,10 @@ impl State {
 
         if !self.ui.has_focus() {
             // update fractal tiles
-            self.input.execute(&mut self.fractal, time);
+            self.input.input.execute(&mut self.fractal, time);
         }
 
-        if !self.input.pause {
+        if !self.input.input.pause {
             self.fractal
                 .update_tiles(&mut self.atlas.provider(&mut self.sdl));
         }
@@ -105,17 +107,17 @@ impl State {
             // atlas.draw(sdl, tile, r);
             self.sdl.canvas_copy(
                 &self.atlas.texture[tile.index.z as usize],
-                Some(tile.rect_padded().to_sdl()),
-                Some(r.to_sdl()),
+                Some(rect_to_sdl(tile.rect_padded())),
+                Some(rect_to_sdl(r)),
             );
 
-            if self.input.debug {
+            if self.input.input.debug {
                 self.sdl.canvas.set_draw_color(Color::RGB(255, 255, 255));
-                self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
+                self.sdl.canvas.draw_rect(rect_to_sdl(r)).unwrap();
             }
         }
 
-        if self.input.debug {
+        if self.input.input.debug {
             let ts = self.fractal.queue.tiles.lock().unwrap();
 
             for (k, v) in ts.map.iter() {
@@ -123,11 +125,11 @@ impl State {
                 match v {
                     Task::Todo => {
                         self.sdl.canvas.set_draw_color(Color::RGB(0, 0, 255));
-                        self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
+                        self.sdl.canvas.draw_rect(rect_to_sdl(r)).unwrap();
                     },
                     Task::Doing => {
                         self.sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
-                        self.sdl.canvas.draw_rect(r.to_sdl()).unwrap();
+                        self.sdl.canvas.draw_rect(rect_to_sdl(r)).unwrap();
                     },
                     _ => (),
                 }
@@ -135,13 +137,13 @@ impl State {
         }
 
         // draw debug
-        if self.input.debug {
+        if self.input.input.debug {
             // Show atlas
             // TODO: show in ui window?
             let w = self.window_size.x as i32 / self.atlas.texture.len().max(4) as i32;
             for (i, t) in self.atlas.texture.iter().enumerate() {
                 self.sdl
-                    .canvas_copy(t, None, Some(Rect::new(i as i32 * w, 0, w, w).to_sdl()));
+                    .canvas_copy(t, None, Some(rect_to_sdl(Rect::new(i as i32 * w, 0, w, w))));
             }
         }
 
@@ -149,8 +151,8 @@ impl State {
 
         self.sdl.canvas.present();
 
-        if self.input.quit {
-            self.input.quit = false;
+        if self.input.input.quit {
+            self.input.input.quit = false;
             true
         } else {
             false
@@ -161,7 +163,7 @@ impl State {
 #[derive(Serialize, Deserialize)]
 pub struct StateSave {
     fractal: FractalSave,
-    input: Input,
+    input: SDLInput,
 }
 
 impl Reload for State {
@@ -257,6 +259,6 @@ fn draw_ui(txt: &mut Option<UITextures>, ui: &UI, sdl: &mut Sdl) {
     let txt = txt.as_mut().unwrap();
     for (rect, name) in ui.rects.iter() {
         let img = txt.get(name);
-        sdl.canvas_copy(&img.txt, None, Some(rect.to_sdl()));
+        sdl.canvas_copy(&img.txt, None, Some(rect_to_sdl(*rect)));
     }
 }

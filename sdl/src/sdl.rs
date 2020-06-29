@@ -7,6 +7,7 @@ use sdl2::rect::Rect;
 use sdl2::render::Texture;
 use sdl2::render::{BlendMode, Canvas};
 use sdl2::video::Window;
+use crate::rect_to_sdl;
 
 pub struct Sdl {
     /// ~~SDL_Quit is called when dropped, so it has to be kept alive~~
@@ -105,7 +106,7 @@ impl AtlasTextureProvider for Sdl {
 
     fn update(&mut self, texture: &mut Texture, rect: MRect, pixels: &[u8]) {
         texture
-            .update(Some(rect.to_sdl()), pixels, 4 * TEXTURE_SIZE as usize)
+            .update(Some(rect_to_sdl(rect)), pixels, 4 * TEXTURE_SIZE as usize)
             .unwrap();
     }
 }

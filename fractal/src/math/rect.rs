@@ -21,16 +21,6 @@ impl Rect {
             && p.x < self.pos.x + self.size.x
             && p.y < self.pos.y + self.size.y
     }
-
-    #[cfg(feature = "platform-sdl")]
-    pub fn to_sdl(&self) -> sdl2::rect::Rect {
-        sdl2::rect::Rect::new(
-            self.pos.x,
-            self.pos.y,
-            self.size.x as u32,
-            self.size.y as u32,
-        )
-    }
 }
 
 impl Default for Rect {
