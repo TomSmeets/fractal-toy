@@ -1,5 +1,4 @@
 use super::{TileRequest, TileType};
-
 use crate::math::*;
 
 pub fn build(rq: &TileRequest) -> Vec<u8> {

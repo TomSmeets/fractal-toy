@@ -1,7 +1,7 @@
-pub use cgmath::*;
-
 mod rect;
+
 pub use self::rect::Rect;
+pub use cgmath::*;
 
 pub type Real = f64;
 pub type V2 = Vector2<f64>;

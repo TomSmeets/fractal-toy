@@ -1,14 +1,3 @@
-use fractal_toy::atlas::AtlasRegion;
-use fractal_toy::math::*;
-use fractal_toy::time::DeltaTime;
-use fractal_toy::ui::UI;
-use fractal_toy::Fractal;
-use fractal_toy::Input;
-use glutin::event::{Event, WindowEvent};
-use glutin::event_loop::{ControlFlow, EventLoop};
-use glutin::window::WindowBuilder;
-use std::time::Instant;
-
 mod atlas;
 mod ctx;
 mod gl;
@@ -19,6 +8,18 @@ mod shader;
 use self::atlas::Atlas;
 use self::ctx::GLCtx;
 use self::gl::Gl;
+use fractal_toy::atlas::AtlasRegion;
+use fractal_toy::math::*;
+use fractal_toy::time::DeltaTime;
+use fractal_toy::ui::UI;
+use fractal_toy::Fractal;
+use fractal_toy::Input;
+use glutin::event::{Event, WindowEvent};
+use glutin::event_loop::{ControlFlow, EventLoop};
+use glutin::window::WindowBuilder;
+use imgui::*;
+use imgui_winit_support::{HiDpiMode, WinitPlatform};
+use std::time::Instant;
 
 static mut GL: Option<Gl> = None;
 
@@ -76,9 +77,6 @@ fn handle_input(input: &mut Input, event: &WindowEvent) {
         _ => (),
     }
 }
-
-use imgui::*;
-use imgui_winit_support::{HiDpiMode, WinitPlatform};
 
 fn main() {
     let event_loop = EventLoop::new();

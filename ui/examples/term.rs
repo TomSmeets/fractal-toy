@@ -5,7 +5,6 @@ use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 use termion::raw::RawTerminal;
 use termion::screen::*;
-
 use ui::{Nav, RenderCommand, UI};
 
 type Screen = AlternateScreen<RawTerminal<Stdout>>;

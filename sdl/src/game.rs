@@ -1,4 +1,5 @@
 use crate::atlas::Atlas;
+
 use crate::input::SDLInput;
 use crate::rect_to_sdl;
 use crate::sdl::Sdl;
@@ -14,6 +15,7 @@ use sdl2::event::{Event, WindowEvent};
 use sdl2::pixels::Color;
 use sdl2::render::Texture;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use tilemap::Task;
 
 pub struct State {
@@ -211,8 +213,6 @@ impl UIImage {
         UIImage { txt }
     }
 }
-
-use std::collections::HashMap;
 
 struct UITextures {
     map: HashMap<String, UIImage>,
