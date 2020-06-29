@@ -58,7 +58,7 @@ impl Queue {
         m.params_version
     }
 
-    pub fn new() -> Queue {
+    pub fn new(params: TileParams) -> Queue {
         // This channel contains newly finished tiles
         // These get cleard each frame wich is around 60 times per second
         // The exact size does not matter much
@@ -68,7 +68,7 @@ impl Queue {
             quit: false,
             map: TaskMap::new(),
             params_version: 0,
-            params: TileParams::default(),
+            params,
         }));
 
         Queue {
@@ -90,12 +90,6 @@ impl Queue {
 impl Drop for Queue {
     fn drop(&mut self) {
         self.tiles.lock().unwrap().quit = true;
-    }
-}
-
-impl Default for Queue {
-    fn default() -> Self {
-        Queue::new()
     }
 }
 

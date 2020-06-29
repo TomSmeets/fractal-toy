@@ -45,7 +45,8 @@ pub struct Fractal<T> {
 
 impl<T> Fractal<T> {
     pub fn new(size: Vector2<u32>) -> Self {
-        let queue = Queue::new();
+        let params = TileParams::default();
+        let queue = Queue::new(params.clone());
         let builder = TileBuilder::new(queue.handle());
         Fractal {
             queue,
@@ -53,7 +54,7 @@ impl<T> Fractal<T> {
             tiles: TileMap::new(),
             pos: Viewport::new(size),
             clear: false,
-            params: TileParams::default(),
+            params,
         }
     }
 
