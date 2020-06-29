@@ -27,22 +27,19 @@ impl<T> PrioMutex<T> {
     }
 
     pub fn lock(&self) -> MutexGuard<T> {
-        loop {
-            if self.master_lock.load(Ordering::Relaxed) {
-                // wait a bit
-                std::thread::sleep(std::time::Duration::from_millis(20));
-                std::thread::yield_now();
-                continue;
-            }
-
-            return self.m.lock().unwrap();
+        while self.master_lock.load(Ordering::Acquire) {
+            // wait a bit
+            std::thread::sleep(std::time::Duration::from_millis(20));
+            std::thread::yield_now();
         }
+
+        self.m.lock().unwrap()
     }
 
     pub fn lock_high(&self) -> MutexGuard<T> {
-        self.master_lock.store(true, Ordering::Relaxed);
+        self.master_lock.store(true, Ordering::Release);
         let l = self.m.lock().unwrap();
-        self.master_lock.store(false, Ordering::Relaxed);
+        self.master_lock.store(false, Ordering::Release);
         l
     }
 }
