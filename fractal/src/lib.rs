@@ -1,15 +1,15 @@
 // TODO: Arbirtrary precision, implementing arbitrary precision is not easy, but we probably want to use this: https://fractalwiki.org/wiki/Perturbation_theory
 // TODO: osm tile builder
 pub mod atlas;
-pub mod math;
-pub mod state;
-pub mod ui;
-
+mod colorscheme;
 pub mod fractal;
 pub mod input;
+pub mod math;
+pub mod state;
 pub mod time;
+pub mod ui;
 
-pub use self::{atlas::Atlas, fractal::Fractal, input::Input};
-
-mod colorscheme;
-pub use colorscheme::ColorScheme;
+pub use self::atlas::Atlas;
+pub use self::colorscheme::ColorScheme;
+pub use self::fractal::Fractal;
+pub use self::input::Input;
