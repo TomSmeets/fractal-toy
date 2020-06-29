@@ -11,6 +11,8 @@ use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex, MutexGuard};
 use tilemap::TilePos;
 
+/// Mutex that can give the main thread priority over worker threads when locking a mutex
+/// NOTE: it does not work that well however, but well leave it in for now
 pub struct PrioMutex<T> {
     master_lock: AtomicBool,
     m: Mutex<T>,
