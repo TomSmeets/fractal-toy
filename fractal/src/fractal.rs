@@ -12,6 +12,7 @@ use self::queue::Queue;
 use self::viewport::{Viewport, ViewportSave};
 use crate::math::*;
 use crate::state::Reload;
+use crate::ColorScheme;
 use serde::{Deserialize, Serialize};
 use tilemap::Task;
 use tilemap::TileMap;
@@ -45,7 +46,14 @@ pub struct Fractal<T> {
 
 impl<T> Fractal<T> {
     pub fn new(size: Vector2<u32>) -> Self {
-        let params = TileParams::default();
+        let params = TileParams {
+            kind: TileType::Mandelbrot,
+            iterations: 64,
+            resolution: TEXTURE_SIZE as u32,
+            padding: PADDING,
+            color: ColorScheme::new(),
+        };
+
         let queue = Queue::new(params.clone());
         let builder = TileBuilder::new(queue.handle());
         Fractal {
