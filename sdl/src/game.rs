@@ -188,16 +188,14 @@ pub struct UIImage {
     txt: Texture,
 }
 
-use std::path::Path;
 impl UIImage {
-    pub fn from_path(p: &Path, sdl: &mut Sdl) -> Self {
+    pub fn from_path(p: &[u8], sdl: &mut Sdl) -> Self {
         use png::BitDepth;
         use png::ColorType;
         use png::Decoder;
         use sdl2::render::BlendMode;
-        use std::fs::File;
 
-        let decoder = Decoder::new(File::open(p).unwrap());
+        let decoder = Decoder::new(p);
         let (info, mut reader) = decoder.read_info().unwrap();
         // Allocate the output buffer.
         let mut buf = vec![0; info.buffer_size()];
@@ -244,16 +242,16 @@ fn draw_ui(txt: &mut Option<UITextures>, ui: &UI, sdl: &mut Sdl) {
         };
 
         // TODO: improve better :)
-        t.map.insert(String::from("missing"),           UIImage::from_path(Path::new("./res/missing.png"), sdl));
-        t.map.insert(String::from("button_back"),       UIImage::from_path(Path::new("./res/button_back.png"), sdl));
-        t.map.insert(String::from("button_front_norm"), UIImage::from_path(Path::new("./res/button_front_norm.png"), sdl));
-        t.map.insert(String::from("button_front_down"), UIImage::from_path(Path::new("./res/button_front_down.png"), sdl));
-        t.map.insert(String::from("button_front_hot"),  UIImage::from_path(Path::new("./res/button_front_hot.png"), sdl));
-        t.map.insert(String::from("slider"),            UIImage::from_path(Path::new("./res/slider.png"), sdl));
-        t.map.insert(String::from("fractal_mandel"),    UIImage::from_path(Path::new("./res/fractal_mandel.png"), sdl));
-        t.map.insert(String::from("fractal_ship"),      UIImage::from_path(Path::new("./res/fractal_ship.png"), sdl));
-        t.map.insert(String::from("fractal_hybrid"),    UIImage::from_path(Path::new("./res/fractal_hybrid.png"), sdl));
-        t.map.insert(String::from("fractal_missing"),   UIImage::from_path(Path::new("./res/fractal_missing.png"), sdl));
+        t.map.insert(String::from("missing"),           UIImage::from_path(include_bytes!("../../res/missing.png"), sdl));
+        t.map.insert(String::from("button_back"),       UIImage::from_path(include_bytes!("../../res/button_back.png"), sdl));
+        t.map.insert(String::from("button_front_norm"), UIImage::from_path(include_bytes!("../../res/button_front_norm.png"), sdl));
+        t.map.insert(String::from("button_front_down"), UIImage::from_path(include_bytes!("../../res/button_front_down.png"), sdl));
+        t.map.insert(String::from("button_front_hot"),  UIImage::from_path(include_bytes!("../../res/button_front_hot.png"), sdl));
+        t.map.insert(String::from("slider"),            UIImage::from_path(include_bytes!("../../res/slider.png"), sdl));
+        t.map.insert(String::from("fractal_mandel"),    UIImage::from_path(include_bytes!("../../res/fractal_mandel.png"), sdl));
+        t.map.insert(String::from("fractal_ship"),      UIImage::from_path(include_bytes!("../../res/fractal_ship.png"), sdl));
+        t.map.insert(String::from("fractal_hybrid"),    UIImage::from_path(include_bytes!("../../res/fractal_hybrid.png"), sdl));
+        t.map.insert(String::from("fractal_missing"),   UIImage::from_path(include_bytes!("../../res/fractal_missing.png"), sdl));
 
         *txt = Some(t);
     }
