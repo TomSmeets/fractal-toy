@@ -6,8 +6,68 @@ use crate::fractal::TileContent;
 use crate::fractal::Viewport;
 use crossbeam_channel::bounded;
 use crossbeam_channel::{Receiver, Sender};
-use std::sync::{Arc, Mutex};
+use lock_api::MutexGuard;
+use parking_lot::Mutex;
+use parking_lot::RawMutex;
+use std::ops::Deref;
+use std::ops::DerefMut;
+use std::sync::Arc;
 use tilemap::TilePos;
+
+pub struct PrioMutexGuard<'a, T> {
+    // NOTE: order matters, drop order == struct order
+    m: MutexGuard<'a, RawMutex, T>,
+
+    #[allow(dead_code)]
+    l: MutexGuard<'a, RawMutex, ()>,
+}
+
+impl<'a, T: 'a> Deref for PrioMutexGuard<'a, T> {
+    type Target = T;
+
+    #[inline]
+    fn deref(&self) -> &T {
+        &*self.m
+    }
+}
+
+impl<'a, T: 'a> DerefMut for PrioMutexGuard<'a, T> {
+    #[inline]
+    fn deref_mut(&mut self) -> &mut T {
+        &mut *self.m
+    }
+}
+
+pub struct PrioMutex<T> {
+    m: Mutex<T>,
+    n: Mutex<()>,
+    l: Mutex<()>,
+}
+
+impl<T> PrioMutex<T> {
+    pub fn new(t: T) -> Self {
+        PrioMutex {
+            m: Mutex::new(t),
+            n: Mutex::new(()),
+            l: Mutex::new(()),
+        }
+    }
+
+    pub fn lock(&self) -> PrioMutexGuard<T> {
+        let l = self.l.lock();
+        let n = self.n.lock();
+        let m = self.m.lock();
+        drop(n);
+        PrioMutexGuard { m, l }
+    }
+
+    pub fn lock_high(&self) -> MutexGuard<RawMutex, T> {
+        let n = self.n.lock();
+        let m = self.m.lock();
+        drop(n);
+        m
+    }
+}
 
 pub struct TaskMapWithParams {
     pub quit: bool,
@@ -23,7 +83,7 @@ pub struct TileResponse {
 }
 
 pub struct Queue {
-    pub tiles: Arc<Mutex<TaskMapWithParams>>,
+    pub tiles: Arc<PrioMutex<TaskMapWithParams>>,
     rx: Receiver<TileResponse>,
 
     // NOTE: clone to create handles, could be done differently
@@ -33,13 +93,13 @@ pub struct Queue {
 #[derive(Clone)]
 pub struct QueueHandle {
     tx: Sender<TileResponse>,
-    tiles: Arc<Mutex<TaskMapWithParams>>,
+    tiles: Arc<PrioMutex<TaskMapWithParams>>,
 }
 
 impl Queue {
     pub fn set_params(&mut self, p: &TileParams) {
         // update params
-        let mut m = self.tiles.lock().unwrap();
+        let mut m = self.tiles.lock_high();
         m.params = p.clone();
         m.params_version = m.params_version.wrapping_add(1);
         println!("set params {}", m.params_version);
@@ -50,7 +110,7 @@ impl Queue {
 
     pub fn update(&mut self, vp: &Viewport) -> usize {
         // update params
-        let mut m = self.tiles.lock().unwrap();
+        let mut m = self.tiles.lock_high();
 
         let new_iter = vp.get_pos_all();
         m.map.update_with(new_iter, |_, _| (), |_| Some(Task::Todo));
@@ -64,7 +124,7 @@ impl Queue {
         // The exact size does not matter much
         let (out_tx, out_rx) = bounded(64);
 
-        let tiles = Arc::new(Mutex::new(TaskMapWithParams {
+        let tiles = Arc::new(PrioMutex::new(TaskMapWithParams {
             quit: false,
             map: TaskMap::new(),
             params_version: 0,
@@ -89,7 +149,7 @@ impl Queue {
 
 impl Drop for Queue {
     fn drop(&mut self) {
-        self.tiles.lock().unwrap().quit = true;
+        self.tiles.lock_high().quit = true;
     }
 }
 
@@ -101,7 +161,7 @@ impl QueueHandle {
     }
 
     pub fn recv(&self) -> Result<Option<TileRequest>, ()> {
-        let mut ts = self.tiles.lock().unwrap();
+        let mut ts = self.tiles.lock();
 
         if ts.quit {
             return Err(());
