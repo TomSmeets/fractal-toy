@@ -145,12 +145,7 @@ impl TileBuilder {
 
         #[cfg(feature = "builder-threaded")]
         {
-            // TODO: use cpu_count when avaliable!
-            // ncpu = (sdl2::cpuinfo::cpu_count() - 1).max(1);
-            // TODO: implement some kind of priority locking for rendering
-            // this will prevent frame lag with many workers
-            let ncpu = 7;
-
+            let ncpu = (num_cpus::get() - 1).max(1);
             for _ in 0..ncpu {
                 let h = h.clone();
                 workers.push(std::thread::spawn(move || {
