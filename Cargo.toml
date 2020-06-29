@@ -21,6 +21,7 @@ required-features = [ "platform-web" ]
 [features]
 default = [ "platform-sdl", "platform-gl" ]
 
+# TODO: move to seperate crates?? this will simplify optional dependencies.
 platform-web = ["builder-single",                  "stdweb", "stdweb-derive", "base64" ]
 platform-sdl = ["builder-threaded", "builder-ocl", "sdl2" ]
 platform-gl  = ["builder-threaded", "builder-ocl", "glutin", "gilrs", "memoffset" ]
