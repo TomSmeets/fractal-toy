@@ -132,18 +132,11 @@ impl Default for TileParams {
         TileParams {
             kind: TileType::Mandelbrot,
             iterations: 64,
-            padding: padding(),
-            resolution: texture_size(),
+            resolution: crate::fractal::TEXTURE_SIZE as u32,
+            padding: crate::fractal::PADDING,
             color: ColorScheme::new(),
         }
     }
-}
-
-fn texture_size() -> u32 {
-    crate::fractal::TEXTURE_SIZE as u32
-}
-fn padding() -> u32 {
-    crate::fractal::PADDING
 }
 
 #[derive(Eq, PartialEq, Clone, Debug)]
