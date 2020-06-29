@@ -4,9 +4,6 @@ version = "0.1.0"
 authors = ["TomSmeets <tom.tsmeets@gmail.com>"]
 edition = "2018"
 
-[lib]
-path = "src/lib.rs"
-
 [features]
 default = [
     "builder-threaded",
@@ -20,10 +17,12 @@ builder-single   = []
 [dependencies]
 tilemap = { path = "../tilemap" }
 ui      = { path = "../ui" }
-serde      = { version = "1.0", features = [ "derive" ] }
-serde_json = { version = "1.0" }
-cgmath     = { version = "0.17", features = [ "serde" ] }
-rand       = { version = "0.7" }
+
+serde             = { version = "1.0", features = [ "derive" ] }
+serde_json        = { version = "1.0" }
+cgmath            = { version = "0.17", features = [ "serde" ] }
+rand              = { version = "0.7" }
 crossbeam-channel = { version = "0.4" }
-png           = { version = "0.16" }
-ocl           = { version = "0.19", optional = true }
+png               = { version = "0.16" }
+
+ocl = { version = "0.19", optional = true }
