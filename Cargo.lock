@@ -92,12 +92,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b20b618342cf9891c292c4f5ac2cde7287cc5c87e87e9c769d617793607dec1"
 
 [[package]]
-name = "base64"
-version = "0.12.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e223af0dc48c96d4f8342ec01a4974f139df863896b316681efd36742f22cc67"
-
-[[package]]
 name = "bitflags"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -482,7 +476,6 @@ checksum = "00b0228411908ca8685dba7fc2cdd70ec9990a6e753e89b6ac91a84c40fbaf4b"
 name = "fractal-toy"
 version = "0.1.0"
 dependencies = [
- "base64",
  "cgmath",
  "crossbeam-channel",
  "ocl",
@@ -490,8 +483,6 @@ dependencies = [
  "rand 0.7.3",
  "serde",
  "serde_json",
- "stdweb",
- "stdweb-derive",
  "tilemap",
  "ui",
 ]
