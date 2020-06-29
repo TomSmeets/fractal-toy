@@ -8,7 +8,7 @@ use crossbeam_channel::bounded;
 use crossbeam_channel::{Receiver, Sender};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex, MutexGuard, Weak};
 use tilemap::TilePos;
 
 /// Mutex that can give the main thread priority over worker threads when locking a mutex
@@ -69,7 +69,7 @@ pub struct Queue {
 #[derive(Clone)]
 pub struct QueueHandle {
     tx: Sender<TileResponse>,
-    pub tiles: Arc<PrioMutex<TaskMapWithParams>>,
+    tiles: Weak<PrioMutex<TaskMapWithParams>>,
 }
 
 impl Queue {
@@ -110,7 +110,10 @@ impl Queue {
             params_version: 0,
             tiles: tiles.clone(),
             rx: out_rx,
-            handle: QueueHandle { tx: out_tx, tiles },
+            handle: QueueHandle {
+                tx: out_tx,
+                tiles: Arc::downgrade(&tiles),
+            },
         }
     }
 
@@ -137,7 +140,11 @@ impl QueueHandle {
     }
 
     pub fn recv(&self) -> Result<Option<TileRequest>, ()> {
-        let mut ts = self.tiles.lock();
+        let ts = match self.tiles.upgrade() {
+            Some(ts) => ts,
+            None => return Err(()),
+        };
+        let mut ts = ts.lock();
 
         if ts.quit {
             return Err(());
