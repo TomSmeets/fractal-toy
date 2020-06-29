@@ -13,4 +13,5 @@ git ls-files \
   done \
 | grep 'TODO' \
 | sort \
+| sed 's/).*TODO/\tTODO/' \
 | column -t -s $'\t'
