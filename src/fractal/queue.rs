@@ -1,12 +1,13 @@
 use crate::fractal::builder::TileParams;
 use crate::fractal::builder::TileRequest;
+use crate::fractal::Task;
 use crate::fractal::TaskMap;
 use crate::fractal::TileContent;
+use crate::fractal::Viewport;
 use crossbeam_channel::bounded;
 use crossbeam_channel::{Receiver, Sender};
-use tilemap::TilePos;
-
 use std::sync::{Arc, Mutex};
+use tilemap::TilePos;
 
 pub struct TaskMapWithParams {
     pub quit: bool,
@@ -34,9 +35,6 @@ pub struct QueueHandle {
     tx: Sender<TileResponse>,
     tiles: Arc<Mutex<TaskMapWithParams>>,
 }
-
-use crate::fractal::Task;
-use crate::fractal::Viewport;
 
 impl Queue {
     pub fn set_params(&mut self, p: &TileParams) {

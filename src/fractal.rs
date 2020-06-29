@@ -1,19 +1,18 @@
-use crate::math::*;
-use serde::{Deserialize, Serialize};
-
 mod builder;
 mod content;
 mod queue;
 mod viewport;
 
+pub use self::builder::TileType;
 pub use self::content::TileContent;
 
 use self::builder::TileBuilder;
-pub use self::builder::TileType;
 use self::builder::{TileParams, TileParamsSave};
 use self::queue::Queue;
 use self::viewport::{Viewport, ViewportSave};
+use crate::math::*;
 use crate::state::Reload;
+use serde::{Deserialize, Serialize};
 use tilemap::Task;
 use tilemap::TileMap;
 

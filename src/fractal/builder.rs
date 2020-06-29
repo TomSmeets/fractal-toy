@@ -51,6 +51,7 @@ use crate::fractal::queue::QueueHandle;
 use crate::state::Reload;
 use crate::ColorScheme;
 use serde::{Deserialize, Serialize};
+use std::thread::JoinHandle;
 use tilemap::TilePos;
 
 trait IsTileBuilder {
@@ -145,8 +146,6 @@ pub struct TileRequest {
     pub version: usize,
     pub params: TileParams,
 }
-
-use std::thread::JoinHandle;
 
 pub struct TileBuilder {
     workers: Vec<JoinHandle<()>>,
