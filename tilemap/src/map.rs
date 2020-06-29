@@ -34,7 +34,6 @@ impl<T> TileMap<T> {
         self.tiles.iter()
     }
 
-
     pub fn iter_mut(&mut self) -> IterMut<T> {
         self.tiles.iter_mut()
     }
@@ -64,7 +63,7 @@ impl<T> TileMap<T> {
                     delete(k, v);
                 },
                 ComparedValue::Right(r) => {
-                    if let Some(v) =  insert(r) {
+                    if let Some(v) = insert(r) {
                         self.tiles.insert(r, v);
                     }
                 },
