@@ -18,12 +18,11 @@ name = "web"
 required-features = [ "platform-web" ]
 
 [features]
-default = [ "platform-sdl", "platform-gl" ]
+default = [ "platform-sdl" ]
 
 # TODO: move to seperate crates?? this will simplify optional dependencies.
 platform-web = ["builder-single",                  "stdweb", "stdweb-derive", "base64" ]
 platform-sdl = ["builder-threaded", "builder-ocl", "sdl2" ]
-platform-gl  = ["builder-threaded", "builder-ocl", "glutin", "gilrs", "memoffset" ]
 
 builder-ocl      = [ "ocl" ]
 builder-threaded = []
@@ -37,10 +36,6 @@ static = [ "sdl2/static-link", "sdl2/bundled" ]
 # better: seperate into library parts that don't depend on any backend
 # then implement the backend stuff directly in opengl,vulkan,webgl, etc
 [dependencies]
-imgui = "0.4"
-imgui-winit-support = "0.4"
-imgui-opengl-renderer = "0.8"
-
 tilemap = { path = "../tilemap" }
 ui = { path = "../ui" }
 
@@ -57,12 +52,6 @@ stdweb        = { version = "0.4",  optional = true }
 stdweb-derive = { version = "0.5",  optional = true }
 png           = { version = "0.16" }
 base64        = { version = "0.12", optional = true }
-glutin    = { version = "0.24.0", optional = true }
-gilrs     = { version = "0.7.4", optional = true }
-memoffset = { version = "0.5.4", optional = true }
-
-[build-dependencies]
-gl_generator = "0.14.0"
 
 [dev-dependencies]
 criterion = "0.3"

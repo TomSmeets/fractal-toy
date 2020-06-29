@@ -592,13 +592,6 @@ dependencies = [
  "cgmath",
  "criterion",
  "crossbeam-channel",
- "gilrs",
- "gl_generator 0.14.0",
- "glutin",
- "imgui",
- "imgui-opengl-renderer",
- "imgui-winit-support",
- "memoffset",
  "ocl",
  "png",
  "rand 0.7.3",
@@ -688,6 +681,22 @@ name = "gimli"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bcc8e0c9bce37868955864dbecd2b1ab2bdf967e6f28066d65aaac620444b65c"
+
+[[package]]
+name = "gl"
+version = "0.1.0"
+dependencies = [
+ "fractal-toy",
+ "gilrs",
+ "gl_generator 0.14.0",
+ "glutin",
+ "imgui",
+ "imgui-opengl-renderer",
+ "imgui-winit-support",
+ "memoffset",
+ "tilemap",
+ "ui",
+]
 
 [[package]]
 name = "gl_generator"
