@@ -1,20 +1,15 @@
 mod atlas;
 mod game;
-mod sdl;
 mod input;
+mod sdl;
 
 use self::game::State;
+use fractal_toy::math::Rect;
 use fractal_toy::state::Persist;
 use fractal_toy::state::Reload;
-use fractal_toy::math::Rect;
 
 pub fn rect_to_sdl(r: Rect) -> sdl2::rect::Rect {
-    sdl2::rect::Rect::new(
-        r.pos.x,
-        r.pos.y,
-        r.size.x as u32,
-        r.size.y as u32,
-    )
+    sdl2::rect::Rect::new(r.pos.x, r.pos.y, r.size.x as u32, r.size.y as u32)
 }
 
 fn main() {

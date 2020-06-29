@@ -1,4 +1,6 @@
 use crate::atlas::Atlas;
+use crate::input::SDLInput;
+use crate::rect_to_sdl;
 use crate::sdl::Sdl;
 use fractal_toy::atlas::AtlasRegion;
 use fractal_toy::fractal::FractalSave;
@@ -13,8 +15,6 @@ use sdl2::pixels::Color;
 use sdl2::render::Texture;
 use serde::{Deserialize, Serialize};
 use tilemap::Task;
-use crate::rect_to_sdl;
-use crate::input::SDLInput;
 
 pub struct State {
     sdl: Sdl,
@@ -39,7 +39,9 @@ impl Default for State {
 impl State {
     pub fn new() -> State {
         let sdl = Sdl::new();
-        let input = SDLInput { input: Input::new() };
+        let input = SDLInput {
+            input: Input::new(),
+        };
         let ui = UI::new();
 
         let window_size = sdl.output_size();

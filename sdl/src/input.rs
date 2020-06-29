@@ -1,12 +1,14 @@
 use sdl2::{controller::Axis, controller::Button, event::*, keyboard::Keycode, mouse::MouseButton};
 
-use fractal_toy::input::InputAction;
 use fractal_toy::input::Input;
+use fractal_toy::input::InputAction;
 use fractal_toy::input::InputEvent;
-use serde::{Serialize,Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct SDLInput { pub input: Input }
+pub struct SDLInput {
+    pub input: Input,
+}
 
 impl SDLInput {
     fn trnalsate_sdl_key(&mut self, key: Keycode) -> Option<InputAction> {
