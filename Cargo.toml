@@ -5,5 +5,7 @@ members = [
     "tilemap",
     "gl",
     "sdl",
+
+# TODO: make web work
 # "web",
 ]
