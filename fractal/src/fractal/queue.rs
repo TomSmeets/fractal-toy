@@ -1,5 +1,4 @@
 use crate::fractal::builder::TileParams;
-use crate::fractal::builder::TileRequest;
 use crate::fractal::Task;
 use crate::fractal::TaskMap;
 use crate::fractal::TileContent;
@@ -45,8 +44,6 @@ impl<T> PrioMutex<T> {
 }
 
 pub struct TaskMapWithParams {
-    // NOTE: quit could be removed, because we are n ow using weak pointers
-    pub quit: bool,
     pub map: TaskMap,
     pub params: TileParams,
     pub params_version: usize,
@@ -126,7 +123,6 @@ impl Queue {
         let (out_tx, out_rx) = bounded(64);
 
         let tiles = Arc::new(PrioMutex::new(TaskMapWithParams {
-            quit: false,
             map: TaskMap::new(),
             params_version: 0,
             params,
@@ -152,43 +148,11 @@ impl Queue {
     }
 }
 
-impl Drop for Queue {
-    fn drop(&mut self) {
-        self.tiles.lock_high().quit = true;
-    }
-}
-
 impl QueueHandle {
     pub fn wait(&self) {
         // TODO: thread parking? what is the performance? (we will have to do this every frame)
         std::thread::sleep(std::time::Duration::from_millis(20));
         std::thread::yield_now();
-    }
-
-    pub fn recv(&self) -> Result<Option<TileRequest>, ()> {
-        let ts = match self.tiles.upgrade() {
-            Some(ts) => ts,
-            None => return Err(()),
-        };
-        let mut ts = ts.lock();
-
-        if ts.quit {
-            return Err(());
-        }
-
-        let pos = ts.recv();
-
-        let pos = match pos {
-            Some(n) => n,
-            None => return Ok(None),
-        };
-
-        Ok(Some(TileRequest {
-            // TODO: don't clone params, just return pos
-            params: ts.params.clone(),
-            version: ts.params_version,
-            pos,
-        }))
     }
 
     pub fn send(&self, t: TileResponse) -> Result<(), ()> {
