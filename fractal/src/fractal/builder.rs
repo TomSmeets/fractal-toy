@@ -133,6 +133,7 @@ pub struct TileRequest {
 }
 
 pub struct TileBuilder {
+    #[allow(dead_code)]
     workers: Vec<JoinHandle<()>>,
 }
 
@@ -163,15 +164,5 @@ impl TileBuilder {
         drop(h);
 
         TileBuilder { workers }
-    }
-}
-
-impl Drop for TileBuilder {
-    fn drop(&mut self) {
-        // TODO: We have to be sure that this gets called after quit is set, otherwise it will
-        // block forever
-        for w in self.workers.drain(..) {
-            w.join().unwrap();
-        }
     }
 }
