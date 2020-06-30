@@ -1,26 +1,46 @@
 use super::{TileRequest, TileType};
-use crate::math::*;
 use crate::fractal::queue::QueueHandle;
-use crate::fractal::TileContent;
 use crate::fractal::queue::TileResponse;
+use crate::fractal::TileContent;
+use crate::math::*;
 
-pub fn worker(h: QueueHandle) {
+pub fn worker(handle: QueueHandle) {
     loop {
-        match h.recv() {
-            Err(_) => break,
-            Ok(None) => h.wait(),
-            Ok(Some(next)) => {
-                let t = TileContent::new(build(&next));
-                if h.send(TileResponse {
-                    pos: next.pos,
-                    version: next.version,
-                    content: t,
-                })
-                .is_err()
-                {
-                    break;
-                }
+        let h = match handle.tiles.upgrade() {
+            Some(h) => h,
+            None => break,
+        };
+
+        let mut h = h.lock();
+
+        let next = match h.recv() {
+            None => {
+                drop(h);
+                handle.wait();
+                continue;
             },
+            Some(next) => next,
+        };
+
+        let next = TileRequest {
+            params: h.params.clone(),
+            version: h.params_version,
+            pos: next,
+        };
+
+        // make sure the lock is freed
+        drop(h);
+
+        let tile = TileContent::new(build(&next));
+
+        let ret = handle.send(TileResponse {
+            pos: next.pos,
+            version: next.version,
+            content: tile,
+        });
+
+        if ret.is_err() {
+            break;
         }
     }
 }

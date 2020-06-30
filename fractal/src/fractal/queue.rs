@@ -45,6 +45,7 @@ impl<T> PrioMutex<T> {
 }
 
 pub struct TaskMapWithParams {
+    // NOTE: quit could be removed, because we are n ow using weak pointers
     pub quit: bool,
     pub map: TaskMap,
     pub params: TileParams,
@@ -69,27 +70,52 @@ pub struct Queue {
 #[derive(Clone)]
 pub struct QueueHandle {
     tx: Sender<TileResponse>,
-    tiles: Weak<PrioMutex<TaskMapWithParams>>,
+    pub tiles: Weak<PrioMutex<TaskMapWithParams>>,
+}
+
+impl TaskMapWithParams {
+    pub fn update(&mut self, vp: &Viewport) {
+        let new_iter = vp.get_pos_all();
+        self.map
+            .update_with(new_iter, |_, _| (), |_| Some(Task::Todo));
+    }
+
+    pub fn set_params(&mut self, p: &TileParams) {
+        self.params = p.clone();
+        self.params_version = self.params_version.wrapping_add(1);
+        self.map.clear();
+    }
+
+    pub fn recv(&mut self) -> Option<TilePos> {
+        let pos = self
+            .map
+            .iter_mut()
+            .filter_map(|(k, v)| match v {
+                Task::Todo => {
+                    *v = Task::Doing;
+                    Some(*k)
+                },
+                _ => None,
+            })
+            .next();
+
+        pos
+    }
 }
 
 impl Queue {
     pub fn set_params(&mut self, p: &TileParams) {
         // update params
         let mut m = self.tiles.lock_high();
-        m.params = p.clone();
-        m.params_version = m.params_version.wrapping_add(1);
+        m.set_params(p);
         self.params_version = m.params_version;
         println!("set params {}", m.params_version);
-
-        // clear map
-        m.map.clear();
     }
 
     pub fn update(&mut self, vp: &Viewport) {
         // update params
         if let Ok(mut m) = self.tiles.m.try_lock() {
-            let new_iter = vp.get_pos_all();
-            m.map.update_with(new_iter, |_, _| (), |_| Some(Task::Todo));
+            m.update(vp);
         }
     }
 
@@ -150,17 +176,7 @@ impl QueueHandle {
             return Err(());
         }
 
-        let pos = ts
-            .map
-            .iter_mut()
-            .filter_map(|(k, v)| match v {
-                Task::Todo => {
-                    *v = Task::Doing;
-                    Some(*k)
-                },
-                _ => None,
-            })
-            .next();
+        let pos = ts.recv();
 
         let pos = match pos {
             Some(n) => n,

@@ -153,20 +153,47 @@ impl OCLWorker {
 
     pub fn run(&mut self) {
         loop {
-            match self.handle.recv() {
-                Err(_) => break,
-                Ok(None) => self.handle.wait(),
-                Ok(Some(next)) => {
-                    let tile = self.process(&next);
+            let h = match self.handle.tiles.upgrade() {
+                Some(h) => h,
+                None => break,
+            };
 
-                    if let Err(_) = self.handle.send(TileResponse {
-                        pos: next.pos,
-                        version: next.version,
-                        content: tile,
-                    }) {
-                        break;
-                    }
+            let mut h = h.lock();
+
+            if h.params.kind == TileType::Empty {
+                drop(h);
+                self.handle.wait();
+                continue;
+            }
+
+            let next = match h.recv() {
+                None => {
+                    drop(h);
+                    self.handle.wait();
+                    continue;
                 },
+                Some(next) => next,
+            };
+
+            let next = TileRequest {
+                params: h.params.clone(),
+                version: h.params_version,
+                pos: next,
+            };
+
+            // make sure the lock is freed
+            drop(h);
+
+            let tile = self.process(&next);
+
+            let ret = self.handle.send(TileResponse {
+                pos: next.pos,
+                version: next.version,
+                content: tile,
+            });
+
+            if ret.is_err() {
+                break;
             }
         }
     }

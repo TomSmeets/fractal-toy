@@ -146,9 +146,7 @@ impl TileBuilder {
             let ncpu = (num_cpus::get() - 1).max(1);
             for _ in 0..ncpu {
                 let h = h.clone();
-                workers.push(std::thread::spawn(move || {
-                    self::cpu::worker(h)
-                }));
+                workers.push(std::thread::spawn(move || self::cpu::worker(h)));
             }
         }
 
