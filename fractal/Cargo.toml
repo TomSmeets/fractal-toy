@@ -21,9 +21,7 @@ ui      = { path = "../ui" }
 serde             = { version = "1.0", features = [ "derive" ] }
 serde_json        = { version = "1.0" }
 cgmath            = { version = "0.17", features = [ "serde" ] }
-rand              = { version = "0.7" }
 crossbeam-channel = { version = "0.4" }
-png               = { version = "0.16" }
 num_cpus          = { version = "1.13" }
 
 ocl = { version = "0.19", optional = true }
