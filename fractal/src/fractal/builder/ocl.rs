@@ -43,7 +43,7 @@ impl OCLWorker {
         })
     }
 
-    pub fn compile(&mut self) -> Program {
+    pub fn compile(&mut self) -> Option<Program> {
         let pow2 = r#"
             tmp = z;
             z.x = tmp.x*tmp.x - tmp.y*tmp.y + c.x;
@@ -78,7 +78,7 @@ impl OCLWorker {
                 alg.push_str(abs);
                 alg.push_str(pow2);
             },
-            TileType::Empty => {},
+            _ => return None,
         }
 
         let new_src = SOURCE_TEMPLATE
@@ -89,19 +89,16 @@ impl OCLWorker {
             .replace("@ALGORITHM@", &alg)
             .replace("@INC@", inc);
 
-        Program::builder()
-            .src(new_src)
-            .devices(self.device)
-            .build(&self.context)
-            .unwrap()
+        Some(
+            Program::builder()
+                .src(new_src)
+                .devices(self.device)
+                .build(&self.context)
+                .unwrap(),
+        )
     }
 
     fn process(&mut self, p: &TileRequest) -> TileContent {
-        if p.params.kind != self.kind || self.program.is_none() {
-            self.kind = p.params.kind;
-            self.program = Some(self.compile());
-        }
-
         let program = self.program.as_ref().unwrap();
 
         let texture_size = p.params.resolution as usize;
@@ -160,7 +157,12 @@ impl OCLWorker {
 
             let mut h = h.lock();
 
-            if h.params.kind == TileType::Empty {
+            if h.params.kind != self.kind || self.program.is_none() {
+                self.kind = h.params.kind;
+                self.program = self.compile();
+            }
+
+            if self.program.is_none() {
                 drop(h);
                 self.handle.wait();
                 continue;
