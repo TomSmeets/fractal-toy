@@ -41,9 +41,6 @@
 
 pub mod cpu;
 
-#[cfg(feature = "builder-threaded")]
-pub mod threaded;
-
 #[cfg(feature = "builder-ocl")]
 pub mod ocl;
 
@@ -149,7 +146,7 @@ impl TileBuilder {
             for _ in 0..ncpu {
                 let h = h.clone();
                 workers.push(std::thread::spawn(move || {
-                    crate::fractal::builder::threaded::worker::worker(h)
+                    self::cpu::worker(h)
                 }));
             }
         }

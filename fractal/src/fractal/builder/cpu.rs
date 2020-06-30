@@ -1,5 +1,29 @@
 use super::{TileRequest, TileType};
 use crate::math::*;
+use crate::fractal::queue::QueueHandle;
+use crate::fractal::TileContent;
+use crate::fractal::queue::TileResponse;
+
+pub fn worker(h: QueueHandle) {
+    loop {
+        match h.recv() {
+            Err(_) => break,
+            Ok(None) => h.wait(),
+            Ok(Some(next)) => {
+                let t = TileContent::new(build(&next));
+                if h.send(TileResponse {
+                    pos: next.pos,
+                    version: next.version,
+                    content: t,
+                })
+                .is_err()
+                {
+                    break;
+                }
+            },
+        }
+    }
+}
 
 pub fn build(rq: &TileRequest) -> Vec<u8> {
     let texture_size = rq.params.resolution as usize;
