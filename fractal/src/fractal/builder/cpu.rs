@@ -13,6 +13,12 @@ pub fn worker(handle: QueueHandle) {
 
         let mut h = h.lock();
 
+        if h.params.kind == TileType::Map {
+            drop(h);
+            handle.wait();
+            continue;
+        }
+
         let next = match h.recv() {
             None => {
                 drop(h);
@@ -101,6 +107,7 @@ pub fn build(rq: &TileRequest) -> Vec<u8> {
                 z
             });
         },
+        _ => panic!("Invalid kind"),
     }
     pixels
 }

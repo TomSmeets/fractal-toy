@@ -44,6 +44,8 @@ pub mod cpu;
 #[cfg(feature = "builder-ocl")]
 pub mod ocl;
 
+pub mod osm;
+
 use crate::fractal::queue::QueueHandle;
 use crate::state::Reload;
 use crate::ColorScheme;
@@ -77,6 +79,8 @@ pub enum TileType {
     /// z = z^3 + c
     /// ```
     ShipHybrid,
+
+    Map,
 }
 
 impl TileType {
@@ -86,7 +90,8 @@ impl TileType {
             TileType::Empty => TileType::Mandelbrot,
             TileType::Mandelbrot => TileType::BurningShip,
             TileType::BurningShip => TileType::ShipHybrid,
-            TileType::ShipHybrid => TileType::Empty,
+            TileType::ShipHybrid => TileType::Map,
+            TileType::Map => TileType::Empty,
         }
     }
 }
@@ -156,6 +161,11 @@ impl TileBuilder {
             if let Ok(mut w) = OCLWorker::new(h.clone()) {
                 workers.push(std::thread::spawn(move || w.run()));
             }
+        }
+
+        for _ in 0..2 {
+            let h = h.clone();
+            workers.push(std::thread::spawn(move || self::osm::worker(h)));
         }
 
         // supress all warnings about cloning h

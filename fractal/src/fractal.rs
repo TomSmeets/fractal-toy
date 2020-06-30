@@ -19,7 +19,7 @@ use tilemap::TileMap;
 
 // We are blending the textures
 pub const PADDING: u32 = 1;
-pub const TEXTURE_SIZE: usize = 64 * 2;
+pub const TEXTURE_SIZE: usize = 64 * 4;
 
 /// Something that can build textures from tile pixels
 // TODO: this is very ugly, kindly remove this

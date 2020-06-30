@@ -180,6 +180,7 @@ impl UI {
                 (TileType::Mandelbrot, "Mandelbrot", "fractal_mandel"),
                 (TileType::BurningShip, "BurningShip", "fractal_ship"),
                 (TileType::ShipHybrid, "ShipHybrid", "fractal_hybrid"),
+                (TileType::Map, "Map", "fractal_missing"),
                 (TileType::Empty, "Empty", "fractal_missing"),
             ];
             for (t, name, img) in types.iter() {

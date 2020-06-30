@@ -5,9 +5,9 @@ type V2 = cgmath::Vector2<f64>;
 
 #[derive(Serialize, Deserialize, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Debug)]
 pub struct TilePos {
-    z: u8,
-    x: i64,
-    y: i64,
+    pub z: u8,
+    pub x: i64,
+    pub y: i64,
 }
 
 impl TilePos {
