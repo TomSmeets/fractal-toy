@@ -14,12 +14,6 @@ pub struct Input {
     pub right: bool,
 }
 
-pub struct ButtonState {
-    pub hot: bool,
-    pub active: bool,
-    pub click: bool,
-}
-
 impl Input {
     pub fn new() -> Self {
         Input {
@@ -31,23 +25,46 @@ impl Input {
     }
 }
 
-impl Default for Input {
-    fn default() -> Self {
-        Input::new()
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
+pub struct ButtonState {
+    pub hot: bool,
+    pub active: bool,
+    pub click: bool,
+}
+
+#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
+pub enum Image {
+    Fractal(TileType),
+    Slider,
+    ButtonFront(ButtonState),
+    ButtonBack,
+    Undefined,
+}
+
+pub fn to_path(img: Image) -> &'static [u8] {
+    match img {
+        Image::Fractal(TileType::Mandelbrot)  => include_bytes!("../../res/fractal_mandel.png"),
+        Image::Fractal(TileType::ShipHybrid)  => include_bytes!("../../res/fractal_hybrid.png"),
+        Image::Fractal(TileType::BurningShip) => include_bytes!("../../res/fractal_ship.png"),
+        Image::Fractal(TileType::Empty)       => include_bytes!("../../res/fractal_missing.png"),
+
+        Image::Slider => include_bytes!("../../res/slider.png"),
+
+        Image::ButtonFront(ButtonState { active: true, .. }) => include_bytes!("../../res/button_front_down.png"),
+        Image::ButtonFront(ButtonState { hot: true, .. })    => include_bytes!("../../res/button_front_hot.png"),
+        Image::ButtonFront(ButtonState { .. })               => include_bytes!("../../res/button_front_norm.png"),
+
+        Image::ButtonBack => include_bytes!("../../res/button_back.png"),
+        _ => include_bytes!("../../res/missing.png"),
     }
 }
 
-pub enum Image {
-    Rect,
-    ButtonBack,
-    ButtonFront { down: bool, hot: bool },
-}
 
 // TODO: we should also have a reliable debug terminal interface
 // It should contain debug counters and messages and commands to do everything
 pub struct UI {
     pub input: Input,
-    pub rects: Vec<(Rect, &'static str)>,
+    pub rects: Vec<(Rect, Image)>,
 
     active: Option<Id>,
     stack: UIStack,
@@ -71,7 +88,7 @@ impl UI {
         self.input = input;
     }
 
-    fn draw_rect(&mut self, rect: Rect, img: &'static str) {
+    fn draw_rect(&mut self, rect: Rect, img: Image) {
         self.rects.push((rect, img));
     }
 
@@ -107,23 +124,18 @@ impl UI {
             is_active = true;
         }
 
-        self.draw_rect(rect, "button_back");
+        self.draw_rect(rect, Image::ButtonBack);
 
-        if is_active {
-            self.draw_rect(rect, "button_front_down");
-        } else if is_hot {
-            self.draw_rect(rect, "button_front_hot");
-        } else {
-            self.draw_rect(rect, "button_front_norm");
-        }
-
-        self.stack.end();
-
-        ButtonState {
+        let state = ButtonState {
             hot: is_hot,
             active: is_active,
             click: went_down,
-        }
+        };
+
+        self.draw_rect(rect, Image::ButtonFront(state));
+        self.stack.end();
+
+        state
     }
 
     // TODO: urghh, i don't like that 'T' here
@@ -152,7 +164,7 @@ impl UI {
                 w,
                 self.input.viewport.y as i32 - pad * 2,
             );
-            self.draw_rect(rect, "slider");
+            self.draw_rect(rect, Image::Slider);
             {
                 let z = (zoom + 2.5) / (2.5 + 48.5);
                 let z = z.max(0.0).min(1.0);
@@ -177,12 +189,12 @@ impl UI {
             let pad = 10;
 
             let types = [
-                (TileType::Mandelbrot, "Mandelbrot", "fractal_mandel"),
-                (TileType::BurningShip, "BurningShip", "fractal_ship"),
-                (TileType::ShipHybrid, "ShipHybrid", "fractal_hybrid"),
-                (TileType::Empty, "Empty", "fractal_missing"),
+                (TileType::Mandelbrot, "Mandelbrot"),
+                (TileType::BurningShip, "BurningShip"),
+                (TileType::ShipHybrid, "ShipHybrid"),
+                (TileType::Empty, "Empty"),
             ];
-            for (t, name, img) in types.iter() {
+            for (t, name) in types.iter() {
                 self.stack.begin(name);
 
                 let rect = Rect::new(x + pad, self.input.viewport.y as i32 - w - pad, w, w);
@@ -190,10 +202,20 @@ impl UI {
                     fractal.params.kind = *t;
                     fractal.reload();
                 }
-                self.draw_rect(rect, img);
+                self.draw_rect(rect, Image::Fractal(*t));
+
+                // TODO: pass this to the button call, don't render it here
                 if fractal.params.kind == *t {
-                    self.draw_rect(rect, "button_front_down");
+                    self.draw_rect(
+                        rect,
+                        Image::ButtonFront(ButtonState {
+                            active: true,
+                            hot: true,
+                            click: false,
+                        }),
+                    );
                 }
+
                 x += w + pad;
 
                 self.stack.end();

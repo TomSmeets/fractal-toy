@@ -1,5 +1,4 @@
 use crate::atlas::Atlas;
-
 use crate::input::SDLInput;
 use crate::rect_to_sdl;
 use crate::sdl::Sdl;
@@ -15,20 +14,17 @@ use sdl2::event::{Event, WindowEvent};
 use sdl2::pixels::Color;
 use sdl2::render::Texture;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::collections::HashMap;
 use tilemap::Task;
 
 pub struct State {
     sdl: Sdl,
     ui: UI,
-    uitxt: Option<UITextures>,
-
+    uitxt: UITextures,
     pub input: SDLInput,
-
     fractal: Fractal<AtlasRegion>,
-
     atlas: Atlas,
-
     window_size: Vector2<u32>,
 }
 
@@ -52,7 +48,9 @@ impl State {
         State {
             sdl,
             ui,
-            uitxt: None,
+            uitxt: UITextures {
+                map: BTreeMap::new(),
+            },
             input,
             fractal,
             window_size,
@@ -215,50 +213,20 @@ impl UIImage {
 }
 
 struct UITextures {
-    map: HashMap<String, UIImage>,
+    map: BTreeMap<fractal_toy::ui::Image, UIImage>,
 }
 
 impl UITextures {
-    pub fn get_missing(&self) -> &UIImage {
-        self.map.get("missing").unwrap()
-    }
-
-    pub fn get(&self, name: &str) -> &UIImage {
-        match self.map.get(name) {
-            Some(t) => t,
-            None => {
-                println!("not found: {}", name);
-                self.get_missing()
-            },
-        }
+    pub fn get(&mut self, sdl: &mut Sdl, name: fractal_toy::ui::Image) -> &UIImage {
+        let e = self.map.entry(name);
+        e.or_insert_with(|| UIImage::from_path(fractal_toy::ui::to_path(name), sdl))
     }
 }
 
 #[rustfmt::skip]
-fn draw_ui(txt: &mut Option<UITextures>, ui: &UI, sdl: &mut Sdl) {
-    if txt.is_none() {
-        let mut t = UITextures {
-            map: HashMap::new(),
-        };
-
-        // TODO: improve better :)
-        t.map.insert(String::from("missing"),           UIImage::from_path(include_bytes!("../../res/missing.png"), sdl));
-        t.map.insert(String::from("button_back"),       UIImage::from_path(include_bytes!("../../res/button_back.png"), sdl));
-        t.map.insert(String::from("button_front_norm"), UIImage::from_path(include_bytes!("../../res/button_front_norm.png"), sdl));
-        t.map.insert(String::from("button_front_down"), UIImage::from_path(include_bytes!("../../res/button_front_down.png"), sdl));
-        t.map.insert(String::from("button_front_hot"),  UIImage::from_path(include_bytes!("../../res/button_front_hot.png"), sdl));
-        t.map.insert(String::from("slider"),            UIImage::from_path(include_bytes!("../../res/slider.png"), sdl));
-        t.map.insert(String::from("fractal_mandel"),    UIImage::from_path(include_bytes!("../../res/fractal_mandel.png"), sdl));
-        t.map.insert(String::from("fractal_ship"),      UIImage::from_path(include_bytes!("../../res/fractal_ship.png"), sdl));
-        t.map.insert(String::from("fractal_hybrid"),    UIImage::from_path(include_bytes!("../../res/fractal_hybrid.png"), sdl));
-        t.map.insert(String::from("fractal_missing"),   UIImage::from_path(include_bytes!("../../res/fractal_missing.png"), sdl));
-
-        *txt = Some(t);
-    }
-
-    let txt = txt.as_mut().unwrap();
+fn draw_ui(txt: &mut UITextures, ui: &UI, sdl: &mut Sdl) {
     for (rect, name) in ui.rects.iter() {
-        let img = txt.get(name);
+        let img = txt.get(sdl, *name);
         sdl.canvas_copy(&img.txt, None, Some(rect_to_sdl(*rect)));
     }
 }
