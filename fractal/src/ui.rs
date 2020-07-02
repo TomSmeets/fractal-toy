@@ -41,6 +41,7 @@ pub enum Image {
     Undefined,
 }
 
+#[rustfmt::skip]
 pub fn to_path(img: Image) -> &'static [u8] {
     match img {
         Image::Fractal(TileType::Mandelbrot)  => include_bytes!("../../res/fractal_mandel.png"),
@@ -58,7 +59,6 @@ pub fn to_path(img: Image) -> &'static [u8] {
         _ => include_bytes!("../../res/missing.png"),
     }
 }
-
 
 // TODO: we should also have a reliable debug terminal interface
 // It should contain debug counters and messages and commands to do everything
