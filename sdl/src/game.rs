@@ -15,7 +15,6 @@ use sdl2::pixels::Color;
 use sdl2::render::Texture;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use std::collections::HashMap;
 use tilemap::Task;
 
 pub struct State {

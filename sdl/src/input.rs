@@ -1,8 +1,11 @@
-use sdl2::{controller::Axis, controller::Button, event::*, keyboard::Keycode, mouse::MouseButton};
-
 use fractal_toy::input::Input;
 use fractal_toy::input::InputAction;
 use fractal_toy::input::InputEvent;
+use sdl2::controller::Axis;
+use sdl2::controller::Button;
+use sdl2::event::*;
+use sdl2::keyboard::Keycode;
+use sdl2::mouse::MouseButton;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
