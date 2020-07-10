@@ -11,7 +11,7 @@ pub struct Persist {
 
 impl Persist {
     pub fn new() -> Self {
-        let root = PathBuf::from("target/state");
+        let root = PathBuf::from(".fractal-toy");
         fs::create_dir_all(&root).unwrap();
         Persist { root }
     }
