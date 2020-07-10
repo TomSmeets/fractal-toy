@@ -3,6 +3,7 @@ name = "gl"
 version = "0.1.0"
 authors = ["TomSmeets <tom.tsmeets@gmail.com>"]
 edition = "2018"
+license = "GPL-v3-or-later"
 
 [dependencies]
 tilemap     = { path = "../tilemap" }
