@@ -30,3 +30,6 @@ The following are mostly for debugging
 * `6` load state
 
 Saved state is stored in the directory `.fractal-toy/` in the current working directory
+
+# Preview
+![image](https://i.imgur.com/CbszaIQ.png)
