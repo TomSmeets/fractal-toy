@@ -10,9 +10,9 @@ license = "GPL-v3-or-later"
 static = [ "sdl2/static-link", "sdl2/bundled" ]
 
 [dependencies]
-tilemap     = { path = "../tilemap" }
-ui          = { path = "../ui" }
-fractal-toy = { path = "../fractal" }
+tilemap     = { path = "../../tilemap" }
+ui          = { path = "../../ui" }
+fractal-toy = { path = "../../fractal" }
 
 sdl2  = { version = "0.34", features = [ "unsafe_textures" ] }
 serde = { version = "1.0", features = [ "derive" ] }

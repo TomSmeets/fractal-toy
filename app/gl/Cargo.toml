@@ -6,9 +6,9 @@ edition = "2018"
 license = "GPL-v3-or-later"
 
 [dependencies]
-tilemap     = { path = "../tilemap" }
-ui          = { path = "../ui" }
-fractal-toy = { path = "../fractal" }
+tilemap     = { path = "../../tilemap" }
+ui          = { path = "../../ui" }
+fractal-toy = { path = "../../fractal" }
 
 glutin    = "0.24.0"
 gilrs     = "0.7.4"
