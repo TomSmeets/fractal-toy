@@ -124,12 +124,12 @@ impl Queue {
 
         let tiles = Arc::new(PrioMutex::new(TaskMapWithParams {
             map: TaskMap::new(),
-            params_version: 0,
+            params_version: 1,
             params,
         }));
 
         Queue {
-            params_version: 0,
+            params_version: 1,
             tiles: tiles.clone(),
             rx: out_rx,
             handle: QueueHandle {
