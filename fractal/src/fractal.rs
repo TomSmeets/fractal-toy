@@ -6,6 +6,7 @@ mod viewport;
 pub use self::builder::TileType;
 pub use self::content::TileContent;
 
+use self::builder::IsTileBuilder;
 use self::builder::TileBuilder;
 use self::builder::{TileParams, TileParamsSave};
 use self::queue::Queue;
@@ -41,6 +42,7 @@ pub struct Fractal<T> {
     pub clear: bool,
     pub tiles: TileMap<T>,
     pub queue: Queue,
+
     pub builder: TileBuilder,
 }
 
@@ -64,6 +66,10 @@ impl<T> Fractal<T> {
             clear: false,
             params,
         }
+    }
+
+    pub fn add_builder<B: IsTileBuilder + Send + 'static>(&mut self, b: B) {
+        self.builder.add_builder(b);
     }
 
     pub fn reload(&mut self) {

@@ -45,15 +45,17 @@ pub mod cpu;
 pub mod ocl;
 
 use crate::fractal::queue::QueueHandle;
+use crate::fractal::queue::TileResponse;
+use crate::fractal::TileContent;
 use crate::state::Reload;
 use crate::ColorScheme;
 use serde::{Deserialize, Serialize};
 use std::thread::JoinHandle;
 use tilemap::TilePos;
 
-trait IsTileBuilder {
-    fn configure(p: &TileParams) -> bool;
-    fn build(p: TilePos) -> Vec<u8>;
+pub trait IsTileBuilder {
+    fn configure(&mut self, p: &TileParams) -> bool;
+    fn build(&mut self, p: TilePos) -> TileContent;
 }
 
 #[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Serialize, Deserialize, Debug)]
@@ -133,6 +135,8 @@ pub struct TileRequest {
 }
 
 pub struct TileBuilder {
+    handle: QueueHandle,
+
     #[allow(dead_code)]
     workers: Vec<JoinHandle<()>>,
 }
@@ -141,26 +145,85 @@ impl TileBuilder {
     pub fn new(h: QueueHandle) -> Self {
         let mut workers = Vec::new();
 
+        // #[cfg(feature = "builder-threaded")]
+        // {
+        // let ncpu = (num_cpus::get() - 1).max(1);
+        // for _ in 0..ncpu {
+        // let h = h.clone();
+        // workers.push(std::thread::spawn(move || self::cpu::worker(h)));
+        // }
+        // }
+        //
+        // #[cfg(feature = "builder-ocl")]
+        // {
+        // use self::ocl::OCLWorker;
+        // if let Ok(mut w) = OCLWorker::new(h.clone()) {
+        // workers.push(std::thread::spawn(move || w.run()));
+        // }
+        // }
+
+        let mut me = TileBuilder { handle: h, workers };
+
         #[cfg(feature = "builder-threaded")]
         {
             let ncpu = (num_cpus::get() - 1).max(1);
             for _ in 0..ncpu {
-                let h = h.clone();
-                workers.push(std::thread::spawn(move || self::cpu::worker(h)));
+                me.add_builder(self::cpu::CPUBuilder { params: None });
             }
         }
 
-        #[cfg(feature = "builder-ocl")]
-        {
-            use self::ocl::OCLWorker;
-            if let Ok(mut w) = OCLWorker::new(h.clone()) {
-                workers.push(std::thread::spawn(move || w.run()));
+        me
+    }
+
+    pub fn add_builder<T: IsTileBuilder + Send + 'static>(&mut self, mut b: T) {
+        let handle = self.handle.clone();
+        self.workers.push(std::thread::spawn(move || loop {
+            let mut version = 0;
+            let mut active = false;
+            loop {
+                let h = match handle.tiles.upgrade() {
+                    Some(h) => h,
+                    None => break,
+                };
+
+                let mut h = h.lock();
+
+                if h.params_version != version {
+                    active = b.configure(&h.params);
+                    version = h.params_version;
+                }
+
+                if !active {
+                    drop(h);
+                    handle.wait();
+                    continue;
+                }
+
+                let next = match h.recv() {
+                    None => {
+                        drop(h);
+                        handle.wait();
+                        continue;
+                    },
+                    Some(next) => next,
+                };
+
+                // make sure the lock is freed before building
+                drop(h);
+
+                // do build
+                let tile = b.build(next);
+
+                let ret = handle.send(TileResponse {
+                    pos: next,
+                    version,
+                    content: tile,
+                });
+
+                if ret.is_err() {
+                    break;
+                }
             }
-        }
-
-        // supress all warnings about cloning h
-        drop(h);
-
-        TileBuilder { workers }
+        }));
     }
 }

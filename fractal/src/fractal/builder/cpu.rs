@@ -1,8 +1,9 @@
-use super::{TileRequest, TileType};
+use super::{IsTileBuilder, TileParams, TileRequest, TileType};
 use crate::fractal::queue::QueueHandle;
 use crate::fractal::queue::TileResponse;
 use crate::fractal::TileContent;
 use crate::math::*;
+use tilemap::TilePos;
 
 pub fn worker(handle: QueueHandle) {
     loop {
@@ -42,6 +43,29 @@ pub fn worker(handle: QueueHandle) {
         if ret.is_err() {
             break;
         }
+    }
+}
+
+pub struct CPUBuilder {
+    pub params: Option<TileParams>,
+}
+
+impl IsTileBuilder for CPUBuilder {
+    fn configure(&mut self, p: &TileParams) -> bool {
+        self.params = Some(p.clone());
+        true
+    }
+
+    fn build(&mut self, pos: TilePos) -> TileContent {
+        let rq = TileRequest {
+            // TODO: remove clone, just borrow
+            params: self.params.as_ref().unwrap().clone(),
+            version: 0,
+            pos,
+        };
+
+        let pixels = build(&rq);
+        TileContent { pixels }
     }
 }
 
