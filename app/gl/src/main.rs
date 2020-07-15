@@ -4,6 +4,7 @@ mod gl;
 mod imm;
 mod program;
 mod shader;
+mod texture;
 
 use self::atlas::Atlas;
 use self::ctx::GLCtx;
