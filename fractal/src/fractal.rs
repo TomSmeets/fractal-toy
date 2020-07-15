@@ -3,12 +3,14 @@ mod content;
 mod queue;
 mod viewport;
 
+pub use self::builder::IsTileBuilder;
+pub use self::builder::TileParams;
 pub use self::builder::TileType;
 pub use self::content::TileContent;
+pub use tilemap::TilePos;
 
-use self::builder::IsTileBuilder;
 use self::builder::TileBuilder;
-use self::builder::{TileParams, TileParamsSave};
+use self::builder::TileParamsSave;
 use self::queue::Queue;
 use self::viewport::{Viewport, ViewportSave};
 use crate::math::*;

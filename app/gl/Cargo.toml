@@ -9,6 +9,7 @@ license = "GPL-v3-or-later"
 tilemap     = { path = "../../tilemap" }
 ui          = { path = "../../ui" }
 fractal-toy = { path = "../../fractal" }
+builder-ocl = { path = "../../builder/ocl" }
 
 glutin    = "0.24.0"
 gilrs     = "0.7.4"

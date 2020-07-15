@@ -41,9 +41,6 @@
 
 pub mod cpu;
 
-#[cfg(feature = "builder-ocl")]
-pub mod ocl;
-
 use crate::fractal::queue::QueueHandle;
 use crate::fractal::queue::TileResponse;
 use crate::fractal::TileContent;
@@ -148,19 +145,11 @@ impl TileBuilder {
             workers: Vec::new(),
         };
 
-        #[cfg(feature = "builder-threaded")]
         {
+            // TODO: also move out to app, maybe simplify
             let ncpu = (num_cpus::get() - 1).max(1);
             for _ in 0..ncpu {
                 me.add_builder(self::cpu::CPUBuilder::new());
-            }
-        }
-
-        #[cfg(feature = "builder-ocl")]
-        {
-            use self::ocl::OCLWorker;
-            if let Ok(w) = OCLWorker::new() {
-                me.add_builder(w);
             }
         }
 

@@ -110,6 +110,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d8c1fef690941d3e7788d328517591fecc684c084084702d6ff1641e993699a"
 
 [[package]]
+name = "builder-ocl"
+version = "0.1.0"
+dependencies = [
+ "fractal-toy",
+ "ocl",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -485,7 +493,6 @@ dependencies = [
  "cgmath",
  "crossbeam-channel",
  "num_cpus",
- "ocl",
  "serde",
  "serde_json",
  "tilemap",
@@ -563,6 +570,7 @@ checksum = "bcc8e0c9bce37868955864dbecd2b1ab2bdf967e6f28066d65aaac620444b65c"
 name = "gl"
 version = "0.1.0"
 dependencies = [
+ "builder-ocl",
  "fractal-toy",
  "gilrs",
  "gl_generator 0.14.0",
@@ -1603,6 +1611,7 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 name = "sdl"
 version = "0.1.0"
 dependencies = [
+ "builder-ocl",
  "fractal-toy",
  "png",
  "sdl2",

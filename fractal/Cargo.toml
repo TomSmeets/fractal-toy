@@ -5,16 +5,6 @@ authors = ["TomSmeets <tom.tsmeets@gmail.com>"]
 edition = "2018"
 license = "GPL-v3-or-later"
 
-[features]
-default = [
-    "builder-threaded",
-    "builder-ocl",
-]
-
-builder-ocl      = [ "ocl" ]
-builder-threaded = []
-builder-single   = []
-
 [dependencies]
 tilemap = { path = "../tilemap" }
 ui      = { path = "../ui" }
@@ -24,5 +14,3 @@ serde_json        = { version = "1.0" }
 cgmath            = { version = "0.17", features = [ "serde" ] }
 crossbeam-channel = { version = "0.4" }
 num_cpus          = { version = "1.13" }
-
-ocl = { version = "0.19", optional = true }

@@ -42,7 +42,11 @@ impl State {
         let ui = UI::new();
 
         let window_size = sdl.output_size();
-        let fractal = Fractal::new(window_size);
+        let mut fractal = Fractal::new(window_size);
+
+        if let Ok(b) = builder_ocl::OCLWorker::new() {
+            fractal.add_builder(b);
+        }
 
         State {
             sdl,

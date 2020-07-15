@@ -1,11 +1,12 @@
-use super::{IsTileBuilder, TileParams};
-use crate::fractal::builder::TileType;
-use crate::fractal::TileContent;
+use fractal_toy::fractal::IsTileBuilder;
+use fractal_toy::fractal::TileContent;
+use fractal_toy::fractal::TileParams;
+use fractal_toy::fractal::TilePos;
+use fractal_toy::fractal::TileType;
 use ocl::enums::{ImageChannelDataType, ImageChannelOrder, MemObjectType};
 use ocl::flags::CommandQueueProperties;
 use ocl::Result as OCLResult;
 use ocl::{Context, Device, Image, Kernel, Program, Queue};
-use tilemap::TilePos;
 
 static SOURCE_TEMPLATE: &str = include_str!("kernel.cl");
 
@@ -21,7 +22,7 @@ impl IsTileBuilder for OCLWorker {
     fn configure(&mut self, p: &TileParams) -> bool {
         self.params = Some(p.clone());
         // TODO: this is blocking and holding the handle lock, check if that is a problem
-        self.program = self.compile(p.kind);
+        self.program = self.compile();
         self.program.is_some()
     }
 
@@ -52,7 +53,8 @@ impl OCLWorker {
         })
     }
 
-    pub fn compile(&mut self, kind: TileType) -> Option<Program> {
+    pub fn compile(&mut self) -> Option<Program> {
+        let params = self.params.as_ref().unwrap();
         let pow2 = r#"
             tmp = z;
             z.x = tmp.x*tmp.x - tmp.y*tmp.y + c.x;
@@ -73,7 +75,7 @@ impl OCLWorker {
         let mut alg = String::new();
         let mut inc = "1.0";
 
-        match kind {
+        match params.kind {
             TileType::Mandelbrot => {
                 alg.push_str(pow2);
             },
@@ -91,10 +93,7 @@ impl OCLWorker {
         }
 
         let new_src = SOURCE_TEMPLATE
-            .replace(
-                "@TEXTURE_SIZE@",
-                &format!("{}.0", super::super::TEXTURE_SIZE),
-            )
+            .replace("@TEXTURE_SIZE@", &format!("{}.0", params.resolution))
             .replace("@ALGORITHM@", &alg)
             .replace("@INC@", inc);
 

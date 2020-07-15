@@ -3,10 +3,12 @@ members = [
     "app/gl",
     "app/sdl",
 
+    # TODO: make web work
+    # "app/web",
+
+    "builder/*",
+
     "fractal",
     "ui",
     "tilemap"
-
-    # TODO: make web work
-    # "web",
 ]
