@@ -38,6 +38,7 @@ fn build(rq: &TileRequest) -> Vec<u8> {
 
     match rq.params.kind {
         TileType::Empty => {
+            // TODO: move out to a seperate builder, the debug builder
             for y in 0..texture_size {
                 for x in 0..texture_size {
                     let i = y * texture_size + x;
