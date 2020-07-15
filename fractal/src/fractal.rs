@@ -42,9 +42,9 @@ pub struct Fractal<T> {
     pub params: TileParams,
     pub clear: bool,
     pub tiles: TileMap<T>,
-    pub queue: Queue,
 
-    pub builder: TileBuilder,
+    queue: Queue,
+    builder: TileBuilder,
 }
 
 impl<T> Fractal<T> {
