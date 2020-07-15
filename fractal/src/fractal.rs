@@ -43,9 +43,9 @@ pub struct Fractal<T> {
     // NOTE: pos is public, so no need to forward its methods
     pub pos: Viewport,
     pub params: TileParams,
-    pub clear: bool,
     pub tiles: TileMap<T>,
 
+    clear: bool,
     queue: Queue,
     builder: TileBuilder,
 }
