@@ -91,7 +91,7 @@ impl GLCtx {
                 None => texture = Some(tile.index.z),
                 Some(t) => {
                     if t != tile.index.z {
-                        self.imm.draw(atlas.texture[t as usize] as i32, gl);
+                        self.imm.draw(atlas.texture[t as usize].id() as i32, gl);
                         texture = Some(tile.index.z);
                     }
                 }
@@ -116,7 +116,7 @@ impl GLCtx {
 
         // what is this?
         if let Some(texture) = texture {
-            self.imm.draw(atlas.texture[texture as usize] as i32, gl);
+            self.imm.draw(atlas.texture[texture as usize].id() as i32, gl);
         }
 
         // TODO: this is very wrong and does not work, use a seperate shader for ui
@@ -147,7 +147,7 @@ impl GLCtx {
                 self.imm.push(Vertex { pos: [lx, hy], col, tex: [ 0.0, 1.0 ] });
                 self.imm.push(Vertex { pos: [hx, hy], col, tex: [ 1.0, 1.0 ] });
                 self.imm.push(Vertex { pos: [lx, ly], col, tex: [ 0.0, 0.0 ] });
-                self.imm.draw(atlas.texture[0] as i32, gl);
+                self.imm.draw(atlas.texture[0].id() as i32, gl);
             }
         }
     }

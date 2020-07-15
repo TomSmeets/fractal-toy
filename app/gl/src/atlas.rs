@@ -5,21 +5,17 @@ use fractal_toy::atlas::AtlasRegion;
 use fractal_toy::atlas::SimpleAtlas;
 use fractal_toy::fractal::TileTextureProvider;
 
-pub struct Atlas {
-    pub simple: SimpleAtlas,
-    pub texture: Vec<GLuint>,
+pub struct TextureSettings {
+    width: u32,
+    height: u32,
 }
 
-impl Atlas {
-    pub fn new() -> Self {
-        Atlas {
-            simple: SimpleAtlas::new(),
-            texture: Vec::new(),
-        }
-    }
+pub struct Texture {
+    id: GLuint,
+}
 
-    fn create_page(&mut self, gl: &mut Gl) -> GLuint {
-        let s = self.simple.size * self.simple.res;
+impl Texture {
+    pub fn new(gl: &mut Gl, param: &TextureSettings) -> Self {
         let mut texture = 0;
         unsafe {
             gl.GenTextures(1, &mut texture);
@@ -32,28 +28,68 @@ impl Atlas {
                 gl::TEXTURE_2D,
                 0,
                 gl::RGBA8 as _,
-                s as _,
-                s as _,
+                param.width as _,
+                param.height as _,
                 0,
                 gl::RGBA as _,
                 gl::UNSIGNED_BYTE as _,
                 std::ptr::null(),
             );
         }
+
+        Texture { id: texture }
+    }
+
+    pub fn id(&self) -> GLuint {
+        self.id
+    }
+}
+
+impl Drop for Texture {
+    fn drop(&mut self) {
+        unsafe {
+            let gl = crate::static_gl();
+            gl.DeleteTextures(1, &self.id);
+        }
+    }
+}
+
+pub struct Atlas {
+    pub simple: SimpleAtlas,
+    pub texture: Vec<Texture>,
+}
+
+impl Atlas {
+    pub fn new() -> Self {
+        Atlas {
+            simple: SimpleAtlas::new(),
+            texture: Vec::new(),
+        }
+    }
+
+    fn create_page(&mut self, gl: &mut Gl) -> &mut Texture {
+        let s = self.simple.size * self.simple.res;
+
+        let texture = Texture::new(gl, &TextureSettings {
+            width: s,
+            height: s,
+        });
+
         self.texture.push(texture);
-        texture
+        self.texture.last_mut().unwrap()
     }
 
     pub fn alloc(&mut self, gl: &mut Gl, pixels: &[u8]) -> AtlasRegion {
         let region = self.simple.alloc();
+
         let texture = match self.texture.get_mut(region.index.z as usize) {
-            Some(texture) => *texture,
+            Some(texture) => texture,
             None => self.create_page(gl),
         };
 
         let rect = region.rect();
         unsafe {
-            gl.BindTexture(gl::TEXTURE_2D, texture);
+            gl.BindTexture(gl::TEXTURE_2D, texture.id());
             gl.TexSubImage2D(
                 gl::TEXTURE_2D,
                 0,
@@ -75,17 +111,6 @@ impl Atlas {
 
     pub fn provider<'a>(&'a mut self, gl: &'a mut Gl) -> Provider<'a> {
         Provider { atlas: self, gl }
-    }
-}
-
-impl Drop for Atlas {
-    fn drop(&mut self) {
-        unsafe {
-            let gl = crate::static_gl();
-            for texture in self.texture.drain(..) {
-                gl.DeleteTextures(1, &texture);
-            }
-        }
     }
 }
 
