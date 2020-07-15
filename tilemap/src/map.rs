@@ -4,11 +4,12 @@ use std::collections::BTreeMap;
 
 type Iter<'a, T> = std::collections::btree_map::Iter<'a, TilePos, T>;
 type IterMut<'a, T> = std::collections::btree_map::IterMut<'a, TilePos, T>;
+type IntoIter<T> = std::collections::btree_map::IntoIter<TilePos, T>;
 
 /// Remembers generated tiles, and adds new ones
 pub struct TileMap<T> {
     // NOTE: it is a BTree because it has to be sorted
-    pub tiles: BTreeMap<TilePos, T>,
+    tiles: BTreeMap<TilePos, T>,
 }
 
 impl<T> TileMap<T> {
@@ -16,22 +17,6 @@ impl<T> TileMap<T> {
         TileMap {
             tiles: BTreeMap::new(),
         }
-    }
-
-    pub fn clear(&mut self) {
-        self.tiles.clear();
-    }
-
-    pub fn iter(&self) -> Iter<T> {
-        self.tiles.iter()
-    }
-
-    pub fn iter_mut(&mut self) -> IterMut<T> {
-        self.tiles.iter_mut()
-    }
-
-    pub fn get_mut(&mut self, k: &TilePos) -> Option<&mut T> {
-        self.tiles.get_mut(k)
     }
 
     // No more destructor please, use drop
@@ -64,6 +49,30 @@ impl<T> TileMap<T> {
                 },
             }
         }
+    }
+
+    pub fn clear(&mut self) {
+        self.tiles.clear();
+    }
+
+    pub fn iter(&self) -> Iter<T> {
+        self.tiles.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<T> {
+        self.tiles.iter_mut()
+    }
+
+    pub fn into_iter(self) -> IntoIter<T> {
+        self.tiles.into_iter()
+    }
+
+    pub fn get_mut(&mut self, k: &TilePos) -> Option<&mut T> {
+        self.tiles.get_mut(k)
+    }
+
+    pub fn insert(&mut self, k: TilePos, v: T) -> Option<T> {
+        self.tiles.insert(k, v)
     }
 }
 

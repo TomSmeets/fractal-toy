@@ -84,7 +84,7 @@ impl<T> Fractal<T> {
         if self.clear {
             self.queue.set_params(&self.params);
             let tiles = std::mem::replace(&mut self.tiles, TileMap::new());
-            for (_, t) in tiles.tiles.into_iter() {
+            for (_, t) in tiles.into_iter() {
                 texture_creator.free(t);
             }
             self.clear = false;
@@ -99,7 +99,7 @@ impl<T> Fractal<T> {
             }
 
             let t = texture_creator.alloc(&r.content.pixels);
-            self.tiles.tiles.insert(r.pos, t);
+            self.tiles.insert(r.pos, t);
         }
 
         // Free textures
