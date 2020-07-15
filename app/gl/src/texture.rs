@@ -1,6 +1,7 @@
 use crate::gl;
 use crate::gl::types::GLuint;
 use crate::gl::Gl;
+use fractal_toy::math::Rect;
 
 pub struct TextureSettings {
     pub width: u32,
@@ -39,6 +40,23 @@ impl Texture {
 
     pub fn id(&self) -> GLuint {
         self.id
+    }
+
+    pub fn write(&mut self, gl: &mut Gl, rect: Rect, pixels: &[u8]) {
+        unsafe {
+            gl.BindTexture(gl::TEXTURE_2D, self.id());
+            gl.TexSubImage2D(
+                gl::TEXTURE_2D,
+                0,
+                rect.pos.x,
+                rect.pos.y,
+                rect.size.x,
+                rect.size.y,
+                gl::RGBA,
+                gl::UNSIGNED_BYTE,
+                pixels.as_ptr() as _,
+            );
+        }
     }
 }
 

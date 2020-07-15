@@ -1,4 +1,3 @@
-use crate::gl;
 use crate::gl::Gl;
 use crate::texture::Texture;
 use crate::texture::TextureSettings;
@@ -40,20 +39,7 @@ impl Atlas {
         };
 
         let rect = region.rect();
-        unsafe {
-            gl.BindTexture(gl::TEXTURE_2D, texture.id());
-            gl.TexSubImage2D(
-                gl::TEXTURE_2D,
-                0,
-                rect.pos.x,
-                rect.pos.y,
-                rect.size.x,
-                rect.size.y,
-                gl::RGBA,
-                gl::UNSIGNED_BYTE,
-                pixels.as_ptr() as _,
-            );
-        }
+        texture.write(gl, rect, pixels);
         region
     }
 
