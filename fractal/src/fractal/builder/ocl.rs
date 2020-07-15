@@ -1,5 +1,5 @@
 use super::{IsTileBuilder, TileParams};
-use crate::fractal::builder::{TileRequest, TileType};
+use crate::fractal::builder::TileType;
 use crate::fractal::TileContent;
 use ocl::enums::{ImageChannelDataType, ImageChannelOrder, MemObjectType};
 use ocl::flags::CommandQueueProperties;
@@ -21,18 +21,12 @@ impl IsTileBuilder for OCLWorker {
     fn configure(&mut self, p: &TileParams) -> bool {
         self.params = Some(p.clone());
         // TODO: this is blocking and holding the handle lock, check if that is a problem
-        self.program = self.compile();
+        self.program = self.compile(p.kind);
         self.program.is_some()
     }
 
     fn build(&mut self, pos: TilePos) -> TileContent {
-        let rq = TileRequest {
-            // TODO: remove clone, just borrow
-            params: self.params.as_ref().unwrap().clone(),
-            version: 0,
-            pos,
-        };
-        self.process(&rq)
+        self.process(pos)
     }
 }
 
@@ -58,7 +52,7 @@ impl OCLWorker {
         })
     }
 
-    pub fn compile(&mut self) -> Option<Program> {
+    pub fn compile(&mut self, kind: TileType) -> Option<Program> {
         let pow2 = r#"
             tmp = z;
             z.x = tmp.x*tmp.x - tmp.y*tmp.y + c.x;
@@ -79,7 +73,7 @@ impl OCLWorker {
         let mut alg = String::new();
         let mut inc = "1.0";
 
-        match self.params.as_ref().unwrap().kind {
+        match kind {
             TileType::Mandelbrot => {
                 alg.push_str(pow2);
             },
@@ -113,10 +107,12 @@ impl OCLWorker {
         )
     }
 
-    fn process(&mut self, p: &TileRequest) -> TileContent {
+    fn process(&mut self, pos: TilePos) -> TileContent {
         let program = self.program.as_ref().unwrap();
 
-        let texture_size = p.params.resolution as usize;
+        let params = self.params.as_ref().unwrap();
+
+        let texture_size = params.resolution as usize;
 
         let mut img = vec![0; texture_size * texture_size * 4];
         let dims = (texture_size, texture_size);
@@ -136,10 +132,9 @@ impl OCLWorker {
             .build()
             .unwrap();
 
-        let rect = p
-            .pos
+        let rect = pos
             .square()
-            .grow_relative(p.params.padding as f64 / p.params.resolution as f64);
+            .grow_relative(params.padding as f64 / params.resolution as f64);
 
         let kernel = Kernel::builder()
             .program(&program)
@@ -147,7 +142,7 @@ impl OCLWorker {
             .queue(self.cqueue.clone())
             .global_work_size(&dims)
             .arg(&dst_image)
-            .arg(p.params.iterations as f32)
+            .arg(params.iterations as f32)
             .arg(rect.x)
             .arg(rect.y)
             .arg(rect.w)
