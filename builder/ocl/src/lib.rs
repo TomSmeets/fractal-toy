@@ -1,8 +1,8 @@
-use fractal_toy::fractal::IsTileBuilder;
-use fractal_toy::fractal::TileContent;
-use fractal_toy::fractal::TileParams;
-use fractal_toy::fractal::TilePos;
-use fractal_toy::fractal::TileType;
+use fractal_toy::IsTileBuilder;
+use fractal_toy::TileContent;
+use fractal_toy::TileParams;
+use fractal_toy::TilePos;
+use fractal_toy::TileType;
 use ocl::enums::{ImageChannelDataType, ImageChannelOrder, MemObjectType};
 use ocl::flags::CommandQueueProperties;
 use ocl::Result as OCLResult;

@@ -13,3 +13,9 @@ pub use self::atlas::Atlas;
 pub use self::colorscheme::ColorScheme;
 pub use self::fractal::Fractal;
 pub use self::input::Input;
+
+pub use self::fractal::builder::IsTileBuilder;
+pub use self::fractal::builder::TileParams;
+pub use self::fractal::builder::TileType;
+pub use self::fractal::content::TileContent;
+pub use tilemap::TilePos;

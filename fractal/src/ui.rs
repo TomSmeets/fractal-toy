@@ -1,7 +1,7 @@
-use crate::fractal::Fractal;
-use crate::fractal::TileType;
 use crate::math::Rect;
 use crate::math::V2i;
+use crate::Fractal;
+use crate::TileType;
 
 use ::ui::Id;
 use ::ui::UIStack;
