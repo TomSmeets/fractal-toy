@@ -53,7 +53,7 @@ impl OCLWorker {
         })
     }
 
-    pub fn compile(&mut self) -> Option<Program> {
+    fn compile(&mut self) -> Option<Program> {
         let params = self.params.as_ref().unwrap();
         let pow2 = r#"
             tmp = z;
