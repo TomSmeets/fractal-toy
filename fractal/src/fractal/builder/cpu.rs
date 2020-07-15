@@ -4,7 +4,13 @@ use crate::math::*;
 use tilemap::TilePos;
 
 pub struct CPUBuilder {
-    pub params: Option<TileParams>,
+    params: Option<TileParams>,
+}
+
+impl CPUBuilder {
+    pub fn new() -> CPUBuilder {
+        CPUBuilder { params: None }
+    }
 }
 
 impl IsTileBuilder for CPUBuilder {

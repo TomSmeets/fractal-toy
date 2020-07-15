@@ -152,7 +152,7 @@ impl TileBuilder {
         {
             let ncpu = (num_cpus::get() - 1).max(1);
             for _ in 0..ncpu {
-                me.add_builder(self::cpu::CPUBuilder { params: None });
+                me.add_builder(self::cpu::CPUBuilder::new());
             }
         }
 
