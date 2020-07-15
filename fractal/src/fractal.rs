@@ -17,6 +17,7 @@ use crate::ColorScheme;
 use serde::{Deserialize, Serialize};
 use tilemap::Task;
 use tilemap::TileMap;
+use tilemap::TilePos;
 
 // We are blending the textures
 pub const PADDING: u32 = 1;
@@ -102,6 +103,16 @@ impl<T> Fractal<T> {
         let new_iter = self.pos.get_pos_all();
         self.tiles
             .update_with(new_iter, |_, v| texture_creator.free(v), |_| None);
+    }
+
+    pub fn debug_tiles(&mut self) -> Vec<(TilePos, Task)> {
+        self.queue
+            .tiles
+            .lock_high()
+            .map
+            .iter()
+            .map(|(a, b)| (*a, *b))
+            .collect()
     }
 }
 

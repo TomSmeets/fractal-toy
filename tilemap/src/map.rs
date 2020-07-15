@@ -6,7 +6,7 @@ type Iter<'a, T> = std::collections::btree_map::Iter<'a, TilePos, T>;
 type IterMut<'a, T> = std::collections::btree_map::IterMut<'a, TilePos, T>;
 
 // TODO: move task out of here
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Task {
     Todo,
     Doing,

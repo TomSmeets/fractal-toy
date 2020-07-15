@@ -123,10 +123,8 @@ impl State {
         }
 
         if self.input.input.debug {
-            let ts = self.fractal.queue.tiles.lock_high();
-
-            for (k, v) in ts.map.iter() {
-                let r = self.fractal.pos.pos_to_rect(k);
+            for (k, v) in self.fractal.debug_tiles().into_iter() {
+                let r = self.fractal.pos.pos_to_rect(&k);
                 match v {
                     Task::Todo => {
                         self.sdl.canvas.set_draw_color(Color::RGB(0, 0, 255));
