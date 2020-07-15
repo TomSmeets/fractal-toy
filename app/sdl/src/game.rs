@@ -123,7 +123,7 @@ impl State {
         }
 
         if self.input.input.debug {
-            for (k, v) in self.fractal.debug_tiles().into_iter() {
+            for (k, v) in self.fractal.debug_queue_tiles().into_iter() {
                 let r = self.fractal.pos.pos_to_rect(&k);
                 match v {
                     Task::Todo => {
