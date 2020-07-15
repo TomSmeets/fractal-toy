@@ -7,8 +7,8 @@ use crossbeam_channel::{Receiver, Sender};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex, MutexGuard, Weak};
-use tilemap::TilePos;
 use tilemap::TileMap;
+use tilemap::TilePos;
 
 /// Mutex that can give the main thread priority over worker threads when locking a mutex
 /// NOTE: it does not work that well however, but well leave it in for now

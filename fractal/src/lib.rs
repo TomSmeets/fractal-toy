@@ -18,4 +18,5 @@ pub use self::fractal::builder::IsTileBuilder;
 pub use self::fractal::builder::TileParams;
 pub use self::fractal::builder::TileType;
 pub use self::fractal::content::TileContent;
+pub use self::fractal::Task;
 pub use tilemap::TilePos;

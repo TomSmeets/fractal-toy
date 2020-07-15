@@ -15,13 +15,18 @@ use crate::math::*;
 use crate::state::Reload;
 use crate::ColorScheme;
 use serde::{Deserialize, Serialize};
-use tilemap::Task;
 use tilemap::TileMap;
 use tilemap::TilePos;
 
 // We are blending the textures
 pub const PADDING: u32 = 1;
 pub const TEXTURE_SIZE: usize = 64 * 2;
+
+#[derive(Debug, Copy, Clone)]
+pub enum Task {
+    Todo,
+    Doing,
+}
 
 /// Something that can build textures from tile pixels
 // TODO: this is very ugly, kindly remove this

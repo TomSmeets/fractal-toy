@@ -9,13 +9,14 @@ use fractal_toy::state::Reload;
 use fractal_toy::time::DeltaTime;
 use fractal_toy::ui;
 use fractal_toy::ui::UI;
-use fractal_toy::{Fractal, Input};
+use fractal_toy::Fractal;
+use fractal_toy::Input;
+use fractal_toy::Task;
 use sdl2::event::{Event, WindowEvent};
 use sdl2::pixels::Color;
 use sdl2::render::Texture;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use tilemap::Task;
 
 pub struct State {
     sdl: Sdl,

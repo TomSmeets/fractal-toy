@@ -5,13 +5,6 @@ use std::collections::BTreeMap;
 type Iter<'a, T> = std::collections::btree_map::Iter<'a, TilePos, T>;
 type IterMut<'a, T> = std::collections::btree_map::IterMut<'a, TilePos, T>;
 
-// TODO: move task out of here
-#[derive(Debug, Copy, Clone)]
-pub enum Task {
-    Todo,
-    Doing,
-}
-
 /// Remembers generated tiles, and adds new ones
 pub struct TileMap<T> {
     // NOTE: it is a BTree because it has to be sorted
