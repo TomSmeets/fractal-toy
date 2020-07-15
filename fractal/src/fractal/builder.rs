@@ -142,33 +142,25 @@ pub struct TileBuilder {
 }
 
 impl TileBuilder {
-    pub fn new(h: QueueHandle) -> Self {
-        let mut workers = Vec::new();
-
-        // #[cfg(feature = "builder-threaded")]
-        // {
-        // let ncpu = (num_cpus::get() - 1).max(1);
-        // for _ in 0..ncpu {
-        // let h = h.clone();
-        // workers.push(std::thread::spawn(move || self::cpu::worker(h)));
-        // }
-        // }
-        //
-        // #[cfg(feature = "builder-ocl")]
-        // {
-        // use self::ocl::OCLWorker;
-        // if let Ok(mut w) = OCLWorker::new(h.clone()) {
-        // workers.push(std::thread::spawn(move || w.run()));
-        // }
-        // }
-
-        let mut me = TileBuilder { handle: h, workers };
+    pub fn new(handle: QueueHandle) -> Self {
+        let mut me = TileBuilder {
+            handle,
+            workers: Vec::new(),
+        };
 
         #[cfg(feature = "builder-threaded")]
         {
             let ncpu = (num_cpus::get() - 1).max(1);
             for _ in 0..ncpu {
                 me.add_builder(self::cpu::CPUBuilder { params: None });
+            }
+        }
+
+        #[cfg(feature = "builder-ocl")]
+        {
+            use self::ocl::OCLWorker;
+            if let Ok(w) = OCLWorker::new() {
+                me.add_builder(w);
             }
         }
 

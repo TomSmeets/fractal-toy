@@ -1,11 +1,11 @@
+use super::{IsTileBuilder, TileParams};
 use crate::fractal::builder::{TileRequest, TileType};
-use crate::fractal::queue::QueueHandle;
-use crate::fractal::queue::TileResponse;
 use crate::fractal::TileContent;
 use ocl::enums::{ImageChannelDataType, ImageChannelOrder, MemObjectType};
 use ocl::flags::CommandQueueProperties;
 use ocl::Result as OCLResult;
 use ocl::{Context, Device, Image, Kernel, Program, Queue};
+use tilemap::TilePos;
 
 static SOURCE_TEMPLATE: &str = include_str!("kernel.cl");
 
@@ -14,15 +14,31 @@ pub struct OCLWorker {
     device: Device,
     cqueue: Queue,
     program: Option<Program>,
+    params: Option<TileParams>,
+}
 
-    handle: QueueHandle,
+impl IsTileBuilder for OCLWorker {
+    fn configure(&mut self, p: &TileParams) -> bool {
+        self.params = Some(p.clone());
+        // TODO: this is blocking and holding the handle lock, check if that is a problem
+        self.program = self.compile();
+        self.program.is_some()
+    }
 
-    kind: TileType,
+    fn build(&mut self, pos: TilePos) -> TileContent {
+        let rq = TileRequest {
+            // TODO: remove clone, just borrow
+            params: self.params.as_ref().unwrap().clone(),
+            version: 0,
+            pos,
+        };
+        self.process(&rq)
+    }
 }
 
 impl OCLWorker {
     // will return Err(_) when unavaliable, or verision mismatch
-    pub fn new(handle: QueueHandle) -> OCLResult<Self> {
+    pub fn new() -> OCLResult<Self> {
         let context = Context::builder()
             .devices(Device::specifier().first())
             .build()?;
@@ -38,8 +54,7 @@ impl OCLWorker {
             device,
             cqueue,
             program: None,
-            handle,
-            kind: TileType::Empty,
+            params: None,
         })
     }
 
@@ -64,7 +79,7 @@ impl OCLWorker {
         let mut alg = String::new();
         let mut inc = "1.0";
 
-        match self.kind {
+        match self.params.as_ref().unwrap().kind {
             TileType::Mandelbrot => {
                 alg.push_str(pow2);
             },
@@ -146,57 +161,5 @@ impl OCLWorker {
         dst_image.read(&mut img).enq().unwrap();
 
         TileContent::new(img)
-    }
-
-    pub fn run(&mut self) {
-        loop {
-            let h = match self.handle.tiles.upgrade() {
-                Some(h) => h,
-                None => break,
-            };
-
-            let mut h = h.lock();
-
-            if h.params.kind != self.kind || self.program.is_none() {
-                self.kind = h.params.kind;
-                self.program = self.compile();
-            }
-
-            if self.program.is_none() {
-                drop(h);
-                self.handle.wait();
-                continue;
-            }
-
-            let next = match h.recv() {
-                None => {
-                    drop(h);
-                    self.handle.wait();
-                    continue;
-                },
-                Some(next) => next,
-            };
-
-            let next = TileRequest {
-                params: h.params.clone(),
-                version: h.params_version,
-                pos: next,
-            };
-
-            // make sure the lock is freed
-            drop(h);
-
-            let tile = self.process(&next);
-
-            let ret = self.handle.send(TileResponse {
-                pos: next.pos,
-                version: next.version,
-                content: tile,
-            });
-
-            if ret.is_err() {
-                break;
-            }
-        }
     }
 }

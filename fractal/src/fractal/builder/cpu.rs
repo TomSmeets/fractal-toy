@@ -1,50 +1,7 @@
 use super::{IsTileBuilder, TileParams, TileRequest, TileType};
-use crate::fractal::queue::QueueHandle;
-use crate::fractal::queue::TileResponse;
 use crate::fractal::TileContent;
 use crate::math::*;
 use tilemap::TilePos;
-
-pub fn worker(handle: QueueHandle) {
-    loop {
-        let h = match handle.tiles.upgrade() {
-            Some(h) => h,
-            None => break,
-        };
-
-        let mut h = h.lock();
-
-        let next = match h.recv() {
-            None => {
-                drop(h);
-                handle.wait();
-                continue;
-            },
-            Some(next) => next,
-        };
-
-        let next = TileRequest {
-            params: h.params.clone(),
-            version: h.params_version,
-            pos: next,
-        };
-
-        // make sure the lock is freed
-        drop(h);
-
-        let tile = TileContent::new(build(&next));
-
-        let ret = handle.send(TileResponse {
-            pos: next.pos,
-            version: next.version,
-            content: tile,
-        });
-
-        if ret.is_err() {
-            break;
-        }
-    }
-}
 
 pub struct CPUBuilder {
     pub params: Option<TileParams>,
@@ -69,7 +26,7 @@ impl IsTileBuilder for CPUBuilder {
     }
 }
 
-pub fn build(rq: &TileRequest) -> Vec<u8> {
+fn build(rq: &TileRequest) -> Vec<u8> {
     let texture_size = rq.params.resolution as usize;
     let mut pixels = vec![0; texture_size * texture_size * 4];
 
