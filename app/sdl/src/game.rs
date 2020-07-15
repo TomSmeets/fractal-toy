@@ -136,7 +136,6 @@ impl State {
                         self.sdl.canvas.set_draw_color(Color::RGB(255, 0, 0));
                         self.sdl.canvas.draw_rect(rect_to_sdl(r)).unwrap();
                     },
-                    _ => (),
                 }
             }
         }

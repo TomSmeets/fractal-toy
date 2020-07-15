@@ -30,7 +30,7 @@ pub trait TileTextureProvider {
     fn free(&mut self, texture: Self::Texture);
 }
 
-pub type TaskMap = TileMap<Task<TileContent>>;
+pub type TaskMap = TileMap<Task>;
 
 /// After so many updates, i am not entierly sure what this struct is supposed to become
 // TODO: use nano/microserde? it allows for derives, however no enums :(

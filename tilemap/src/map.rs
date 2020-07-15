@@ -7,10 +7,9 @@ type IterMut<'a, T> = std::collections::btree_map::IterMut<'a, TilePos, T>;
 
 // TODO: move task out of here
 #[derive(Debug)]
-pub enum Task<T> {
+pub enum Task {
     Todo,
     Doing,
-    Done(T),
 }
 
 /// Remembers generated tiles, and adds new ones
