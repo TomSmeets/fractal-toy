@@ -1,6 +1,5 @@
 use crate::fractal::builder::TileParams;
 use crate::fractal::Task;
-use crate::fractal::TaskMap;
 use crate::fractal::TileContent;
 use crate::fractal::Viewport;
 use crossbeam_channel::bounded;
@@ -9,6 +8,7 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex, MutexGuard, Weak};
 use tilemap::TilePos;
+use tilemap::TileMap;
 
 /// Mutex that can give the main thread priority over worker threads when locking a mutex
 /// NOTE: it does not work that well however, but well leave it in for now
@@ -44,7 +44,7 @@ impl<T> PrioMutex<T> {
 }
 
 pub struct TaskMapWithParams {
-    pub map: TaskMap,
+    pub map: TileMap<Task>,
     pub params: TileParams,
     pub params_version: usize,
 }
@@ -123,7 +123,7 @@ impl Queue {
         let (out_tx, out_rx) = bounded(64);
 
         let tiles = Arc::new(PrioMutex::new(TaskMapWithParams {
-            map: TaskMap::new(),
+            map: TileMap::new(),
             params_version: 1,
             params,
         }));
