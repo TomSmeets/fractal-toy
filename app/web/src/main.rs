@@ -1,7 +1,7 @@
-use fractal_toy::fractal::TileTextureProvider;
-use fractal_toy::fractal::TEXTURE_SIZE;
+use fractal_toy::TileTextureProvider;
+use fractal_toy::TEXTURE_SIZE;
 use fractal_toy::math::*;
-use fractal_toy::time::DeltaTime;
+use fractal_toy::DeltaTime;
 use fractal_toy::Fractal;
 use fractal_toy::Input;
 use std::cell::RefCell;

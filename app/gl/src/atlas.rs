@@ -1,9 +1,9 @@
 use crate::gl::Gl;
 use crate::texture::Texture;
 use crate::texture::TextureSettings;
-use fractal_toy::atlas::AtlasRegion;
-use fractal_toy::atlas::SimpleAtlas;
-use fractal_toy::fractal::TileTextureProvider;
+use fractal_toy::AtlasRegion;
+use fractal_toy::SimpleAtlas;
+use fractal_toy::TileTextureProvider;
 
 pub struct Atlas {
     pub simple: SimpleAtlas,

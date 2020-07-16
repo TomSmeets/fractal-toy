@@ -1,8 +1,8 @@
 use crate::rect_to_sdl;
-use fractal_toy::atlas::AtlasTextureProvider;
-use fractal_toy::fractal::TEXTURE_SIZE;
 use fractal_toy::math::Rect as MRect;
 use fractal_toy::math::*;
+use fractal_toy::AtlasTextureProvider;
+use fractal_toy::TEXTURE_SIZE;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::rect::Rect;
 use sdl2::render::Texture;

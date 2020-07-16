@@ -5,8 +5,8 @@ mod sdl;
 
 use self::game::State;
 use fractal_toy::math::Rect;
-use fractal_toy::state::Persist;
-use fractal_toy::state::Reload;
+use fractal_toy::Persist;
+use fractal_toy::Reload;
 
 pub fn rect_to_sdl(r: Rect) -> sdl2::rect::Rect {
     sdl2::rect::Rect::new(r.pos.x, r.pos.y, r.size.x as u32, r.size.y as u32)

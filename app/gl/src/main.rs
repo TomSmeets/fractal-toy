@@ -9,12 +9,12 @@ mod texture;
 use self::atlas::Atlas;
 use self::ctx::GLCtx;
 use self::gl::Gl;
-use fractal_toy::atlas::AtlasRegion;
 use fractal_toy::math::*;
-use fractal_toy::time::DeltaTime;
-use fractal_toy::ui::UI;
+use fractal_toy::AtlasRegion;
+use fractal_toy::DeltaTime;
 use fractal_toy::Fractal;
 use fractal_toy::Input;
+use fractal_toy::UI;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::{ControlFlow, EventLoop};
 use glutin::window::WindowBuilder;
@@ -154,8 +154,8 @@ fn main() {
                         // fractal.pos.offset.y = offset[1] as f64;
 
                         Slider::new(im_str!("zoom"), 0.0..=48.5).build(&ui, &mut fractal.pos.zoom);
-                        use fractal_toy::input::InputAction;
-                        use fractal_toy::input::InputEvent;
+                        use fractal_toy::InputAction;
+                        use fractal_toy::InputEvent;
                         if ui.button(im_str!("Iter+"), [60.0, 30.0]) {
                             input
                                 .events

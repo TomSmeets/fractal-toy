@@ -1,6 +1,6 @@
-use fractal_toy::input::Input;
-use fractal_toy::input::InputAction;
-use fractal_toy::input::InputEvent;
+use fractal_toy::Input;
+use fractal_toy::InputAction;
+use fractal_toy::InputEvent;
 use sdl2::controller::Axis;
 use sdl2::controller::Button;
 use sdl2::event::*;
