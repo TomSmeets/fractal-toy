@@ -132,60 +132,71 @@ impl TileBuilder {
             // TODO: also move out to app, maybe simplify
             let ncpu = (num_cpus::get() - 1).max(1);
             for _ in 0..ncpu {
-                me.add_builder(self::cpu::CPUBuilder::new());
+                me.add_builder(|| self::cpu::CPUBuilder::new());
             }
         }
 
         me
     }
 
-    pub fn add_builder<T: IsTileBuilder + Send + 'static>(&mut self, mut b: T) {
+    // TODO: do builders realy have to be Send and 'static? Maybe construct via a closure?
+    // TODO: What about an single threaded application? threads are hard in web.
+    pub fn add_builder<T, F>(&mut self, f: F)
+    where
+        T: IsTileBuilder,
+        F: FnOnce() -> T + Send + 'static,
+    {
         let handle = self.handle.clone();
-        self.workers.push(std::thread::spawn(move || loop {
-            let mut version = 0;
-            let mut active = false;
+
+        // TODO: how do we handle cpu affinity for threads?
+        self.workers.push(std::thread::spawn(move || {
+            let mut b = f();
             loop {
-                let h = match handle.tiles.upgrade() {
-                    Some(h) => h,
-                    None => break,
-                };
+                let mut version = 0;
+                let mut active = false;
+                loop {
+                    let h = match handle.tiles.upgrade() {
+                        Some(h) => h,
+                        None => break,
+                    };
 
-                let mut h = h.lock();
+                    let mut h = h.lock();
 
-                if h.params_version != version {
-                    active = b.configure(&h.params);
-                    version = h.params_version;
-                }
+                    if h.params_version != version {
+                        active = b.configure(&h.params);
+                        version = h.params_version;
+                    }
 
-                if !active {
-                    drop(h);
-                    handle.wait();
-                    continue;
-                }
-
-                let next = match h.recv() {
-                    None => {
+                    if !active {
                         drop(h);
                         handle.wait();
                         continue;
-                    },
-                    Some(next) => next,
-                };
+                    }
 
-                // make sure the lock is freed before building
-                drop(h);
+                    let next = match h.recv() {
+                        None => {
+                            drop(h);
+                            handle.wait();
+                            continue;
+                        },
+                        Some(next) => next,
+                    };
 
-                // do build
-                let tile = b.build(next);
+                    // make sure the lock is freed before building
+                    drop(h);
 
-                let ret = handle.send(TileResponse {
-                    pos: next,
-                    version,
-                    content: tile,
-                });
+                    // do build
+                    let tile = b.build(next);
 
-                if ret.is_err() {
-                    break;
+                    let ret = handle.send(TileResponse {
+                        pos: next,
+                        version,
+                        content: tile,
+                    });
+
+                    if ret.is_err() {
+                        break;
+                    }
                 }
             }
         }));

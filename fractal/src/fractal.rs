@@ -72,8 +72,13 @@ impl<T> Fractal<T> {
         }
     }
 
-    pub fn add_builder<B: IsTileBuilder + Send + 'static>(&mut self, b: B) {
-        self.builder.add_builder(b);
+    // TODO: Remove and add access to builder or move the logic here
+    pub fn add_builder<B, F>(&mut self, f: F)
+    where
+        B: IsTileBuilder,
+        F: FnOnce() -> B + Send + 'static,
+    {
+        self.builder.add_builder(f);
     }
 
     pub fn reload(&mut self) {

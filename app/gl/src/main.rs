@@ -88,7 +88,7 @@ fn main() {
     let mut fractal: Fractal<AtlasRegion> = Fractal::new(Vector2::new(800, 600));
 
     if let Ok(b) = builder_ocl::OCLWorker::new() {
-        fractal.add_builder(b);
+        fractal.add_builder(|| b);
     }
 
     let mut input = Input::new();
