@@ -13,7 +13,6 @@ use self::queue::Queue;
 use self::viewport::{Viewport, ViewportSave};
 use crate::math::*;
 use crate::state::Reload;
-use crate::ColorScheme;
 use serde::{Deserialize, Serialize};
 use tilemap::TileMap;
 use tilemap::TilePos;
@@ -57,7 +56,6 @@ impl<T> Fractal<T> {
             iterations: 64,
             resolution: TEXTURE_SIZE as u32,
             padding: PADDING,
-            color: ColorScheme::new(),
         };
 
         let queue = Queue::new(params.clone());

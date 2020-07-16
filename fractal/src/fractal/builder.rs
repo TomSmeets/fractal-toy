@@ -28,7 +28,6 @@ use crate::fractal::queue::QueueHandle;
 use crate::fractal::queue::TileResponse;
 use crate::fractal::TileContent;
 use crate::state::Reload;
-use crate::ColorScheme;
 use serde::{Deserialize, Serialize};
 use std::thread::JoinHandle;
 use tilemap::TilePos;
@@ -104,7 +103,6 @@ pub struct TileParams {
     // We are not storing these, as they are constants and not somehting that should be stored
     pub resolution: u32,
     pub padding: u32,
-    pub color: ColorScheme,
 }
 
 #[derive(Eq, PartialEq, Clone, Debug)]
