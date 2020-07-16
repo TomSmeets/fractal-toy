@@ -3,7 +3,6 @@ use crate::input::SDLInput;
 use crate::rect_to_sdl;
 use crate::sdl::Sdl;
 use fractal_toy::math::*;
-use fractal_toy::ui;
 use fractal_toy::AtlasRegion;
 use fractal_toy::DeltaTime;
 use fractal_toy::Fractal;
@@ -11,6 +10,7 @@ use fractal_toy::FractalSave;
 use fractal_toy::Input;
 use fractal_toy::Reload;
 use fractal_toy::Task;
+use fractal_toy::UIInput;
 use fractal_toy::UI;
 use sdl2::event::{Event, WindowEvent};
 use sdl2::pixels::Color;
@@ -82,7 +82,7 @@ impl State {
             }
         }
 
-        let ui_input = ui::Input {
+        let ui_input = UIInput {
             viewport: V2i::new(self.window_size.x as i32, self.window_size.y as i32),
             mouse: self.input.input.mouse,
             left: self.input.input.mouse_down,
@@ -214,13 +214,13 @@ impl UIImage {
 }
 
 struct UITextures {
-    map: BTreeMap<fractal_toy::ui::Image, UIImage>,
+    map: BTreeMap<fractal_toy::Image, UIImage>,
 }
 
 impl UITextures {
-    pub fn get(&mut self, sdl: &mut Sdl, name: fractal_toy::ui::Image) -> &UIImage {
+    pub fn get(&mut self, sdl: &mut Sdl, name: fractal_toy::Image) -> &UIImage {
         let e = self.map.entry(name);
-        e.or_insert_with(|| UIImage::from_path(fractal_toy::ui::to_path(name), sdl))
+        e.or_insert_with(|| UIImage::from_path(UI::to_path(name), sdl))
     }
 }
 

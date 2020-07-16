@@ -14,6 +14,7 @@ use fractal_toy::AtlasRegion;
 use fractal_toy::DeltaTime;
 use fractal_toy::Fractal;
 use fractal_toy::Input;
+use fractal_toy::UIInput;
 use fractal_toy::UI;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::{ControlFlow, EventLoop};
@@ -130,7 +131,7 @@ fn main() {
                 input.begin();
                 fractal.update_tiles(&mut atlas.provider(ctx.gl()));
 
-                let ui_input = fractal_toy::ui::Input {
+                let ui_input = UIInput {
                     viewport: V2i::new(ctx.size.x as i32, ctx.size.y as i32),
                     mouse: input.mouse,
                     left: input.mouse_down,

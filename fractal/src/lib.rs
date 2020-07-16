@@ -9,7 +9,7 @@ mod input;
 pub mod math;
 mod state;
 mod time;
-pub mod ui;
+mod ui;
 
 pub use self::atlas::Atlas;
 pub use self::atlas::AtlasRegion;
@@ -31,5 +31,7 @@ pub use self::input::InputEvent;
 pub use self::state::Persist;
 pub use self::state::Reload;
 pub use self::time::DeltaTime;
+pub use self::ui::Image;
+pub use self::ui::UIInput;
 pub use self::ui::UI;
 pub use tilemap::TilePos;

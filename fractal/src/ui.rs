@@ -7,16 +7,16 @@ use ::ui::Id;
 use ::ui::UIStack;
 
 #[derive(Clone, Copy)]
-pub struct Input {
+pub struct UIInput {
     pub viewport: V2i,
     pub mouse: V2i,
     pub left: bool,
     pub right: bool,
 }
 
-impl Input {
+impl UIInput {
     pub fn new() -> Self {
-        Input {
+        UIInput {
             viewport: V2i::new(0, 0),
             mouse: V2i::new(0, 0),
             left: false,
@@ -41,29 +41,10 @@ pub enum Image {
     Undefined,
 }
 
-#[rustfmt::skip]
-pub fn to_path(img: Image) -> &'static [u8] {
-    match img {
-        Image::Fractal(TileType::Mandelbrot)  => include_bytes!("../../res/fractal_mandel.png"),
-        Image::Fractal(TileType::ShipHybrid)  => include_bytes!("../../res/fractal_hybrid.png"),
-        Image::Fractal(TileType::BurningShip) => include_bytes!("../../res/fractal_ship.png"),
-        Image::Fractal(TileType::Empty)       => include_bytes!("../../res/fractal_missing.png"),
-
-        Image::Slider => include_bytes!("../../res/slider.png"),
-
-        Image::ButtonFront(ButtonState { active: true, .. }) => include_bytes!("../../res/button_front_down.png"),
-        Image::ButtonFront(ButtonState { hot: true, .. })    => include_bytes!("../../res/button_front_hot.png"),
-        Image::ButtonFront(ButtonState { .. })               => include_bytes!("../../res/button_front_norm.png"),
-
-        Image::ButtonBack => include_bytes!("../../res/button_back.png"),
-        _ => include_bytes!("../../res/missing.png"),
-    }
-}
-
 // TODO: we should also have a reliable debug terminal interface
 // It should contain debug counters and messages and commands to do everything
 pub struct UI {
-    pub input: Input,
+    pub input: UIInput,
     pub rects: Vec<(Rect, Image)>,
 
     active: Option<Id>,
@@ -71,9 +52,28 @@ pub struct UI {
 }
 
 impl UI {
+    #[rustfmt::skip]
+    pub fn to_path(img: Image) -> &'static [u8] {
+        match img {
+            Image::Fractal(TileType::Mandelbrot)  => include_bytes!("../../res/fractal_mandel.png"),
+            Image::Fractal(TileType::ShipHybrid)  => include_bytes!("../../res/fractal_hybrid.png"),
+            Image::Fractal(TileType::BurningShip) => include_bytes!("../../res/fractal_ship.png"),
+            Image::Fractal(TileType::Empty)       => include_bytes!("../../res/fractal_missing.png"),
+
+            Image::Slider => include_bytes!("../../res/slider.png"),
+
+            Image::ButtonFront(ButtonState { active: true, .. }) => include_bytes!("../../res/button_front_down.png"),
+            Image::ButtonFront(ButtonState { hot: true, .. })    => include_bytes!("../../res/button_front_hot.png"),
+            Image::ButtonFront(ButtonState { .. })               => include_bytes!("../../res/button_front_norm.png"),
+
+            Image::ButtonBack => include_bytes!("../../res/button_back.png"),
+            _ => include_bytes!("../../res/missing.png"),
+        }
+    }
+
     pub fn new() -> Self {
         UI {
-            input: Input::new(),
+            input: UIInput::new(),
             rects: Vec::new(),
             active: None,
             stack: UIStack::default(),
@@ -84,7 +84,7 @@ impl UI {
         self.active.is_some() && self.active != Some(Id::root())
     }
 
-    pub fn input(&mut self, input: Input) {
+    pub fn input(&mut self, input: UIInput) {
         self.input = input;
     }
 
