@@ -1,6 +1,6 @@
 // TODO: Arbirtrary precision, implementing arbitrary precision is not easy, but we probably want to use this: https://fractalwiki.org/wiki/Perturbation_theory
 // TODO: osm tile builder
-// TODO: reduce the number of public modules, only export a few types to simplify the api
+// TODO: only export a few types to simplify the api
 // TODO: wgpu backend
 mod atlas;
 mod colorscheme;
