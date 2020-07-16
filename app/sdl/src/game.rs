@@ -213,6 +213,7 @@ impl UIImage {
     }
 }
 
+// TODO: This should be improved
 struct UITextures {
     map: BTreeMap<fractal_toy::Image, UIImage>,
 }
@@ -224,7 +225,6 @@ impl UITextures {
     }
 }
 
-#[rustfmt::skip]
 fn draw_ui(txt: &mut UITextures, ui: &UI, sdl: &mut Sdl) {
     for (rect, name) in ui.rects.iter() {
         let img = txt.get(sdl, *name);

@@ -108,7 +108,7 @@ impl<T> Fractal<T> {
             .update_with(new_iter, |_, v| texture_creator.free(v), |_| None);
     }
 
-    pub fn debug_queue_tiles(&mut self) -> Vec<(TilePos, Task)> {
+    pub fn debug_queue_tiles(&self) -> Vec<(TilePos, Task)> {
         self.queue
             .tiles
             .lock_high()
