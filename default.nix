@@ -23,7 +23,5 @@
     pkgconfig
   ];
 
-  hardningDisable = [ "all" ];
-
-  # CARGO_TARGET_DIR="/tmp/cargo/${pname}/";
+  hardeningDisable = [ "all" ];
 }
