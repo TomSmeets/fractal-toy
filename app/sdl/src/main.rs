@@ -1,17 +1,15 @@
 mod builder_cpu;
+mod builder_ocl;
 mod sdl;
 
 use crate::builder_cpu::BuilderCPU;
+use crate::builder_ocl::BuilderOCL;
 use crate::sdl::Sdl;
-use crossbeam_channel::{Receiver, Sender};
 use fractal_toy::math::Rect;
-use fractal_toy::IsTileBuilder;
 use fractal_toy::TileParams;
-use fractal_toy::TilePos;
 use fractal_toy::TileType;
 use fractal_toy::Viewport;
 use fractal_toy::TEXTURE_SIZE;
-use std::thread::JoinHandle;
 
 pub fn rect_to_sdl(r: Rect) -> sdl2::rect::Rect {
     sdl2::rect::Rect::new(r.pos.x, r.pos.y, r.size.x as u32, r.size.y as u32)
@@ -32,7 +30,6 @@ pub struct Config {
 pub struct TileMap {
     pub tiles: tilemap::TileMap<Tile>,
 }
-struct BuilderOCL {}
 
 impl Config {
     fn new() -> Self {
@@ -45,20 +42,6 @@ impl Config {
                 padding: 1,
             },
         }
-    }
-}
-
-impl BuilderOCL {
-    fn new() -> Self {
-        Self {}
-    }
-    pub fn update(&mut self, config: &Config, map: &mut TileMap) {
-        // for (_, t) in map.tiles.iter_mut() {
-        //     if let Tile::Todo = t {
-        //         *t = Tile::Done(vec![0, 0, 255, 0]);
-        //         break;
-        //     }
-        // }
     }
 }
 
