@@ -178,14 +178,6 @@ impl Sdl {
         self.canvas.present();
     }
 
-    pub fn canvas_copy(
-        &mut self,
-        texture: &sdl2::render::Texture,
-        src: Option<Rect>,
-        dst: Option<Rect>,
-    ) {
-    }
-
     pub fn output_size(&self) -> Vector2<u32> {
         let (x, y) = self.canvas.output_size().unwrap();
         Vector2::new(x, y)
