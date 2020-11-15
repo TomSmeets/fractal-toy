@@ -1,5 +1,3 @@
-mod atlas;
-mod input;
 mod sdl;
 
 use crate::sdl::Sdl;

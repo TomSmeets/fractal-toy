@@ -1,5 +1,9 @@
-use crate::atlas::Atlas;
-use crate::input::SDLInput;
+mod atlas;
+mod input;
+
+use self::atlas::Atlas;
+use self::input::SDLInput;
+
 use crate::rect_to_sdl;
 use crate::Config;
 use crate::Tile;
