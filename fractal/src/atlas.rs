@@ -1,15 +1,12 @@
-use crate::fractal::PADDING;
-use crate::fractal::TEXTURE_SIZE;
 use crate::math::*;
+use crate::TextureSizeAndPadding;
 use serde::{Deserialize, Serialize};
 
 pub struct SimpleAtlas {
+    pub size_and_padding: TextureSizeAndPadding,
+
     // number of tiles in both x and y
     pub size: u32,
-
-    // resolution of one tile
-    pub res: u32,
-
     pub page_count: u32,
 
     // free tiles
@@ -17,16 +14,18 @@ pub struct SimpleAtlas {
 }
 
 impl SimpleAtlas {
-    pub fn new() -> Self {
-        let res = TEXTURE_SIZE as u32;
+    pub fn new(size_and_padding: TextureSizeAndPadding) -> Self {
+        let res = size_and_padding.size;
+
         // 4K is somewhere near the maximum texture size
         // determined by trail and error, size does not matter that much,
         let texture_size = 4 * 1024;
         let size = texture_size / res;
+
         SimpleAtlas {
+            size_and_padding,
             free: Vec::new(),
             size,
-            res,
             page_count: 0,
         }
     }
@@ -46,7 +45,6 @@ impl SimpleAtlas {
         match self.free.pop() {
             Some(i) => AtlasRegion {
                 index: i,
-                res: self.res,
                 free: false,
             },
             None => {
@@ -62,44 +60,37 @@ impl SimpleAtlas {
     }
 }
 
-impl Default for SimpleAtlas {
-    fn default() -> Self {
-        SimpleAtlas::new()
-    }
-}
-
 #[derive(Clone, Serialize, Deserialize)]
 pub struct AtlasRegion {
     pub index: Vector3<u32>,
-    res: u32,
     free: bool,
 }
 
 impl AtlasRegion {
-    pub fn rect(&self) -> Rect {
+    pub fn rect(&self, texture: TextureSizeAndPadding) -> Rect {
         let pos = Vector2 {
-            x: (self.res * self.index.x) as i32,
-            y: (self.res * self.index.y) as i32,
+            x: (texture.size * self.index.x) as i32,
+            y: (texture.size * self.index.y) as i32,
         };
 
         let size = Vector2 {
-            x: (self.res) as i32,
-            y: (self.res) as i32,
+            x: (texture.size) as i32,
+            y: (texture.size) as i32,
         };
 
         Rect { pos, size }
     }
 
     // returns smaller rectangle with padding removed
-    pub fn rect_padded(&self) -> Rect {
+    pub fn rect_padded(&self, texture: TextureSizeAndPadding) -> Rect {
         let pos = Vector2 {
-            x: (self.res * self.index.x + PADDING) as i32,
-            y: (self.res * self.index.y + PADDING) as i32,
+            x: (texture.size * self.index.x + texture.padding) as i32,
+            y: (texture.size * self.index.y + texture.padding) as i32,
         };
 
         let size = Vector2 {
-            x: (self.res - PADDING * 2) as i32,
-            y: (self.res - PADDING * 2) as i32,
+            x: (texture.size - texture.padding * 2) as i32,
+            y: (texture.size - texture.padding * 2) as i32,
         };
 
         Rect { pos, size }

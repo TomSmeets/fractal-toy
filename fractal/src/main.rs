@@ -17,7 +17,6 @@ pub(crate) use self::atlas::SimpleAtlas;
 pub(crate) use self::fractal::builder::TileParams;
 pub(crate) use self::fractal::builder::TileType;
 pub(crate) use self::fractal::viewport::Viewport;
-pub(crate) use self::fractal::TEXTURE_SIZE;
 pub(crate) use self::input::Input;
 pub(crate) use self::input::InputAction;
 pub(crate) use self::input::InputEvent;
@@ -32,6 +31,21 @@ use crate::builder_cpu::BuilderCPU;
 use crate::builder_ocl::BuilderOCL;
 use crate::math::Rect;
 use crate::sdl::Sdl;
+
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+pub struct TextureSizeAndPadding {
+    pub size: u32,
+    pub padding: u32,
+}
+
+impl TextureSizeAndPadding {
+    pub fn stride_in_bytes(self) -> usize {
+        self.size as usize * 4
+    }
+    pub fn size_in_bytes(self) -> usize {
+        self.size as usize * self.size as usize * 4
+    }
+}
 
 pub fn rect_to_sdl(r: Rect) -> sdl2::rect::Rect {
     sdl2::rect::Rect::new(r.pos.x, r.pos.y, r.size.x as u32, r.size.y as u32)
@@ -62,8 +76,10 @@ impl Config {
             params: TileParams {
                 kind: TileType::Mandelbrot,
                 iterations: 64,
-                resolution: TEXTURE_SIZE as u32,
-                padding: 1,
+                size: TextureSizeAndPadding {
+                    size: 64 * 2,
+                    padding: 1,
+                },
             },
         }
     }
@@ -76,10 +92,12 @@ struct SaveState {
 }
 
 pub fn main() {
-    let mut tile_map = TileMap::new();
+    // Configure
     let mut config = Config::new();
 
-    let mut sdl = Sdl::new();
+    // Init
+    let mut tile_map = TileMap::new();
+    let mut sdl = Sdl::new(&config);
     let mut viewport = Viewport::new(sdl.output_size());
 
     let mut builder_ocl = BuilderOCL::new();
@@ -89,7 +107,9 @@ pub fn main() {
     let persist = Persist::new();
     if let Ok(state) = persist.load("auto") {
         let state: SaveState = state;
-        if let Some(s) = state.viewport { viewport.load(s) }
+        if let Some(s) = state.viewport {
+            viewport.load(s)
+        }
         config.debug = state.debug;
     }
 
@@ -104,12 +124,11 @@ pub fn main() {
             break;
         }
 
-        tile_map.update(&viewport);
-
+        tile_map.update(&config, &viewport);
         builder_ocl.update(&config, &mut tile_map);
         builder_cpu.update(&config, &mut tile_map);
 
-        sdl.render(&tile_map, &viewport);
+        sdl.render(&config.params, &tile_map, &viewport);
 
         config.changed = false;
 
@@ -136,9 +155,9 @@ impl TileMap {
         }
     }
 
-    fn update(&mut self, vp: &Viewport) {
+    fn update(&mut self, config: &Config, vp: &Viewport) {
         // Free textures
-        let new_iter = vp.get_pos_all().map(|x| (x, ()));
+        let new_iter = vp.get_pos_all(config.params.size).map(|x| (x, ()));
         self.tiles
             .update_with(new_iter, |_, _| (), |_, _| Some(Tile::Todo));
     }

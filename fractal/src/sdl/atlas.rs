@@ -1,7 +1,7 @@
 use crate::rect_to_sdl;
 use crate::AtlasRegion;
 use crate::SimpleAtlas;
-use crate::TEXTURE_SIZE;
+use crate::TextureSizeAndPadding;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::Texture;
 use sdl2::render::TextureCreator;
@@ -13,9 +13,9 @@ pub struct Atlas {
 }
 
 impl Atlas {
-    pub fn new() -> Self {
+    pub fn new(tile_size: TextureSizeAndPadding) -> Self {
         Atlas {
-            simple: SimpleAtlas::new(),
+            simple: SimpleAtlas::new(tile_size),
             texture: Vec::new(),
         }
     }
@@ -29,7 +29,7 @@ impl Atlas {
         let texture = match self.texture.get_mut(region.index.z as usize) {
             Some(texture) => texture,
             None => {
-                let s = self.simple.size * self.simple.res;
+                let s = self.simple.size * self.simple.size_and_padding.size;
                 let texture = texture_creator
                     .create_texture_static(PixelFormatEnum::ABGR8888, s, s)
                     .unwrap();
@@ -38,11 +38,13 @@ impl Atlas {
             },
         };
 
+        assert_eq!(pixels.len(), self.simple.size_and_padding.size_in_bytes());
+
         texture
             .update(
-                Some(rect_to_sdl(region.rect())),
+                Some(rect_to_sdl(region.rect(self.simple.size_and_padding))),
                 pixels,
-                4 * TEXTURE_SIZE as usize,
+                self.simple.size_and_padding.stride_in_bytes(),
             )
             .unwrap();
 

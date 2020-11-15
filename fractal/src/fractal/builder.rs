@@ -23,6 +23,7 @@
 // TODO: The coloring method should be changable (orbit trap)
 
 use crate::state::Reload;
+use crate::TextureSizeAndPadding;
 use serde::{Deserialize, Serialize};
 use tilemap::TilePos;
 
@@ -87,11 +88,7 @@ impl Reload for TileParams {
 pub struct TileParams {
     pub kind: TileType,
     pub iterations: i32,
-
-    // TODO: pub padding: f64? but then it cannot be Ord and has to be moved out of TilePos
-    // We are not storing these, as they are constants and not somehting that should be stored
-    pub resolution: u32,
-    pub padding: u32,
+    pub size: TextureSizeAndPadding,
 }
 
 #[derive(Eq, PartialEq, Clone, Debug)]

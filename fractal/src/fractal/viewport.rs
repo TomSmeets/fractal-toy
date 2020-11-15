@@ -1,7 +1,6 @@
-// TODO: If we want to make texture_size dynamic then we need to get rid of this import
-use super::TEXTURE_SIZE;
 use crate::math::*;
 use crate::state::Reload;
+use crate::TextureSizeAndPadding;
 use serde::{Deserialize, Serialize};
 use tilemap::TilePos;
 
@@ -125,7 +124,7 @@ impl Viewport {
 
     /// Returns an iterator with sorted tiles, the ordering is the same according to
     /// the ord implementation for TilePos
-    pub fn get_pos_all(&self) -> impl Iterator<Item = TilePos> {
+    pub fn get_pos_all(&self, size: TextureSizeAndPadding) -> impl Iterator<Item = TilePos> {
         // size of single pixel:
         // scale is width of entire viewport in the world
         //
@@ -135,7 +134,7 @@ impl Viewport {
         // z = log(tile_size)/log(1/2)
         // z = -log2(tile_size)
         let px_size = self.pixel_size();
-        let tile_size = px_size * TEXTURE_SIZE as f64;
+        let tile_size = px_size * size.size as f64;
         let z_max = -tile_size.log2();
         let z_max = z_max.max(0.0).ceil() as i32;
         let z_min = (z_max - 8).max(0);

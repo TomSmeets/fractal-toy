@@ -6,8 +6,10 @@ use self::input::SDLInput;
 
 use crate::math::*;
 use crate::AtlasRegion;
+use crate::Config;
 use crate::Tile;
 use crate::TileMap;
+use crate::TileParams;
 use crate::Viewport;
 use sdl2::event::Event;
 use sdl2::pixels::Color;
@@ -39,7 +41,7 @@ pub struct Sdl {
 }
 
 impl Sdl {
-    pub fn new() -> Self {
+    pub fn new(config: &Config) -> Self {
         let ctx = sdl2::init().unwrap();
         let video = ctx.video().unwrap();
 
@@ -79,7 +81,7 @@ impl Sdl {
 
             input: SDLInput::new(1.0 / 60.0),
             map: tilemap::TileMap::new(),
-            atlas: Atlas::new(),
+            atlas: Atlas::new(config.params.size),
         }
     }
 
@@ -104,7 +106,7 @@ impl Sdl {
         input
     }
 
-    pub fn render(&mut self, map: &TileMap, vp: &Viewport) {
+    pub fn render(&mut self, params: &TileParams, map: &TileMap, vp: &Viewport) {
         // Update my renderd tiles
         let tiles = std::mem::replace(&mut self.map.tiles, BTreeMap::new());
         let iter = CompareIter::new(map.tiles.iter(), tiles.into_iter(), |(l, _), (r, _)| {
@@ -145,7 +147,7 @@ impl Sdl {
             self.canvas
                 .copy(
                     &self.atlas.texture[tile.index.z as usize],
-                    Some(rect_to_sdl(tile.rect_padded())),
+                    Some(rect_to_sdl(tile.rect_padded(params.size))),
                     Some(rect_to_sdl(r)),
                 )
                 .unwrap();

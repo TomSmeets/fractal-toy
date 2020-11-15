@@ -111,7 +111,7 @@ impl BuilderCPU {
 }
 
 fn build(pos: TilePos, params: &TileParams) -> Vec<u8> {
-    let texture_size = params.resolution as usize;
+    let texture_size = params.size.size as usize;
     let mut pixels = vec![0; texture_size * texture_size * 4];
 
     match params.kind {
@@ -178,10 +178,10 @@ fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(
     pixels: &mut [u8],
     f: F,
 ) {
-    let texture_size = params.resolution as usize;
+    let texture_size = params.size.size as usize;
     let rect = pos
         .square()
-        .grow_relative(params.padding as f64 / params.resolution as f64);
+        .grow_relative(params.size.padding as f64 / params.size.size as f64);
     let offset = rect.corner_min();
     let zoom = rect.size();
 
