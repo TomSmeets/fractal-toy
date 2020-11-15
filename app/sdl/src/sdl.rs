@@ -117,10 +117,15 @@ impl Sdl {
             |_, t| unsafe { t.destroy() },
             |_, t| {
                 if let Tile::Done(px) = t {
+                    use fractal_toy::TEXTURE_SIZE;
                     let mut txt = texture_creator
-                        .create_texture_static(PixelFormatEnum::ABGR8888, 1, 1)
+                        .create_texture_static(
+                            PixelFormatEnum::ABGR8888,
+                            TEXTURE_SIZE as _,
+                            TEXTURE_SIZE as _,
+                        )
                         .unwrap();
-                    txt.update(None, &px, 4 as usize).unwrap();
+                    txt.update(None, &px, 4 * TEXTURE_SIZE as usize).unwrap();
                     Some(txt)
                 } else {
                     None

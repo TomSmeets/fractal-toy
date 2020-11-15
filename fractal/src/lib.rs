@@ -16,6 +16,7 @@ pub use self::atlas::AtlasRegion;
 pub use self::atlas::AtlasTextureProvider;
 pub use self::atlas::SimpleAtlas;
 pub use self::colorscheme::ColorScheme;
+pub use self::fractal::builder::cpu::CPUBuilder;
 pub use self::fractal::builder::IsTileBuilder;
 pub use self::fractal::builder::TileParams;
 pub use self::fractal::builder::TileType;

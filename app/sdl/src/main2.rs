@@ -1,5 +1,6 @@
 use crate::sdl::Sdl;
 use fractal_toy::Viewport;
+use fractal_toy::TEXTURE_SIZE;
 
 pub enum Tile {
     Todo,
@@ -25,10 +26,25 @@ impl BuilderCPU {
     fn new() -> Self {
         Self {}
     }
+
     pub fn update(&mut self, map: &mut TileMap) {
-        for (_, t) in map.tiles.iter_mut() {
+        use fractal_toy::IsTileBuilder;
+        use fractal_toy::TileParams;
+        use fractal_toy::TileType;
+
+        let mut b = fractal_toy::CPUBuilder::new();
+        let p = TileParams {
+            kind: TileType::Mandelbrot,
+            iterations: 64,
+            resolution: TEXTURE_SIZE as u32,
+            padding: 1,
+        };
+
+        b.configure(&p);
+        for (p, t) in map.tiles.iter_mut() {
             if let Tile::Todo = t {
-                *t = Tile::Done(vec![0, 255, 0, 0]);
+                // *t = Tile::Done(vec![0, 255, 0, 0]);
+                *t = Tile::Done(b.build(*p).pixels);
                 break;
             }
         }
@@ -40,12 +56,12 @@ impl BuilderOCL {
         Self {}
     }
     pub fn update(&mut self, map: &mut TileMap) {
-        for (_, t) in map.tiles.iter_mut() {
-            if let Tile::Todo = t {
-                *t = Tile::Done(vec![0, 0, 255, 0]);
-                break;
-            }
-        }
+        // for (_, t) in map.tiles.iter_mut() {
+        //     if let Tile::Todo = t {
+        //         *t = Tile::Done(vec![0, 0, 255, 0]);
+        //         break;
+        //     }
+        // }
     }
 }
 
