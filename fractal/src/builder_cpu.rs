@@ -1,11 +1,11 @@
+use crate::math::*;
 use crate::Config;
 use crate::Tile;
 use crate::TileMap;
-use crossbeam_channel::{Receiver, Sender};
-use crate::math::*;
 use crate::TileParams;
 use crate::TilePos;
 use crate::TileType;
+use crossbeam_channel::{Receiver, Sender};
 use std::thread::JoinHandle;
 
 pub struct BuilderCPU {

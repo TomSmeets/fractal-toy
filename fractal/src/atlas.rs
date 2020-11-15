@@ -68,7 +68,6 @@ impl Default for SimpleAtlas {
     }
 }
 
-
 #[derive(Clone, Serialize, Deserialize)]
 pub struct AtlasRegion {
     pub index: Vector3<u32>,

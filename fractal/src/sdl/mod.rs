@@ -4,10 +4,10 @@ mod input;
 use self::atlas::Atlas;
 use self::input::SDLInput;
 
-use crate::Tile;
-use crate::TileMap;
 use crate::math::*;
 use crate::AtlasRegion;
+use crate::Tile;
+use crate::TileMap;
 use crate::Viewport;
 use sdl2::event::Event;
 use sdl2::pixels::Color;
