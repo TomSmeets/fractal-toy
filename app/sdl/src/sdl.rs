@@ -105,19 +105,8 @@ impl Sdl {
     }
 
     pub fn render(&mut self, map: &TileMap, vp: &Viewport) {
-        self.canvas.set_draw_color(Color::RGB(0, 0, 0));
-        self.canvas.clear();
-
-        let sz = vp.size_in_pixels();
-        self.canvas.set_draw_color(Color::RGB(255, 0, 255));
-        self.canvas
-            .draw_rect(Rect::new(10, 10, sz.x as u32 - 20, sz.y as u32 - 20))
-            .unwrap();
-
-        self.canvas.set_draw_color(Color::RGB(255, 0, 0));
-
+        // Update my renderd tiles
         let tiles = std::mem::replace(&mut self.map.tiles, BTreeMap::new());
-
         let iter = CompareIter::new(map.tiles.iter(), tiles.into_iter(), |(l, _), (r, _)| {
             l.cmp(&r)
         });
@@ -144,6 +133,12 @@ impl Sdl {
             }
         }
 
+        // Clear canvas
+        self.canvas.set_draw_color(Color::RGB(0, 0, 0));
+        self.canvas.clear();
+
+        // Draw tiles
+        self.canvas.set_draw_color(Color::RGB(255, 255, 255));
         for (p, tile) in self.map.tiles.iter() {
             let r = vp.pos_to_rect(p);
 
@@ -156,20 +151,22 @@ impl Sdl {
                 .unwrap();
         }
 
+        // Draw debug stuff
+        self.canvas.set_draw_color(Color::RGB(255, 255, 255));
         for (p, tile) in map.tiles.iter() {
             let mut r = vp.pos_to_rect(p);
 
-            r.pos.x += 5;
-            r.pos.y += 5;
-            r.size.x -= 2 * 5;
-            r.size.y -= 2 * 5;
+            r.pos.x += 2;
+            r.pos.y += 2;
+            r.size.x -= 2 * 2;
+            r.size.y -= 2 * 2;
 
             if let Tile::Doing = tile {
-                self.canvas.set_draw_color(Color::RGB(255, 255, 255));
                 self.canvas.draw_rect(rect_to_sdl(r)).unwrap();
             }
         }
 
+        // Finish frame
         self.canvas.present();
     }
 
