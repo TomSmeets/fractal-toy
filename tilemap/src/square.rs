@@ -14,14 +14,15 @@ impl Square {
         Square { x, y, w }
     }
 
-    /// Grow this rectangle on all sides by 's'
-    /// NOTE: total size will increase by 2*n*{w, h}!
-    pub fn grow_relative(self, s: f64) -> Self {
-        let sx = s * self.w;
+    /// scale this square, the center will stay at the same spot
+    pub fn scale(self, s: f64) -> Self {
+        let wo =     self.w;
+        let wn = s * self.w;
+
         Self {
-            x: self.x - sx,
-            y: self.y - sx,
-            w: self.w + sx + sx,
+            x: self.x + wo*0.5 - wn*0.5,
+            y: self.y + wo*0.5 - wn*0.5,
+            w: wn,
         }
     }
 

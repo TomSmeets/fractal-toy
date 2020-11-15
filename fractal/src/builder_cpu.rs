@@ -179,9 +179,12 @@ fn draw_mandel<F: Fn(V2, V2) -> V2 + Copy>(
     f: F,
 ) {
     let texture_size = params.size.size as usize;
-    let rect = pos
-        .square()
-        .grow_relative((params.size.padding * 2) as f64 / params.size.size as f64);
+
+    let sz_small = params.size.size - 2*params.size.padding;
+    let sz_big   = params.size.size;
+
+    let rect = pos.square()
+        .scale(sz_big as f64 / sz_small as f64);
     let offset = rect.corner_min();
     let zoom = rect.size();
 
