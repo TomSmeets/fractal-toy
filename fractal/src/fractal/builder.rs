@@ -22,20 +22,9 @@
 // TODO: The colorscheme should be changable
 // TODO: The coloring method should be changable (orbit trap)
 
-pub mod cpu;
-
-use crate::fractal::queue::QueueHandle;
-use crate::fractal::queue::TileResponse;
-use crate::fractal::TileContent;
 use crate::state::Reload;
 use serde::{Deserialize, Serialize};
-use std::thread::JoinHandle;
 use tilemap::TilePos;
-
-pub trait IsTileBuilder {
-    fn configure(&mut self, p: &TileParams) -> bool;
-    fn build(&mut self, p: TilePos) -> TileContent;
-}
 
 #[derive(Eq, PartialEq, Copy, Clone, Ord, PartialOrd, Serialize, Deserialize, Debug)]
 pub enum TileType {
@@ -110,93 +99,4 @@ pub struct TileRequest {
     pub pos: TilePos,
     pub version: usize,
     pub params: TileParams,
-}
-
-pub struct TileBuilder {
-    handle: QueueHandle,
-
-    #[allow(dead_code)]
-    workers: Vec<JoinHandle<()>>,
-}
-
-impl TileBuilder {
-    pub fn new(handle: QueueHandle) -> Self {
-        let mut me = TileBuilder {
-            handle,
-            workers: Vec::new(),
-        };
-
-        {
-            // TODO: also move out to app, maybe simplify
-            let ncpu = (num_cpus::get() - 1).max(1);
-            for _ in 0..ncpu {
-                me.add_builder(|| self::cpu::CPUBuilder::new());
-            }
-        }
-
-        me
-    }
-
-    // TODO: do builders realy have to be Send and 'static? Maybe construct via a closure?
-    // TODO: What about an single threaded application? threads are hard in web.
-    pub fn add_builder<T, F>(&mut self, f: F)
-    where
-        T: IsTileBuilder,
-        F: FnOnce() -> T + Send + 'static,
-    {
-        let handle = self.handle.clone();
-
-        // TODO: how do we handle cpu affinity for threads?
-        self.workers.push(std::thread::spawn(move || {
-            let mut b = f();
-            loop {
-                let mut version = 0;
-                let mut active = false;
-                loop {
-                    let h = match handle.tiles.upgrade() {
-                        Some(h) => h,
-                        None => break,
-                    };
-
-                    let mut h = h.lock();
-
-                    if h.params_version != version {
-                        active = b.configure(&h.params);
-                        version = h.params_version;
-                    }
-
-                    if !active {
-                        drop(h);
-                        handle.wait();
-                        continue;
-                    }
-
-                    let next = match h.recv() {
-                        None => {
-                            drop(h);
-                            handle.wait();
-                            continue;
-                        },
-                        Some(next) => next,
-                    };
-
-                    // make sure the lock is freed before building
-                    drop(h);
-
-                    // do build
-                    let tile = b.build(next);
-
-                    let ret = handle.send(TileResponse {
-                        pos: next,
-                        version,
-                        content: tile,
-                    });
-
-                    if ret.is_err() {
-                        break;
-                    }
-                }
-            }
-        }));
-    }
 }

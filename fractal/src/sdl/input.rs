@@ -1,9 +1,9 @@
 use crate::Config;
-use fractal_toy::Input;
-use fractal_toy::InputAction;
-use fractal_toy::InputEvent;
-use fractal_toy::Vector2;
-use fractal_toy::Viewport;
+use crate::Input;
+use crate::InputAction;
+use crate::InputEvent;
+use crate::Vector2;
+use crate::Viewport;
 use sdl2::controller::Axis;
 use sdl2::controller::Button;
 use sdl2::event::*;
@@ -61,7 +61,7 @@ impl SDLInput {
         vp.translate({
             let mut p = self.dt as f64 * self.input.dir_move * 2.0 * vp.size_in_pixels().x;
             p.y *= -1.0;
-            fractal_toy::V2i::new(p.x as i32, p.y as i32)
+            crate::V2i::new(p.x as i32, p.y as i32)
         });
         vp.zoom_in(self.dt as f64 * self.input.zoom as f64 * 3.5);
         vp.translate(-self.input.drag);

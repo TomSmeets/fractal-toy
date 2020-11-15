@@ -6,9 +6,9 @@ use self::input::SDLInput;
 
 use crate::Tile;
 use crate::TileMap;
-use fractal_toy::math::*;
-use fractal_toy::AtlasRegion;
-use fractal_toy::Viewport;
+use crate::math::*;
+use crate::AtlasRegion;
+use crate::Viewport;
 use sdl2::event::Event;
 use sdl2::pixels::Color;
 use sdl2::render::{BlendMode, Canvas};

@@ -1,16 +1,7 @@
-use crate::fractal::TileTextureProvider;
 use crate::fractal::PADDING;
 use crate::fractal::TEXTURE_SIZE;
 use crate::math::*;
 use serde::{Deserialize, Serialize};
-
-pub trait AtlasTextureProvider {
-    type Texture;
-
-    fn alloc(&mut self, width: u32, height: u32) -> Self::Texture;
-    fn update(&mut self, texture: &mut Self::Texture, rect: Rect, pixels: &[u8]);
-    fn free(&mut self, texture: Self::Texture);
-}
 
 pub struct SimpleAtlas {
     // number of tiles in both x and y
@@ -77,62 +68,6 @@ impl Default for SimpleAtlas {
     }
 }
 
-pub struct Atlas<T> {
-    pub simple: SimpleAtlas,
-    pub texture: Vec<T>,
-}
-
-impl<T> Atlas<T> {
-    pub fn new() -> Self {
-        Atlas {
-            simple: SimpleAtlas::new(),
-            texture: Vec::new(),
-        }
-    }
-
-    pub fn alloc(
-        &mut self,
-        sdl: &mut impl AtlasTextureProvider<Texture = T>,
-        pixels: &[u8],
-    ) -> AtlasRegion {
-        let region = self.simple.alloc();
-        let texture = match self.texture.get_mut(region.index.z as usize) {
-            Some(texture) => texture,
-            None => {
-                let texture = sdl.alloc(
-                    self.simple.size * self.simple.res,
-                    self.simple.size * self.simple.res,
-                );
-                self.texture.push(texture);
-                self.texture.last_mut().unwrap()
-            },
-        };
-
-        sdl.update(texture, region.rect(), pixels);
-
-        region
-    }
-
-    pub fn remove(&mut self, r: AtlasRegion) {
-        self.simple.remove(r);
-    }
-}
-
-impl<T> Default for Atlas<T> {
-    fn default() -> Self {
-        Atlas::new()
-    }
-}
-
-// impl Drop for Atlas<T> {
-//     fn drop(&mut self) {
-//         for t in self.texture.drain(..) {
-//             unsafe {
-//                 t.destroy();
-//             }
-//         }
-//     }
-// }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct AtlasRegion {
@@ -176,22 +111,5 @@ impl Drop for AtlasRegion {
     fn drop(&mut self) {
         // self.free should be true, however not when dropping the entire struct by serializing to disk
         // assert!(self.free);
-    }
-}
-
-pub struct AtlasTextureCreator<'a, T: AtlasTextureProvider> {
-    pub atlas: &'a mut Atlas<T::Texture>,
-    pub sdl: &'a mut T,
-}
-
-impl<'a, T: AtlasTextureProvider> TileTextureProvider for AtlasTextureCreator<'a, T> {
-    type Texture = AtlasRegion;
-
-    fn alloc(&mut self, pixels_rgba: &[u8]) -> Self::Texture {
-        self.atlas.alloc(self.sdl, pixels_rgba)
-    }
-
-    fn free(&mut self, texture: Self::Texture) {
-        self.atlas.remove(texture)
     }
 }

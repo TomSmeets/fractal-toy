@@ -1,15 +1,33 @@
+// TODO: Arbirtrary precision, implementing arbitrary precision is not easy, but we probably want to use this: https://fractalwiki.org/wiki/Perturbation_theory
+// TODO: osm tile builder
+// TODO: only export a few types to simplify the api
+// TODO: wgpu backend
 mod builder_cpu;
 mod builder_ocl;
 mod sdl;
+mod atlas;
+mod fractal;
+mod input;
+mod math;
+mod state;
+mod time;
+
+pub(crate) use self::atlas::AtlasRegion;
+pub(crate) use self::atlas::SimpleAtlas;
+pub(crate) use self::fractal::builder::TileParams;
+pub(crate) use self::fractal::builder::TileType;
+pub(crate) use self::fractal::viewport::Viewport;
+pub(crate) use self::fractal::TEXTURE_SIZE;
+pub(crate) use self::input::Input;
+pub(crate) use self::input::InputAction;
+pub(crate) use self::input::InputEvent;
+pub(crate) use self::math::*;
+pub(crate) use tilemap::TilePos;
 
 use crate::builder_cpu::BuilderCPU;
 use crate::builder_ocl::BuilderOCL;
 use crate::sdl::Sdl;
-use fractal_toy::math::Rect;
-use fractal_toy::TileParams;
-use fractal_toy::TileType;
-use fractal_toy::Viewport;
-use fractal_toy::TEXTURE_SIZE;
+use crate::math::Rect;
 
 pub fn rect_to_sdl(r: Rect) -> sdl2::rect::Rect {
     sdl2::rect::Rect::new(r.pos.x, r.pos.y, r.size.x as u32, r.size.y as u32)

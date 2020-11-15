@@ -2,10 +2,10 @@ use crate::Config;
 use crate::Tile;
 use crate::TileMap;
 use crossbeam_channel::{Receiver, Sender};
-use fractal_toy::math::*;
-use fractal_toy::TileParams;
-use fractal_toy::TilePos;
-use fractal_toy::TileType;
+use crate::math::*;
+use crate::TileParams;
+use crate::TilePos;
+use crate::TileType;
 use std::thread::JoinHandle;
 
 pub struct BuilderCPU {
@@ -27,7 +27,8 @@ impl BuilderCPU {
         let (a_tx, a_rx) = crossbeam_channel::bounded(32);
         let mut workers = Vec::new();
 
-        for _ in 0..6 {
+        let ncpu = (num_cpus::get() - 1).max(1);
+        for _ in 0..ncpu {
             let (q_tx, q_rx) = crossbeam_channel::bounded(4);
 
             let a_tx = a_tx.clone();
