@@ -1,4 +1,4 @@
-use crate::main2::Config;
+use crate::Config;
 use fractal_toy::Input;
 use fractal_toy::InputAction;
 use fractal_toy::InputEvent;

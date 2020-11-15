@@ -1,9 +1,9 @@
 use crate::atlas::Atlas;
 use crate::input::SDLInput;
-use crate::main2::Config;
-use crate::main2::Tile;
-use crate::main2::TileMap;
 use crate::rect_to_sdl;
+use crate::Config;
+use crate::Tile;
+use crate::TileMap;
 use fractal_toy::math::Rect as MRect;
 use fractal_toy::math::*;
 use fractal_toy::AtlasRegion;
