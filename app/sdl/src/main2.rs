@@ -164,7 +164,6 @@ pub fn run() {
     let mut builder_ocl = BuilderOCL::new();
     let mut builder_cpu = BuilderCPU::new();
 
-
     use std::time::Instant;
     let mut start_time = Instant::now();
     loop {

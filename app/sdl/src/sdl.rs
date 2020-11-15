@@ -17,6 +17,7 @@ use sdl2::rect::Rect;
 use sdl2::render::Texture;
 use sdl2::render::{BlendMode, Canvas};
 use sdl2::video::Window;
+use std::collections::BTreeMap;
 use tilemap::CompareIter;
 use tilemap::ComparedValue;
 
@@ -115,10 +116,12 @@ impl Sdl {
 
         self.canvas.set_draw_color(Color::RGB(255, 0, 0));
 
-        let iter = CompareIter::new(map.tiles.iter(), self.map.tiles.iter(), |(l, _), (r, _)| {
+        let tiles = std::mem::replace(&mut self.map.tiles, BTreeMap::new());
+
+        let iter = CompareIter::new(map.tiles.iter(), tiles.into_iter(), |(l, _), (r, _)| {
             l.cmp(&r)
         });
-        let mut new_map = std::collections::BTreeMap::new();
+
         for i in iter {
             match i {
                 ComparedValue::Left((pos, v)) => {
@@ -126,21 +129,20 @@ impl Sdl {
                     if let Tile::Done(px) = v {
                         let texture_creator = self.canvas.texture_creator();
                         let region = self.atlas.alloc(&texture_creator, px);
-                        new_map.insert(*pos, region);
+                        self.map.tiles.insert(*pos, region);
                     }
                 },
 
-                ComparedValue::Right(_) => {
-                    // dont insert
+                ComparedValue::Right((_, region)) => {
+                    // only in sdl
+                    self.atlas.remove(region);
                 },
 
                 ComparedValue::Both((pos, _), (_, w)) => {
-                    new_map.insert(*pos, w.clone());
+                    self.map.tiles.insert(*pos, w);
                 },
             }
         }
-
-        self.map.tiles = new_map;
 
         for (p, tile) in self.map.tiles.iter() {
             let r = vp.pos_to_rect(p);
@@ -161,13 +163,6 @@ impl Sdl {
             r.pos.y += 5;
             r.size.x -= 2 * 5;
             r.size.y -= 2 * 5;
-
-            // // atlas.draw(sdl, tile, r);
-            // self.canvas_copy(
-            //     &self.atlas.texture[tile.index.z as usize],
-            //     Some(rect_to_sdl(tile.rect_padded())),
-            //     Some(rect_to_sdl(r)),
-            // );
 
             if let Tile::Doing = tile {
                 self.canvas.set_draw_color(Color::RGB(255, 255, 255));
