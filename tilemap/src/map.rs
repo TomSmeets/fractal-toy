@@ -9,7 +9,7 @@ type IntoIter<T> = std::collections::btree_map::IntoIter<TilePos, T>;
 /// Remembers generated tiles, and adds new ones
 pub struct TileMap<T> {
     // NOTE: it is a BTree because it has to be sorted
-    tiles: BTreeMap<TilePos, T>,
+    pub tiles: BTreeMap<TilePos, T>,
 }
 
 impl<T> TileMap<T> {
@@ -20,11 +20,11 @@ impl<T> TileMap<T> {
     }
 
     // No more destructor please, use drop
-    pub fn update_with<I, FDel, FNew>(&mut self, new_iter: I, mut delete: FDel, mut insert: FNew)
+    pub fn update_with<U, I, FDel, FNew>(&mut self, new_iter: I, mut delete: FDel, mut insert: FNew)
     where
-        I: Iterator<Item = TilePos>,
+        I: Iterator<Item = (TilePos, U)>,
         FDel: FnMut(TilePos, T),
-        FNew: FnMut(TilePos) -> Option<T>,
+        FNew: FnMut(TilePos, U) -> Option<T>,
     {
         // items we rendered last frame
         let tiles = std::mem::replace(&mut self.tiles, BTreeMap::new());
@@ -32,15 +32,15 @@ impl<T> TileMap<T> {
 
         // items we should render this frame
 
-        let iter = CompareIter::new(old_iter, new_iter, |l, r| l.0.cmp(r));
+        let iter = CompareIter::new(old_iter, new_iter, |l, r| l.0.cmp(&r.0));
         for i in iter {
             match i {
                 ComparedValue::Left((k, v)) => {
                     // only in old_iter, remove value
                     delete(k, v);
                 },
-                ComparedValue::Right(r) => {
-                    if let Some(v) = insert(r) {
+                ComparedValue::Right((r, w)) => {
+                    if let Some(v) = insert(r, w) {
                         self.tiles.insert(r, v);
                     }
                 },

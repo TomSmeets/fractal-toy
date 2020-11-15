@@ -61,6 +61,7 @@ pub struct Queue {
     rx: Receiver<TileResponse>,
 
     // NOTE: clone to create handles, could be done differently
+    // NOTE: We might not need to use Mutexes
     handle: QueueHandle,
 }
 
@@ -72,9 +73,9 @@ pub struct QueueHandle {
 
 impl TaskMapWithParams {
     pub fn update(&mut self, vp: &Viewport) {
-        let new_iter = vp.get_pos_all();
+        let new_iter = vp.get_pos_all().map(|x| (x, ()));
         self.map
-            .update_with(new_iter, |_, _| (), |_| Some(Task::Todo));
+            .update_with(new_iter, |_, _| (), |_, _| Some(Task::Todo));
     }
 
     pub fn set_params(&mut self, p: &TileParams) {

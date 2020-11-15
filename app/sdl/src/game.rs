@@ -38,6 +38,10 @@ impl State {
     pub fn new() -> State {
         let sdl = Sdl::new();
         let input = SDLInput {
+            // TODO: Remove
+            dt: 1.0 / 60.0,
+            resize: None,
+
             input: Input::new(),
         };
         let ui = UI::new();

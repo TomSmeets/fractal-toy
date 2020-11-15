@@ -46,6 +46,8 @@ pub struct Fractal<T> {
 
     clear: bool,
     queue: Queue,
+
+    // TODO: NO, move UP
     builder: TileBuilder,
 }
 
@@ -106,9 +108,9 @@ impl<T> Fractal<T> {
         }
 
         // Free textures
-        let new_iter = self.pos.get_pos_all();
+        let new_iter = self.pos.get_pos_all().map(|x| (x, ()));
         self.tiles
-            .update_with(new_iter, |_, v| texture_creator.free(v), |_| None);
+            .update_with(new_iter, |_, v| texture_creator.free(v), |_, _| None);
     }
 
     pub fn debug_queue_tiles(&self) -> Vec<(TilePos, Task)> {

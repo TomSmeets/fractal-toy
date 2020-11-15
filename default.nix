@@ -20,6 +20,8 @@
 
   nativeBuildInputs = [
     cargo
+    cargo-watch
+    rustfmt
     pkgconfig
   ];
 

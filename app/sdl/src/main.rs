@@ -1,6 +1,7 @@
 mod atlas;
 mod game;
 mod input;
+mod main2;
 mod sdl;
 
 use self::game::State;
@@ -13,6 +14,10 @@ pub fn rect_to_sdl(r: Rect) -> sdl2::rect::Rect {
 }
 
 fn main() {
+    main2::run();
+
+    return;
+
     let p = Persist::new();
     let mut s = State::new();
 
