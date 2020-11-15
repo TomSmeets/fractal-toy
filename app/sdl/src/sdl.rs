@@ -1,3 +1,4 @@
+use crate::atlas::Atlas;
 use crate::input::SDLInput;
 use crate::main2::Config;
 use crate::main2::Tile;
@@ -5,6 +6,7 @@ use crate::main2::TileMap;
 use crate::rect_to_sdl;
 use fractal_toy::math::Rect as MRect;
 use fractal_toy::math::*;
+use fractal_toy::AtlasRegion;
 use fractal_toy::AtlasTextureProvider;
 use fractal_toy::Viewport;
 use fractal_toy::TEXTURE_SIZE;
@@ -15,6 +17,8 @@ use sdl2::rect::Rect;
 use sdl2::render::Texture;
 use sdl2::render::{BlendMode, Canvas};
 use sdl2::video::Window;
+use tilemap::CompareIter;
+use tilemap::ComparedValue;
 
 pub struct Sdl {
     /// ~~SDL_Quit is called when dropped, so it has to be kept alive~~
@@ -29,7 +33,8 @@ pub struct Sdl {
     pub canvas: Canvas<Window>,
 
     pub input: SDLInput,
-    pub map: tilemap::TileMap<Texture>,
+    pub map: tilemap::TileMap<AtlasRegion>,
+    pub atlas: Atlas,
 }
 
 impl Sdl {
@@ -73,6 +78,7 @@ impl Sdl {
 
             input: SDLInput::new(1.0 / 60.0),
             map: tilemap::TileMap::new(),
+            atlas: Atlas::new(),
         }
     }
 
@@ -98,7 +104,6 @@ impl Sdl {
     }
 
     pub fn render(&mut self, map: &TileMap, vp: &Viewport) {
-        let debug = true;
         self.canvas.set_draw_color(Color::RGB(0, 0, 0));
         self.canvas.clear();
 
@@ -110,41 +115,43 @@ impl Sdl {
 
         self.canvas.set_draw_color(Color::RGB(255, 0, 0));
 
-        let it = map.tiles.iter().map(|(x, y)| (*x, y));
-        let texture_creator = self.canvas.texture_creator();
-        self.map.update_with(
-            it,
-            |_, t| unsafe { t.destroy() },
-            |_, t| {
-                if let Tile::Done(px) = t {
-                    let mut txt = texture_creator
-                        .create_texture_static(
-                            PixelFormatEnum::ABGR8888,
-                            TEXTURE_SIZE as _,
-                            TEXTURE_SIZE as _,
-                        )
-                        .unwrap();
-                    txt.update(None, &px, 4 * TEXTURE_SIZE as usize).unwrap();
-                    // TODO: this does not change the tilemap... do we just always store the pixels
-                    // for convinience, or should sdl be able to deallocate them
-                    Some(txt)
-                } else {
-                    None
-                }
-            },
-        );
+        let iter = CompareIter::new(map.tiles.iter(), self.map.tiles.iter(), |(l, _), (r, _)| {
+            l.cmp(&r)
+        });
+        let mut new_map = std::collections::BTreeMap::new();
+        for i in iter {
+            match i {
+                ComparedValue::Left((pos, v)) => {
+                    // only in map.tiles
+                    if let Tile::Done(px) = v {
+                        let texture_creator = self.canvas.texture_creator();
+                        let region = self.atlas.alloc(&texture_creator, px);
+                        new_map.insert(*pos, region);
+                    }
+                },
+
+                ComparedValue::Right(_) => {
+                    // dont insert
+                },
+
+                ComparedValue::Both((pos, _), (_, w)) => {
+                    new_map.insert(*pos, w.clone());
+                },
+            }
+        }
+
+        self.map.tiles = new_map;
 
         for (p, tile) in self.map.tiles.iter() {
             let r = vp.pos_to_rect(p);
 
-            self.canvas.copy(tile, None, rect_to_sdl(r)).unwrap();
-
-            // // atlas.draw(sdl, tile, r);
-            // self.canvas_copy(
-            //     &self.atlas.texture[tile.index.z as usize],
-            //     Some(rect_to_sdl(tile.rect_padded())),
-            //     Some(rect_to_sdl(r)),
-            // );
+            self.canvas
+                .copy(
+                    &self.atlas.texture[tile.index.z as usize],
+                    Some(rect_to_sdl(tile.rect_padded())),
+                    Some(rect_to_sdl(r)),
+                )
+                .unwrap();
         }
 
         for (p, tile) in map.tiles.iter() {
@@ -177,44 +184,10 @@ impl Sdl {
         src: Option<Rect>,
         dst: Option<Rect>,
     ) {
-        self.canvas.copy(texture, src, dst).unwrap();
     }
 
     pub fn output_size(&self) -> Vector2<u32> {
         let (x, y) = self.canvas.output_size().unwrap();
         Vector2::new(x, y)
-    }
-
-    pub fn create_texture_static_rgba8(&mut self, w: u32, h: u32) -> sdl2::render::Texture {
-        self.canvas
-            .texture_creator()
-            .create_texture_static(PixelFormatEnum::ABGR8888, w, h)
-            .unwrap()
-    }
-}
-
-impl Default for Sdl {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl AtlasTextureProvider for Sdl {
-    type Texture = Texture;
-
-    fn alloc(&mut self, width: u32, height: u32) -> Texture {
-        self.create_texture_static_rgba8(width, height)
-    }
-
-    fn free(&mut self, t: Texture) {
-        unsafe {
-            t.destroy();
-        }
-    }
-
-    fn update(&mut self, texture: &mut Texture, rect: MRect, pixels: &[u8]) {
-        texture
-            .update(Some(rect_to_sdl(rect)), pixels, 4 * TEXTURE_SIZE as usize)
-            .unwrap();
     }
 }

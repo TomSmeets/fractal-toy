@@ -134,7 +134,7 @@ impl<T> Default for Atlas<T> {
 //     }
 // }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct AtlasRegion {
     pub index: Vector3<u32>,
     res: u32,

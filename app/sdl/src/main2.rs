@@ -46,7 +46,7 @@ impl Config {
                 kind: TileType::Mandelbrot,
                 iterations: 64,
                 resolution: TEXTURE_SIZE as u32,
-                padding: 0,
+                padding: 1,
             },
         }
     }
