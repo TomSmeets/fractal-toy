@@ -164,6 +164,9 @@ pub fn run() {
     let mut builder_ocl = BuilderOCL::new();
     let mut builder_cpu = BuilderCPU::new();
 
+
+    use std::time::Instant;
+    let mut start_time = Instant::now();
     loop {
         let input = sdl.events();
         input.move_viewport(&mut viewport);
@@ -181,6 +184,11 @@ pub fn run() {
         sdl.render(&tile_map, &viewport);
 
         config.changed = false;
+
+        let end_time = Instant::now();
+        let dt = end_time - start_time;
+        println!("dt: {:?}", dt);
+        start_time = end_time;
     }
 }
 
