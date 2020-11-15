@@ -46,6 +46,7 @@ pub enum Tile {
 
 pub struct Config {
     changed: bool,
+    debug: bool,
     params: TileParams,
 }
 
@@ -57,6 +58,7 @@ impl Config {
     fn new() -> Self {
         Self {
             changed: true,
+            debug: false,
             params: TileParams {
                 kind: TileType::Mandelbrot,
                 iterations: 64,
@@ -69,23 +71,26 @@ impl Config {
 
 #[derive(Serialize, Deserialize)]
 struct SaveState {
-    viewport: ViewportSave,
+    viewport: Option<ViewportSave>,
+    debug: bool,
 }
 
 pub fn main() {
-    let mut sdl = Sdl::new();
-
     let mut tile_map = TileMap::new();
     let mut config = Config::new();
+
+    let mut sdl = Sdl::new();
     let mut viewport = Viewport::new(sdl.output_size());
 
     let mut builder_ocl = BuilderOCL::new();
     let mut builder_cpu = BuilderCPU::new();
 
+    // load saved state
     let persist = Persist::new();
     if let Ok(state) = persist.load("auto") {
         let state: SaveState = state;
-        viewport.load(state.viewport);
+        if let Some(s) = state.viewport { viewport.load(s) }
+        config.debug = state.debug;
     }
 
     use std::time::Instant;
@@ -116,7 +121,8 @@ pub fn main() {
 
     {
         let state = SaveState {
-            viewport: viewport.save(),
+            viewport: Some(viewport.save()),
+            debug: config.debug,
         };
 
         persist.save("auto", &state).unwrap();
