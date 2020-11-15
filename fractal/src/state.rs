@@ -32,7 +32,7 @@ impl Persist {
         Ok(d1)
     }
 
-    pub fn jist(&self) -> Vec<String> {
+    pub fn list(&self) -> Vec<String> {
         let dir = fs::read_dir(&self.root);
 
         let dir = match dir {
