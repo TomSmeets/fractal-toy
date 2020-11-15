@@ -129,12 +129,12 @@ impl Viewport {
         // scale is width of entire viewport in the world
         //
         // px_size = (scale / with_in_pixels)
-        // tile_size = px_size * TEXTURE_SIZE;
+        // tile_size = px_size * (TEXTURE_SIZE - 2*PADDING);
         // tile_size = (0.5)^z
         // z = log(tile_size)/log(1/2)
         // z = -log2(tile_size)
         let px_size = self.pixel_size();
-        let tile_size = px_size * size.size as f64;
+        let tile_size = px_size * (size.size - size.padding*2) as f64;
         let z_max = -tile_size.log2();
         let z_max = z_max.max(0.0).ceil() as i32;
         let z_min = (z_max - 8).max(0);
