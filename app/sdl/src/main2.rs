@@ -64,12 +64,13 @@ impl BuilderCPU {
 
             let thread = std::thread::spawn(move || {
                 let mut b = fractal_toy::CPUBuilder::new();
-                loop {
-                    let p = q_rx.recv().unwrap();
+                while let Ok(p) = q_rx.recv() {
                     match p {
                         ThreadCommand::Build(p) => {
                             let px = b.build(p).pixels;
-                            a_tx.send((p, px)).unwrap();
+                            if let Err(_) = a_tx.send((p, px)) {
+                                break;
+                            }
                         },
 
                         ThreadCommand::Configure(params) => {
@@ -106,7 +107,6 @@ impl BuilderCPU {
                 }
             }
         }
-        println!("done: {}", done);
 
         let mut queued = 0;
         for (p, t) in map.tiles.iter_mut() {
@@ -126,7 +126,14 @@ impl BuilderCPU {
                 }
             }
         }
-        println!("queued: {}", queued);
+
+        if done > 0 {
+            println!("done: {}", done);
+        }
+
+        if queued > 0 {
+            println!("queued: {}", queued);
+        }
 
         // TODO: we could use this done count to determine how many tiles we should queue for the
         // next iteration;
