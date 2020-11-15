@@ -1,14 +1,14 @@
 [workspace]
 members = [
-    "app/gl",
+    # "app/gl",
     "app/sdl",
 
     # TODO: make web work
     # "app/web",
 
-    "builder/*",
+    # "builder/*",
 
     "fractal",
-    "ui",
+    # "ui",
     "tilemap"
 ]

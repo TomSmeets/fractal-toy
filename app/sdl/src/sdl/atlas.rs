@@ -1,8 +1,6 @@
 use crate::rect_to_sdl;
-use crate::sdl::Sdl;
 use fractal_toy::AtlasRegion;
 use fractal_toy::SimpleAtlas;
-use fractal_toy::TileTextureProvider;
 use fractal_toy::TEXTURE_SIZE;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::Texture;

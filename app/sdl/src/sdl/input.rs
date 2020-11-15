@@ -69,7 +69,7 @@ impl SDLInput {
         self.input.events.clear();
     }
 
-    pub fn update_config(&self, cfg: &mut Config) {}
+    pub fn update_config(&self, _cfg: &mut Config) {}
 
     fn trnalsate_sdl_key(&mut self, key: Keycode) -> Option<InputAction> {
         Some(match key {
