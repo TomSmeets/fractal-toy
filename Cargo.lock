@@ -1878,6 +1878,7 @@ name = "sdl"
 version = "0.1.0"
 dependencies = [
  "builder-ocl",
+ "crossbeam-channel",
  "fractal-toy",
  "png",
  "sdl2",

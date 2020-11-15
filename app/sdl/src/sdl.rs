@@ -103,7 +103,7 @@ impl Sdl {
         self.canvas.clear();
 
         let sz = vp.size_in_pixels();
-        self.canvas.set_draw_color(Color::RGB(255, 255, 255));
+        self.canvas.set_draw_color(Color::RGB(255, 0, 255));
         self.canvas
             .draw_rect(Rect::new(10, 10, sz.x as u32 - 20, sz.y as u32 - 20))
             .unwrap();
@@ -117,7 +117,6 @@ impl Sdl {
             |_, t| unsafe { t.destroy() },
             |_, t| {
                 if let Tile::Done(px) = t {
-                    use fractal_toy::TEXTURE_SIZE;
                     let mut txt = texture_creator
                         .create_texture_static(
                             PixelFormatEnum::ABGR8888,
@@ -126,6 +125,8 @@ impl Sdl {
                         )
                         .unwrap();
                     txt.update(None, &px, 4 * TEXTURE_SIZE as usize).unwrap();
+                    // TODO: this does not change the tilemap... do we just always store the pixels
+                    // for convinience, or should sdl be able to deallocate them
                     Some(txt)
                 } else {
                     None
@@ -144,8 +145,24 @@ impl Sdl {
             //     Some(rect_to_sdl(tile.rect_padded())),
             //     Some(rect_to_sdl(r)),
             // );
+        }
 
-            if debug {
+        for (p, tile) in map.tiles.iter() {
+            let mut r = vp.pos_to_rect(p);
+
+            r.pos.x += 5;
+            r.pos.y += 5;
+            r.size.x -= 2 * 5;
+            r.size.y -= 2 * 5;
+
+            // // atlas.draw(sdl, tile, r);
+            // self.canvas_copy(
+            //     &self.atlas.texture[tile.index.z as usize],
+            //     Some(rect_to_sdl(tile.rect_padded())),
+            //     Some(rect_to_sdl(r)),
+            // );
+
+            if let Tile::Doing = tile {
                 self.canvas.set_draw_color(Color::RGB(255, 255, 255));
                 self.canvas.draw_rect(rect_to_sdl(r)).unwrap();
             }

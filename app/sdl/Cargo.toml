@@ -18,3 +18,4 @@ builder-ocl = { path = "../../builder/ocl" }
 sdl2  = { version = "0.34", features = [ "unsafe_textures" ] }
 serde = { version = "1.0", features = [ "derive" ] }
 png   = { version = "0.16" }
+crossbeam-channel = { version = "0.4" }
