@@ -4,7 +4,6 @@ mod input;
 use self::atlas::Atlas;
 use self::input::SDLInput;
 
-use crate::rect_to_sdl;
 use crate::Tile;
 use crate::TileMap;
 use fractal_toy::math::*;
@@ -17,6 +16,10 @@ use sdl2::video::Window;
 use std::collections::BTreeMap;
 use tilemap::CompareIter;
 use tilemap::ComparedValue;
+
+pub fn rect_to_sdl(r: Rect) -> sdl2::rect::Rect {
+    sdl2::rect::Rect::new(r.pos.x, r.pos.y, r.size.x as u32, r.size.y as u32)
+}
 
 pub struct Sdl {
     /// ~~SDL_Quit is called when dropped, so it has to be kept alive~~
