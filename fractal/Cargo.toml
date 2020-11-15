@@ -5,6 +5,9 @@ authors = ["TomSmeets <tom.tsmeets@gmail.com>"]
 edition = "2018"
 license = "GPL-v3-or-later"
 
+[features]
+static = [ "sdl2/static-link", "sdl2/bundled" ]
+
 [dependencies]
 tilemap = { path = "../tilemap" }
 ui      = { path = "../ui" }
@@ -14,3 +17,5 @@ serde_json        = { version = "1.0" }
 cgmath            = { version = "0.17", features = [ "serde" ] }
 crossbeam-channel = { version = "0.4" }
 num_cpus          = { version = "1.13" }
+sdl2  = { version = "0.34", features = [ "unsafe_textures" ] }
+png   = { version = "0.16" }

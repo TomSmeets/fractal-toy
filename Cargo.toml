@@ -1,7 +1,7 @@
 [workspace]
 members = [
     # "app/gl",
-    "app/sdl",
+    # "app/sdl",
 
     # TODO: make web work
     # "app/web",
