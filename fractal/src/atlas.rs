@@ -84,13 +84,13 @@ impl AtlasRegion {
     // returns smaller rectangle with padding removed
     pub fn rect_padded(&self, texture: TextureSizeAndPadding) -> Rect {
         let pos = Vector2 {
-            x: (texture.size * self.index.x + texture.padding) as i32,
-            y: (texture.size * self.index.y + texture.padding) as i32,
+            x: (texture.size * self.index.x) as i32 + texture.padding as i32,
+            y: (texture.size * self.index.y) as i32 + texture.padding as i32,
         };
 
         let size = Vector2 {
-            x: (texture.size - texture.padding * 2) as i32,
-            y: (texture.size - texture.padding * 2) as i32,
+            x: (texture.size as i32 - texture.padding as i32 * 2) as i32,
+            y: (texture.size as i32 - texture.padding as i32 * 2) as i32,
         };
 
         Rect { pos, size }
