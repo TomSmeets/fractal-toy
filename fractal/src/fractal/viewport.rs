@@ -184,7 +184,10 @@ impl Viewport {
 #[test]
 fn test_viewport_pos_sorted() {
     let v = Viewport::new(Vector2::new(800, 600));
-    let xs: Vec<_> = v.get_pos_all().collect();
+    let xs: Vec<_> = v.get_pos_all(TextureSizeAndPadding {
+        size:   64,
+        padding: 1,
+    }).collect();
     let mut ys = xs.clone();
     ys.sort();
     assert_eq!(xs, ys);
