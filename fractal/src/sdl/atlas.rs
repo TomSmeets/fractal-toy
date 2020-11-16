@@ -54,6 +54,10 @@ impl Atlas {
     pub fn remove(&mut self, r: AtlasRegion) {
         self.simple.remove(r);
     }
+
+    pub fn clear(&mut self) {
+        self.simple = SimpleAtlas::new(self.simple.size_and_padding);
+    }
 }
 
 impl Drop for Atlas {

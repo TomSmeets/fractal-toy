@@ -39,6 +39,7 @@ pub struct Sdl {
     pub input: SDLInput,
     pub map: tilemap::TileMap<AtlasRegion>,
     pub atlas: Atlas,
+    pub version: u32,
 }
 
 impl Sdl {
@@ -80,6 +81,8 @@ impl Sdl {
             event,
             canvas,
 
+            version: 0,
+
             input: SDLInput::new(),
             map: tilemap::TileMap::new(),
             atlas: Atlas::new(config.params.size),
@@ -93,6 +96,12 @@ impl Sdl {
     }
 
     pub fn render(&mut self, params: &TileParams, map: &TileMap, vp: &Viewport) {
+        if params.version != self.version {
+            self.map.clear();
+            self.atlas.clear();
+            self.version = params.version;
+        }
+
         // Update my renderd tiles
         let tiles = std::mem::replace(&mut self.map.tiles, BTreeMap::new());
         let iter = CompareIter::new(map.tiles.iter(), tiles.into_iter(), |(l, _), (r, _)| {

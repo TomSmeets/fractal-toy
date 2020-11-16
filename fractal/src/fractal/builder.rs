@@ -89,6 +89,7 @@ pub struct TileParams {
     pub kind: TileType,
     pub iterations: i32,
     pub size: TextureSizeAndPadding,
+    pub version: u32,
 }
 
 #[derive(Eq, PartialEq, Clone, Debug)]

@@ -9,7 +9,8 @@ use crossbeam_channel::{Receiver, Sender};
 use std::thread::JoinHandle;
 
 pub struct BuilderCPU {
-    rx: Receiver<(TilePos, Vec<u8>)>,
+    version: u32,
+    rx: Receiver<(TilePos, u32, Vec<u8>)>,
     workers: Vec<(Sender<ThreadCommand>, JoinHandle<()>)>,
 }
 
@@ -40,7 +41,7 @@ impl BuilderCPU {
                         ThreadCommand::Build(p) => {
                             let params = params.as_ref().unwrap();
                             let px = build(p, params);
-                            if let Err(_) = a_tx.send((p, px)) {
+                            if let Err(_) = a_tx.send((p, params.version, px)) {
                                 break;
                             }
                         },
@@ -57,11 +58,13 @@ impl BuilderCPU {
             workers.push((q_tx, thread));
         }
 
-        Self { rx: a_rx, workers }
+        Self { version: 0, rx: a_rx, workers }
     }
 
     pub fn update(&mut self, config: &Config, map: &mut TileMap) {
-        if config.changed {
+        if config.params.version != self.version {
+            self.version = config.params.version;
+
             for (tx, _) in self.workers.iter() {
                 tx.send(ThreadCommand::Configure(config.params.clone()))
                     .unwrap();
@@ -69,7 +72,11 @@ impl BuilderCPU {
         }
 
         let mut done = 0;
-        for (pos, pixels) in self.rx.try_iter() {
+        for (pos, version, pixels) in self.rx.try_iter() {
+            if version != config.params.version {
+                continue;
+            }
+
             if let Some(t) = map.tiles.get_mut(&pos) {
                 if let Tile::Doing = *t {
                     done += 1;

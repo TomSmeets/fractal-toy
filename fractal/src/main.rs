@@ -75,6 +75,7 @@ impl Config {
             params: TileParams {
                 kind: TileType::ShipHybrid,
                 iterations: 64,
+                version: 1,
                 size: TextureSizeAndPadding {
                     size: 64 * 2,
                     padding: 1,
@@ -129,6 +130,13 @@ pub fn main() {
 
         if input.quit {
             break;
+        }
+
+        if input.next > 0 {
+            tile_map = TileMap::new();
+            config.params.kind = config.params.kind.next();
+            config.params.version += 1;
+            config.changed = true;
         }
 
         tile_map.update(&config, &viewport);
