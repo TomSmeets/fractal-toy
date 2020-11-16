@@ -30,7 +30,7 @@ impl BuilderCPU {
 
         let ncpu = (num_cpus::get() - 1).max(1);
         for _ in 0..ncpu {
-            let (q_tx, q_rx) = crossbeam_channel::bounded(4);
+            let (q_tx, q_rx) = crossbeam_channel::bounded(8);
 
             let a_tx = a_tx.clone();
 
