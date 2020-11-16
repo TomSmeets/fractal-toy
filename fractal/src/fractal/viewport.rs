@@ -134,7 +134,7 @@ impl Viewport {
         // z = log(tile_size)/log(1/2)
         // z = -log2(tile_size)
         let px_size = self.pixel_size();
-        let tile_size = px_size * (size.size - size.padding*2) as f64;
+        let tile_size = px_size * (size.size - size.padding * 2) as f64;
         let z_max = -tile_size.log2();
         let z_max = z_max.max(0.0).ceil() as i32;
         let z_min = (z_max - 8).max(0);
@@ -184,10 +184,12 @@ impl Viewport {
 #[test]
 fn test_viewport_pos_sorted() {
     let v = Viewport::new(Vector2::new(800, 600));
-    let xs: Vec<_> = v.get_pos_all(TextureSizeAndPadding {
-        size:   64,
-        padding: 1,
-    }).collect();
+    let xs: Vec<_> = v
+        .get_pos_all(TextureSizeAndPadding {
+            size: 64,
+            padding: 1,
+        })
+        .collect();
     let mut ys = xs.clone();
     ys.sort();
     assert_eq!(xs, ys);

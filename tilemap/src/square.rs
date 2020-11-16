@@ -16,12 +16,12 @@ impl Square {
 
     /// scale this square, the center will stay at the same spot
     pub fn scale(self, s: f64) -> Self {
-        let wo =     self.w;
+        let wo = self.w;
         let wn = s * self.w;
 
         Self {
-            x: self.x + wo*0.5 - wn*0.5,
-            y: self.y + wo*0.5 - wn*0.5,
+            x: self.x + wo * 0.5 - wn * 0.5,
+            y: self.y + wo * 0.5 - wn * 0.5,
             w: wn,
         }
     }

@@ -12,25 +12,24 @@ mod sdl;
 mod state;
 mod time;
 
-pub(crate) use self::atlas::AtlasRegion;
-pub(crate) use self::atlas::SimpleAtlas;
-pub(crate) use self::fractal::builder::TileParams;
-pub(crate) use self::fractal::builder::TileType;
-pub(crate) use self::fractal::viewport::Viewport;
-pub(crate) use self::input::Input;
-pub(crate) use self::input::InputAction;
-pub(crate) use self::input::InputEvent;
-pub(crate) use self::math::*;
-use serde::{Deserialize, Serialize};
-use state::Persist;
-use state::Reload;
-pub(crate) use tilemap::TilePos;
-
+use self::atlas::AtlasRegion;
+use self::atlas::SimpleAtlas;
+use self::fractal::builder::TileParams;
+use self::fractal::builder::TileType;
+use self::fractal::viewport::Viewport;
 use self::fractal::viewport::ViewportSave;
+use self::input::Input;
+use self::input::InputAction;
+use self::input::InputEvent;
+use self::math::*;
 use crate::builder_cpu::BuilderCPU;
 use crate::builder_ocl::BuilderOCL;
 use crate::math::Rect;
 use crate::sdl::Sdl;
+use serde::{Deserialize, Serialize};
+use state::Persist;
+use state::Reload;
+use tilemap::TilePos;
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub struct TextureSizeAndPadding {
