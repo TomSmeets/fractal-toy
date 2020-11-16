@@ -7,6 +7,7 @@ use self::input::SDLInput;
 use crate::math::*;
 use crate::AtlasRegion;
 use crate::Config;
+use crate::Input;
 use crate::Tile;
 use crate::TileMap;
 use crate::TileParams;
@@ -85,24 +86,9 @@ impl Sdl {
         }
     }
 
-    pub fn events(&mut self) -> &mut SDLInput {
-        let input = &mut self.input;
+    pub fn events(&mut self) -> Input {
         let es = self.event.poll_iter().collect::<Vec<_>>();
-        input.handle_sdl(&es);
-
-        for e in es.iter() {
-            match e {
-                Event::Window { win_event, .. } => match win_event {
-                    sdl2::event::WindowEvent::Resized(x, y) => {
-                        let window_size = Vector2::new((*x as u32).max(1), (*y as u32).max(1));
-                        input.resize = Some(window_size);
-                    },
-                    _ => (),
-                },
-                _ => (),
-            }
-        }
-
+        let input = self.input.handle_sdl(&es);
         input
     }
 

@@ -73,7 +73,7 @@ impl Config {
             changed: true,
             debug: false,
             params: TileParams {
-                kind: TileType::Mandelbrot,
+                kind: TileType::ShipHybrid,
                 iterations: 64,
                 size: TextureSizeAndPadding {
                     size: 64 * 2,
@@ -127,7 +127,7 @@ pub fn main() {
         input.move_viewport(dt, &mut viewport);
         input.update_config(&mut config);
 
-        if input.is_quit() {
+        if input.quit {
             break;
         }
 

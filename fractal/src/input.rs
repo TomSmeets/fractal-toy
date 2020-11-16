@@ -1,4 +1,7 @@
 use crate::math::*;
+use crate::Config;
+use crate::Vector2;
+use crate::Viewport;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -24,6 +27,11 @@ pub struct Input {
     pub pause: bool,
     pub load: bool,
     pub save: bool,
+
+    pub iter: i32,
+    pub next: i32,
+
+    pub resize: Option<Vector2<u32>>,
 
     pub events: Vec<InputEvent>,
 }
@@ -91,20 +99,34 @@ impl Input {
             load: false,
             save: false,
             events: Vec::new(),
+
+            iter: 0,
+            next: 0,
+            resize: None,
         }
     }
 
-    pub fn begin(&mut self) {
+    pub fn move_viewport(&self, dt: f32, vp: &mut Viewport) {
+        if let Some(sz) = self.resize {
+            vp.resize(sz);
+        }
+
+        if self.scroll != 0 {
+            vp.zoom_in_at(0.3 * self.scroll as f64, self.mouse);
+        }
+
+        vp.translate({
+            let mut p = dt as f64 * self.dir_move * 2.0 * vp.size_in_pixels().x;
+            p.y *= -1.0;
+            crate::V2i::new(p.x as i32, p.y as i32)
+        });
+
+        vp.zoom_in(dt as f64 * self.zoom as f64 * 3.5);
+
         if self.mouse_down {
-            self.drag = self.mouse - self.old_mouse;
-        } else {
-            self.drag = V2i::zero();
+            vp.translate(-self.drag);
         }
-
-        self.old_mouse = self.mouse;
-        self.scroll = 0;
-        self.mouse_click = false;
-        self.load = false;
-        self.save = false;
     }
+
+    pub fn update_config(&self, _cfg: &mut Config) {}
 }
