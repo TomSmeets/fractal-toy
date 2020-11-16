@@ -20,8 +20,14 @@
 
   nativeBuildInputs = [
     cargo
-    cargo-watch
+    clippy
     rustfmt
+
+    cargo-watch
+    cargo-bloat
+    cargo-edit
+    cargo-license
+
     pkgconfig
   ];
 
