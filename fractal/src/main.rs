@@ -19,12 +19,9 @@ use self::fractal::builder::TileType;
 use self::fractal::viewport::Viewport;
 use self::fractal::viewport::ViewportSave;
 use self::input::Input;
-use self::input::InputAction;
-use self::input::InputEvent;
 use self::math::*;
 use crate::builder_cpu::BuilderCPU;
 use crate::builder_ocl::BuilderOCL;
-use crate::math::Rect;
 use crate::sdl::Sdl;
 use serde::{Deserialize, Serialize};
 use state::Persist;
@@ -44,10 +41,6 @@ impl TextureSizeAndPadding {
     pub fn size_in_bytes(self) -> usize {
         self.size as usize * self.size as usize * 4
     }
-}
-
-pub fn rect_to_sdl(r: Rect) -> sdl2::rect::Rect {
-    sdl2::rect::Rect::new(r.pos.x, r.pos.y, r.size.x as u32, r.size.y as u32)
 }
 
 pub enum Tile {

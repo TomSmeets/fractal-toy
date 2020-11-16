@@ -5,10 +5,8 @@ use crate::Viewport;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
-// TODO: fractal should be a library, input should not exists here?
 pub struct Input {
     pub mouse: V2i,
-    pub old_mouse: V2i,
 
     // mouse drag in pixels
     pub drag: V2i,
@@ -32,58 +30,12 @@ pub struct Input {
     pub next: i32,
 
     pub resize: Option<Vector2<u32>>,
-
-    pub events: Vec<InputEvent>,
-}
-
-// These can be seriealized
-// We should handle all of these
-#[derive(Serialize, Deserialize, Clone)]
-pub enum MouseEvent {
-    Move(V2i),
-    Button(u32, bool),
-    Wheel(i32),
-}
-
-// TODO: In the future there should be a key binding for these
-#[derive(Serialize, Deserialize, Clone)]
-pub enum InputAction {
-    Quit,
-    Debug,
-    Pause,
-    Load,
-    Save,
-    IterInc,
-    IterDec,
-    MoveUp,
-    MoveDown,
-    MoveLeft,
-    MoveRight,
-    ZoomIn,
-    ZoomOut,
-    NextFractal,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub enum InputEvent {
-    Mouse(MouseEvent),
-
-    // think keyboard key, but named
-    Action(InputAction, bool),
-}
-
-impl Default for Input {
-    fn default() -> Self {
-        Input::new()
-    }
 }
 
 impl Input {
     pub fn new() -> Self {
         Input {
             mouse: V2i::zero(),
-            old_mouse: V2i::zero(),
-
             mouse_down: false,
             mouse_click: false,
             drag: V2i::zero(),
@@ -98,7 +50,6 @@ impl Input {
             pause: false,
             load: false,
             save: false,
-            events: Vec::new(),
 
             iter: 0,
             next: 0,

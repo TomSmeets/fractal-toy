@@ -3,7 +3,6 @@ mod input;
 
 use self::atlas::Atlas;
 use self::input::SDLInput;
-
 use crate::math::*;
 use crate::AtlasRegion;
 use crate::Config;
@@ -12,7 +11,6 @@ use crate::Tile;
 use crate::TileMap;
 use crate::TileParams;
 use crate::Viewport;
-use sdl2::event::Event;
 use sdl2::pixels::Color;
 use sdl2::render::{BlendMode, Canvas};
 use sdl2::video::Window;
@@ -90,9 +88,7 @@ impl Sdl {
     }
 
     pub fn events(&mut self) -> Input {
-        let es = self.event.poll_iter().collect::<Vec<_>>();
-        let input = self.input.handle_sdl(&es);
-        input
+        self.input.handle_sdl(&mut self.event)
     }
 
     pub fn render(&mut self, params: &TileParams, map: &TileMap, vp: &Viewport) {

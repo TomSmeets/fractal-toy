@@ -41,7 +41,7 @@ impl BuilderCPU {
                         ThreadCommand::Build(p) => {
                             let params = params.as_ref().unwrap();
                             let px = build(p, params);
-                            if let Err(_) = a_tx.send((p, params.version, px)) {
+                            if a_tx.send((p, params.version, px)).is_err() {
                                 break;
                             }
                         },
@@ -58,7 +58,11 @@ impl BuilderCPU {
             workers.push((q_tx, thread));
         }
 
-        Self { version: 0, rx: a_rx, workers }
+        Self {
+            version: 0,
+            rx: a_rx,
+            workers,
+        }
     }
 
     pub fn update(&mut self, config: &Config, map: &mut TileMap) {
@@ -91,7 +95,7 @@ impl BuilderCPU {
                 let mut had_ready_workers = false;
 
                 for (tx, _) in self.workers.iter() {
-                    if let Ok(_) = tx.try_send(ThreadCommand::Build(*p)) {
+                    if tx.try_send(ThreadCommand::Build(*p)).is_ok() {
                         *t = Tile::Doing;
                         had_ready_workers = true;
                         queued += 1;

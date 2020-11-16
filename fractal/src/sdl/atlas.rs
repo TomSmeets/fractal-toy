@@ -1,4 +1,4 @@
-use crate::rect_to_sdl;
+use crate::sdl::rect_to_sdl;
 use crate::AtlasRegion;
 use crate::SimpleAtlas;
 use crate::TextureSizeAndPadding;

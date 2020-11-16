@@ -1,9 +1,5 @@
-use crate::Config;
 use crate::Input;
-use crate::InputAction;
-use crate::InputEvent;
 use crate::Vector2;
-use crate::Viewport;
 use cgmath::InnerSpace;
 use sdl2::controller::Axis;
 use sdl2::controller::Button;
@@ -14,14 +10,14 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SDLInput {
-    pub mouse_down: bool,
-    pub mouse: Vector2<i32>,
+    mouse_down: bool,
+    mouse: Vector2<i32>,
 
-    pub controller_left: [f32; 2],
-    pub controller_right: [f32; 2],
+    controller_left: [f32; 2],
+    controller_right: [f32; 2],
 
-    pub wsad_state: [bool; 4],
-    pub ikjl_state: [bool; 4],
+    wsad_state: [bool; 4],
+    ikjl_state: [bool; 4],
 }
 
 impl SDLInput {
@@ -76,16 +72,16 @@ impl SDLInput {
 
     // I like the allignment here
     #[rustfmt::skip]
-    pub fn handle_sdl(&mut self, events: &[Event]) -> Input {
+    pub fn handle_sdl(&mut self, events: &mut sdl2::EventPump) -> Input {
         let mut input = Input::new();
 
-        for e in events {
+        for e in events.poll_iter() {
             match e {
                 Event::Quit { .. } => input.quit = true,
 
                 // Why does sdl-rs split these events? original events contain key state.
-                Event::KeyUp   { keycode: Some(key), .. } => self.handle_sdl_key(&mut input, *key, false),
-                Event::KeyDown { keycode: Some(key), .. } => self.handle_sdl_key(&mut input, *key, true),
+                Event::KeyUp   { keycode: Some(key), .. } => self.handle_sdl_key(&mut input, key, false),
+                Event::KeyDown { keycode: Some(key), .. } => self.handle_sdl_key(&mut input, key, true),
 
                 Event::MouseButtonDown { mouse_btn: MouseButton::Left, .. } => {
                     input.mouse_click = true;
@@ -96,14 +92,14 @@ impl SDLInput {
 
                 Event::MouseWheel { y, .. } => input.scroll += y,
                 Event::MouseMotion { x, y, xrel, yrel, .. } => {
-                    self.mouse.x = *x as i32;
-                    self.mouse.y = *y as i32;
+                    self.mouse.x = x as i32;
+                    self.mouse.y = y as i32;
 
                     input.drag.x += xrel;
                     input.drag.y += yrel;
                 },
                 Event::ControllerAxisMotion { axis, value, .. } => {
-                    let mut value = *value as f32 / 32767.0;
+                    let mut value = value as f32 / 32767.0;
 
                     // TODO: maybe move out?
                     if value.abs() < 0.2 {
@@ -118,14 +114,14 @@ impl SDLInput {
                         _ => (),
                     }
                 },
-                Event::ControllerButtonDown { button, .. } => self.controller_button(&mut input, *button, true),
-                Event::ControllerButtonUp   { button, .. } => self.controller_button(&mut input, *button, false),
+                Event::ControllerButtonDown { button, .. } => self.controller_button(&mut input, button, true),
+                Event::ControllerButtonUp   { button, .. } => self.controller_button(&mut input, button, false),
 
-                Event::ControllerDeviceAdded { which, .. } => unsafe { sdl2::sys::SDL_GameControllerOpen(*which as i32); },
+                Event::ControllerDeviceAdded { which, .. } => unsafe { sdl2::sys::SDL_GameControllerOpen(which as i32); },
 
                 Event::Window { win_event, .. } => match win_event {
                     sdl2::event::WindowEvent::Resized(x, y) => {
-                        let window_size = Vector2::new((*x as u32).max(1), (*y as u32).max(1));
+                        let window_size = Vector2::new((x as u32).max(1), (y as u32).max(1));
                         input.resize = Some(window_size);
                     },
                     _ => (),
