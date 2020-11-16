@@ -79,7 +79,7 @@ impl Sdl {
             event,
             canvas,
 
-            input: SDLInput::new(1.0 / 60.0),
+            input: SDLInput::new(),
             map: tilemap::TileMap::new(),
             atlas: Atlas::new(config.params.size),
         }

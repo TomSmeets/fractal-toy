@@ -115,8 +115,16 @@ pub fn main() {
     use std::time::Instant;
     let mut start_time = Instant::now();
     loop {
+        let dt = {
+            let end_time = Instant::now();
+            let dt = end_time - start_time;
+            println!("dt: {:?}", dt);
+            start_time = end_time;
+            dt.as_secs_f32()
+        };
+
         let input = sdl.events();
-        input.move_viewport(&mut viewport);
+        input.move_viewport(dt, &mut viewport);
         input.update_config(&mut config);
 
         if input.is_quit() {
@@ -130,11 +138,6 @@ pub fn main() {
         sdl.render(&config.params, &tile_map, &viewport);
 
         config.changed = false;
-
-        let end_time = Instant::now();
-        let dt = end_time - start_time;
-        println!("dt: {:?}", dt);
-        start_time = end_time;
     }
 
     {

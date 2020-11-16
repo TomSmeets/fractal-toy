@@ -13,15 +13,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SDLInput {
-    pub dt: f32,
     pub input: Input,
     pub resize: Option<Vector2<u32>>,
 }
 
 impl SDLInput {
-    pub fn new(dt: f32) -> Self {
+    pub fn new() -> Self {
         SDLInput {
-            dt,
             input: Input::new(),
             resize: None,
         }
@@ -31,7 +29,7 @@ impl SDLInput {
     }
 
     // TODO: Remove mut
-    pub fn move_viewport(&mut self, vp: &mut Viewport) {
+    pub fn move_viewport(&mut self, dt: f32, vp: &mut Viewport) {
         if let Some(sz) = self.resize {
             vp.resize(sz);
         }
@@ -59,11 +57,11 @@ impl SDLInput {
         }
 
         vp.translate({
-            let mut p = self.dt as f64 * self.input.dir_move * 2.0 * vp.size_in_pixels().x;
+            let mut p = dt as f64 * self.input.dir_move * 2.0 * vp.size_in_pixels().x;
             p.y *= -1.0;
             crate::V2i::new(p.x as i32, p.y as i32)
         });
-        vp.zoom_in(self.dt as f64 * self.input.zoom as f64 * 3.5);
+        vp.zoom_in(dt as f64 * self.input.zoom as f64 * 3.5);
         vp.translate(-self.input.drag);
 
         self.input.events.clear();
