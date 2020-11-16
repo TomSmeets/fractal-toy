@@ -38,6 +38,8 @@ impl SDLInput {
     }
     fn handle_sdl_key(&mut self, input: &mut Input, key: Keycode, down: bool) {
         match key {
+            Keycode::Q => input.quit = true,
+
             Keycode::W => self.wsad_state[0] = down,
             Keycode::S => self.wsad_state[1] = down,
             Keycode::A => self.wsad_state[2] = down,
