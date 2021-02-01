@@ -1,8 +1,14 @@
-{ pkgs ? import <nixpkgs> {} }: with pkgs; stdenv.mkDerivation rec {
+{ pkgs ? import <nixpkgs> {} }: with pkgs;
+rustPlatform.buildRustPackage rec {
   pname = "fractal-toy";
   version = "0.1.0";
 
-  src = "/dev/null";
+  src = builtins.filterSource (p: t: !builtins.elem (toString p) (map toString [
+    ./.git
+    ./target
+    ./result
+    ./default.nix
+  ])) ./.;
 
   buildInputs = [
     ocl-icd
@@ -16,12 +22,12 @@
     xorg.libXi
   ];
 
-  LD_LIBRARY_PATH="${libGL}/lib";
-
   nativeBuildInputs = [
-    cargo
     pkgconfig
   ];
 
+  LD_LIBRARY_PATH="${libGL}/lib";
+
   hardeningDisable = [ "all" ];
+  cargoSha256 = "1mmib87jaqh7sd7x1m4pmhi56nrb21y876wjvak861k6csbsiiyg";
 }
