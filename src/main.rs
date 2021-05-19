@@ -8,26 +8,34 @@ use std::process::Command;
 use std::time::Instant;
 use std::time::Duration;
 
-use gpu::Gpu;
+use gpu::{Gpu, GpuInput};
 use winit::window::Window;
 use winit::window::WindowBuilder;
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::event::Event;
 use winit::event::WindowEvent;
 
+use cgmath::Vector2;
+
 pub struct State {
+    resolution: Vector2<u32>,
     gpu: Gpu,
 }
 
 impl State {
     pub fn init(window: &Window) -> Self {
+        let resolution = window.inner_size();
         State {
+            resolution: Vector2::new(resolution.width, resolution.height),
             gpu: Gpu::init(window),
         }
     }
 
     /// always called at regular intervals
     pub fn update(&mut self, dt: f32) {
+        self.gpu.render(&GpuInput {
+            resolution: self.resolution
+        });
     }
 }
 
@@ -44,7 +52,7 @@ pub fn main() {
         //
         // NOTE: Sadly we had to use the window title, and hope that it is uniqe.
         // I would like to use the x11 window id, but winit does not expose it to me.
-        Command::new("wmctrl").arg("-r").arg(title).arg("-t").arg("9").status().unwrap();
+        let _ = Command::new("wmctrl").arg("-r").arg(title).arg("-t").arg("9").status();
     }
 
     let mut state = State::init(&window);
