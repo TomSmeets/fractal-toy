@@ -98,14 +98,18 @@ pub fn main() {
                 // NOTE: if it was a while loop it would loop forever if we couldent keep up
                 // now it still requests an instaint update, but gives the os some cpu time
                 if next_frame_time <= current_time {
+                    state.update(target_dt);
+
                     // check how accurate we actually are
-                    if false {
-                        let dt = current_time - last_frame_time;
-                        println!("update: {:.2}, {:.2?}", 1.0 / dt.as_secs_f32(), dt);
+                    // TODO: extract to timing struct
+                    if true {
+                        let dt_frame  = current_time - last_frame_time;
+                        let dt_behind = current_time - next_frame_time;
+                        let dt_update = Instant::now() - current_time;
+                        println!("{:.1} Hz, frame {:6?} µs, update {:6} µs, behind {:2?} µs", 1.0 / dt_frame.as_secs_f32(), dt_frame.as_micros(), dt_update.as_micros(), dt_behind.as_micros());
                         last_frame_time = current_time;
                     }
 
-                    state.update(target_dt);
                     next_frame_time += Duration::from_secs_f32(target_dt);
                 }
 
