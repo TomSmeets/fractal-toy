@@ -81,6 +81,14 @@ pub fn main() {
                 event: WindowEvent::CloseRequested
             } => *control_flow = ControlFlow::Exit,
 
+            Event::WindowEvent {
+                window_id: _,
+                event: WindowEvent::Resized(size)
+            } => {
+                state.resolution.x = size.width;
+                state.resolution.y = size.height;
+            },
+
             // After all events are handled, time to update.
             // or not, if this is called on any event that might have happened
             Event::MainEventsCleared => {

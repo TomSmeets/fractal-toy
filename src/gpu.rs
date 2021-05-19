@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use wgpu::*;
 use winit::window::Window;
 use cgmath::Vector2;
@@ -67,25 +69,58 @@ impl Gpu {
     }
 
     pub fn render(&mut self, input: &GpuInput) {
-        // how we want our swap_chain
-        let recreate_swapchain = match &self.swap_chain {
-            None     => true,
-            Some(sc) => sc.resolution != input.resolution,
-        };
+        {
+            let recreate_swapchain = match &self.swap_chain {
+                None     => true,
+                Some(sc) => sc.resolution != input.resolution,
+            };
 
-        if recreate_swapchain {
-            println!("Recrating swapchain!");
-            self.swap_chain = Some(SwapChain {
-                resolution: input.resolution,
-                swap_chain: self.device.create_swap_chain(&self.surface, &SwapChainDescriptor {
-                    usage: TextureUsage::RENDER_ATTACHMENT,
-                    format: self.swap_chain_format,
-                    width:  input.resolution.x,
-                    height: input.resolution.y,
-                    present_mode: PresentMode::Mailbox,
-                }),
-            });
+            if recreate_swapchain {
+                println!("Recrating swapchain!");
+                self.swap_chain = Some(SwapChain {
+                    resolution: input.resolution,
+                    swap_chain: self.device.create_swap_chain(&self.surface, &SwapChainDescriptor {
+                        usage: TextureUsage::RENDER_ATTACHMENT,
+                        format: self.swap_chain_format,
+                        width:  input.resolution.x,
+                        height: input.resolution.y,
+                        present_mode: PresentMode::Mailbox,
+                    }),
+                });
+            }
         }
+
+        let shader = self.device.create_shader_module(&ShaderModuleDescriptor {
+            label: None,
+            source: ShaderSource::Wgsl(Cow::Owned(std::fs::read_to_string("src/shader.wgsl").unwrap())),
+            flags: ShaderFlags::all(),
+        });
+
+        let pipeline_layout = self.device.create_pipeline_layout(&PipelineLayoutDescriptor {
+            label: None,
+            bind_group_layouts: &[],
+            push_constant_ranges: &[],
+        });
+
+        let pipeline = self.device.create_render_pipeline(&RenderPipelineDescriptor {
+            label: None,
+            layout: Some(&pipeline_layout),
+            vertex: VertexState {
+                module: &shader,
+                entry_point: "vs_main",
+                buffers: &[],
+            },
+            fragment: Some(FragmentState {
+                module: &shader,
+                entry_point: "fs_main",
+                targets: &[self.swap_chain_format.into()],
+            }),
+            primitive: PrimitiveState::default(),
+            depth_stencil: None,
+            multisample: MultisampleState::default(),
+        });
+
+        
 
         // TODO: is there a better way, instead of unwraping the swap_chain 2 times?
         let swap_chain = match &self.swap_chain {
@@ -110,7 +145,28 @@ impl Gpu {
             return;
         }
 
-        let encoder = self.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
+        // We finally have a frame, now it is time to create the render commands
+        let mut encoder = self.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
+
+        // Render pass
+        // TODO: what do we do with compute commands? do they block? do we do them async?
+        {
+            let mut rpass = encoder.begin_render_pass(&RenderPassDescriptor {
+                label: None,
+                color_attachments: &[RenderPassColorAttachment {
+                    view: &frame.output.view,
+                    resolve_target: None,
+                    ops: Operations {
+                        load: LoadOp::Clear(Color::BLACK),
+                        store: true,
+                    },
+                }],
+                depth_stencil_attachment: None,
+            });
+            rpass.set_pipeline(&pipeline);
+            rpass.draw(0..3, 0..1);
+        }
+
         self.queue.submit(Some(encoder.finish()));
     }
 }
