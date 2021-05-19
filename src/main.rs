@@ -14,7 +14,6 @@ use winit::event::Event;
 use winit::event::WindowEvent;
 
 pub struct State {
-    // Handle to the gpu
     gpu: Gpu,
 }
 
@@ -26,10 +25,8 @@ impl State {
     }
 
     /// always called at regular intervals
-    pub fn update(&mut self, dt: f32) {}
-
-    /// Can sometimes be called more often than update
-    pub fn render(&mut self) {}
+    pub fn update(&mut self, dt: f32) {
+    }
 }
 
 pub fn main() {
@@ -51,7 +48,7 @@ pub fn main() {
     // but lets keep it as simple as possible.
     event_loop.run(move |event, _, control_flow| {
         // TODO: Poll vs Wait, what is usefull?
-        // whaterver happens
+        // NOTE: using just Wait, will not work. why?
         *control_flow = ControlFlow::WaitUntil(next_frame_time);
 
         match event {
@@ -65,7 +62,7 @@ pub fn main() {
             // or not, if this is called on any event that might have happened
             Event::MainEventsCleared => {
                 // check if we shoud update
-                let current_time    = Instant::now();
+                let current_time = Instant::now();
 
                 // NOTE: if it was a while loop it would loop forever if we couldent keep up
                 // now it still requests an instaint update, but gives the os some cpu time
@@ -78,7 +75,6 @@ pub fn main() {
                     }
 
                     state.update(target_dt);
-                    state.render();
                     next_frame_time += Duration::from_secs_f32(target_dt);
                 }
 
