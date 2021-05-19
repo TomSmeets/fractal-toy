@@ -1,14 +1,12 @@
-[workspace]
-members = [
-    "app/gl",
-    "app/sdl",
+[package]
+name = "fractal-toy"
+version = "0.1.0"
+authors = ["Tom Smeets <tom.tsmeets@gmail.com>"]
+edition = "2018"
+license = "GPL-v2"
 
-    # TODO: make web work
-    # "app/web",
-
-    "builder/*",
-
-    "fractal",
-    "ui",
-    "tilemap"
-]
+[dependencies]
+bytemuck = "1.5.1"
+pollster = "0.2.4"
+wgpu = "0.8.1"
+winit = "0.25.0"
