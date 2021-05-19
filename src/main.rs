@@ -4,11 +4,13 @@
 
 mod gpu;
 
+use std::process::Command;
 use std::time::Instant;
 use std::time::Duration;
 
 use gpu::Gpu;
 use winit::window::Window;
+use winit::window::WindowBuilder;
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::event::Event;
 use winit::event::WindowEvent;
@@ -30,8 +32,21 @@ impl State {
 }
 
 pub fn main() {
+    let title = "Fractaly Toy!";
     let event_loop = EventLoop::new();
-    let window = Window::new(&event_loop).unwrap();
+    let window = WindowBuilder::new().with_title(title).build(&event_loop).unwrap();
+
+    {
+        // very hacky way to move the window out of my way
+        // when using 'cargo watch -x run'
+        // was to lazy to modify my wm or so.
+        // This actually works very well :)
+        //
+        // NOTE: Sadly we had to use the window title, and hope that it is uniqe.
+        // I would like to use the x11 window id, but winit does not expose it to me.
+        Command::new("wmctrl").arg("-r").arg(title).arg("-t").arg("9").status().unwrap();
+    }
+
     let mut state = State::init(&window);
 
     // Decide what framerate we want to run

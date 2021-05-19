@@ -9,6 +9,12 @@ pub struct Gpu {
     queue: Queue, 
 }
 
+/// This struct should contain whatever the gpu should show
+/// I don't like statefull apis, so this is the entire api
+/// Put in here whatever you like, and the gpu will try to show it
+pub struct GpuInput {
+}
+
 impl Gpu {
     pub fn init(window: &Window) -> Gpu {
         // choose whatever backend you want
@@ -38,5 +44,8 @@ impl Gpu {
             device,
             queue
         }
+    }
+
+    pub fn render(&mut self) {
     }
 }
