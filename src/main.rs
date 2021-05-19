@@ -1,3 +1,7 @@
+// Sorry, but these warnings are very annoying
+#![allow(dead_code)]
+#![allow(unused_variables)]
+
 mod gpu;
 
 use std::time::Instant;
