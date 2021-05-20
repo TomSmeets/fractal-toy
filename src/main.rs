@@ -40,19 +40,18 @@ impl State {
 }
 
 pub fn main() {
-    let title = "Fractaly Toy!";
     let event_loop = EventLoop::new();
-    let window = WindowBuilder::new().with_title(title).build(&event_loop).unwrap();
+    let window = WindowBuilder::new().with_title("Fractal Toy!").build(&event_loop).unwrap();
 
     {
+        use winit::platform::unix::WindowExtUnix;
         // very hacky way to move the window out of my way
         // when using 'cargo watch -x run'
         // was to lazy to modify my wm or so.
         // This actually works very well :)
-        //
-        // NOTE: Sadly we had to use the window title, and hope that it is uniqe.
-        // I would like to use the x11 window id, but winit does not expose it to me.
-        let _ = Command::new("wmctrl").arg("-r").arg(title).arg("-t").arg("9").status();
+        if let Some(id) = window.xlib_window() {
+            let _ = Command::new("wmctrl").arg("-i").arg("-r").arg(id.to_string()).arg("-t").arg("9").status();
+        }
     }
 
     let mut state = State::init(&window);
