@@ -16,6 +16,16 @@ use winit::event::Event;
 use winit::event::WindowEvent;
 
 use cgmath::Vector2;
+use structopt::StructOpt;
+
+#[derive(Debug, StructOpt)]
+struct Config {
+    #[structopt(short, long)]
+    move_window: Option<Option<u32>>,
+
+    #[structopt(short, long)]
+    debug: bool,
+}
 
 pub struct State {
     resolution: Vector2<u32>,
@@ -40,17 +50,21 @@ impl State {
 }
 
 pub fn main() {
+    let config = Config::from_args();
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().with_title("Fractal Toy!").build(&event_loop).unwrap();
 
-    {
+    dbg!(&config);
+    if let Some(ws) = config.move_window {
+        let ws = ws.unwrap_or(9);
+
         use winit::platform::unix::WindowExtUnix;
         // very hacky way to move the window out of my way
         // when using 'cargo watch -x run'
         // was to lazy to modify my wm or so.
         // This actually works very well :)
         if let Some(id) = window.xlib_window() {
-            let _ = Command::new("wmctrl").arg("-i").arg("-r").arg(id.to_string()).arg("-t").arg("9").status();
+            let _ = Command::new("wmctrl").arg("-i").arg("-r").arg(id.to_string()).arg("-t").arg(ws.to_string()).status();
         }
     }
 
@@ -101,7 +115,7 @@ pub fn main() {
 
                     // check how accurate we actually are
                     // TODO: extract to timing struct
-                    if true {
+                    if config.debug {
                         let dt_frame  = current_time - last_frame_time;
                         let dt_behind = current_time - next_frame_time;
                         let dt_update = Instant::now() - current_time;
