@@ -13,16 +13,70 @@ pub struct Gpu {
     /// The queue is used to send commands to the gpu
     queue: Queue, 
 
-    swap_chain_format: TextureFormat,
-
     // is only created as soon as we actually know what to draw
-    swap_chain: Option<SwapChain>,
+    swap_chain: SwapChain,
     pipeline:   Option<RenderPipeline>,
 }
 
 pub struct SwapChain {
     resolution: Vector2<u32>,
-    swap_chain: wgpu::SwapChain,
+    format: TextureFormat,
+    swap_chain: Option<wgpu::SwapChain>,
+}
+
+impl SwapChain {
+    pub fn new(format: TextureFormat) -> Self {
+        SwapChain {
+            resolution: Vector2::new(0, 0),
+            format,
+            swap_chain: None,
+        }
+    }
+
+    pub fn format(&self) -> TextureFormat {
+        self.format
+    }
+    
+
+    pub fn next_frame(&mut self, device: &Device, surface: &Surface, resolution: Vector2<u32>) -> SwapChainFrame {
+        loop {
+            let recreate_swapchain = self.swap_chain.is_none() || self.resolution != resolution;
+
+            if recreate_swapchain {
+                println!("Recrating swapchain!");
+                self.resolution = resolution;
+                self.swap_chain = Some(device.create_swap_chain(surface, &SwapChainDescriptor {
+                    usage: TextureUsage::RENDER_ATTACHMENT,
+                    format: self.format,
+                    width:  resolution.x,
+                    height: resolution.y,
+                    present_mode: PresentMode::Mailbox,
+                }));
+            }
+
+            let swap_chain = self.swap_chain.as_ref().unwrap();
+
+
+            let frame = match swap_chain.get_current_frame() {
+                Ok(frame) => frame,
+                Err(e) => {
+                    dbg!(e);
+
+                    // swap chain has to be recreated
+                    // lets drop this frame
+                    self.swap_chain = None;
+                    continue;
+                },
+            };
+
+            if frame.suboptimal {
+                self.swap_chain = None;
+                    continue;
+            }
+
+            return frame;
+        }
+    }
 }
 
 /// This struct should contain whatever the gpu should show
@@ -63,35 +117,12 @@ impl Gpu {
             surface,
             device,
             queue,
-            swap_chain_format,
-
-            swap_chain: None,
+            swap_chain: SwapChain::new(swap_chain_format),
             pipeline: None,
         }
     }
 
     pub fn render(&mut self, input: &GpuInput) {
-        {
-            let recreate_swapchain = match &self.swap_chain {
-                None     => true,
-                Some(sc) => sc.resolution != input.resolution,
-            };
-
-            if recreate_swapchain {
-                println!("Recrating swapchain!");
-                self.swap_chain = Some(SwapChain {
-                    resolution: input.resolution,
-                    swap_chain: self.device.create_swap_chain(&self.surface, &SwapChainDescriptor {
-                        usage: TextureUsage::RENDER_ATTACHMENT,
-                        format: self.swap_chain_format,
-                        width:  input.resolution.x,
-                        height: input.resolution.y,
-                        present_mode: PresentMode::Mailbox,
-                    }),
-                });
-            }
-        }
-
         if self.pipeline.is_none() {
             println!("Recrating pipeline!");
             let shader = self.device.create_shader_module(&ShaderModuleDescriptor {
@@ -117,7 +148,7 @@ impl Gpu {
                 fragment: Some(FragmentState {
                     module: &shader,
                     entry_point: "fs_main",
-                    targets: &[self.swap_chain_format.into()],
+                    targets: &[self.swap_chain.format.into()],
                 }),
                 primitive: PrimitiveState::default(),
                 depth_stencil: None,
@@ -129,27 +160,7 @@ impl Gpu {
         
 
         // TODO: is there a better way, instead of unwraping the swap_chain 2 times?
-        let swap_chain = match &self.swap_chain {
-            Some(sc) => sc,
-            None => return,
-        };
-
-        let frame = match swap_chain.swap_chain.get_current_frame() {
-            Ok(frame) => frame,
-            Err(e) => {
-                dbg!(e);
-
-                // swap chain has to be recreated
-                // lets drop this frame
-                self.swap_chain = None;
-                return;
-            },
-        };
-
-        if frame.suboptimal {
-            self.swap_chain = None;
-            return;
-        }
+        let frame = self.swap_chain.next_frame(&self.device, &self.surface, input.resolution);
 
         let pipeline = match &self.pipeline {
             Some(pipe) => pipe,
