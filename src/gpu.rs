@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, path::PathBuf};
 
 use wgpu::*;
 use winit::window::Window;
@@ -15,7 +15,7 @@ pub struct Gpu {
 
     // is only created as soon as we actually know what to draw
     swap_chain: SwapChain,
-    pipeline:   Option<RenderPipeline>,
+    pipeline:   Pipeline,
 }
 
 pub struct SwapChain {
@@ -79,6 +79,59 @@ impl SwapChain {
     }
 }
 
+struct Pipeline {
+    pipeline: Option<RenderPipeline>,
+    path: PathBuf,
+}
+
+impl Pipeline {
+    pub fn new(path: &str) -> Self {
+        Pipeline {
+            path: PathBuf::from(path),
+            pipeline: None,
+        }
+    }
+
+    pub fn load(&mut self, device: &Device, swap_chain_format: TextureFormat) -> &RenderPipeline {
+        if self.pipeline.is_none() {
+            println!("Recrating pipeline!");
+            let shader = device.create_shader_module(&ShaderModuleDescriptor {
+                label: None,
+                source: ShaderSource::Wgsl(Cow::Owned(std::fs::read_to_string(&self.path).unwrap())),
+                flags: ShaderFlags::all(),
+            });
+
+            let pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
+                label: None,
+                bind_group_layouts: &[],
+                push_constant_ranges: &[],
+            });
+
+            let pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
+                label: None,
+                layout: Some(&pipeline_layout),
+                vertex: VertexState {
+                    module: &shader,
+                    entry_point: "vs_main",
+                    buffers: &[],
+                },
+                fragment: Some(FragmentState {
+                    module: &shader,
+                    entry_point: "fs_main",
+                    targets: &[swap_chain_format.into()],
+                }),
+                primitive: PrimitiveState::default(),
+                depth_stencil: None,
+                multisample: MultisampleState::default(),
+            });
+
+            self.pipeline = Some(pipeline);
+        }
+
+        self.pipeline.as_ref().unwrap()
+    }
+}
+
 /// This struct should contain whatever the gpu should show
 /// I don't like statefull apis, so this is the entire api
 /// Put in here whatever you like, and the gpu will try to show it
@@ -118,54 +171,13 @@ impl Gpu {
             device,
             queue,
             swap_chain: SwapChain::new(swap_chain_format),
-            pipeline: None,
+            pipeline: Pipeline::new("src/shader.wgsl"),
         }
     }
 
     pub fn render(&mut self, input: &GpuInput) {
-        if self.pipeline.is_none() {
-            println!("Recrating pipeline!");
-            let shader = self.device.create_shader_module(&ShaderModuleDescriptor {
-                label: None,
-                source: ShaderSource::Wgsl(Cow::Owned(std::fs::read_to_string("src/shader.wgsl").unwrap())),
-                flags: ShaderFlags::all(),
-            });
-
-            let pipeline_layout = self.device.create_pipeline_layout(&PipelineLayoutDescriptor {
-                label: None,
-                bind_group_layouts: &[],
-                push_constant_ranges: &[],
-            });
-
-            let pipeline = self.device.create_render_pipeline(&RenderPipelineDescriptor {
-                label: None,
-                layout: Some(&pipeline_layout),
-                vertex: VertexState {
-                    module: &shader,
-                    entry_point: "vs_main",
-                    buffers: &[],
-                },
-                fragment: Some(FragmentState {
-                    module: &shader,
-                    entry_point: "fs_main",
-                    targets: &[self.swap_chain.format.into()],
-                }),
-                primitive: PrimitiveState::default(),
-                depth_stencil: None,
-                multisample: MultisampleState::default(),
-            });
-
-            self.pipeline = Some(pipeline);
-        }
-        
-
-        // TODO: is there a better way, instead of unwraping the swap_chain 2 times?
         let frame = self.swap_chain.next_frame(&self.device, &self.surface, input.resolution);
-
-        let pipeline = match &self.pipeline {
-            Some(pipe) => pipe,
-            None => return,
-        };
+        let pipeline = self.pipeline.load(&self.device, self.swap_chain.format());
 
         // We finally have a frame, now it is time to create the render commands
         let mut encoder = self.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
