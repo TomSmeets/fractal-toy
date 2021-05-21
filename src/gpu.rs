@@ -1,10 +1,12 @@
-use std::borrow::Cow;
-use std::path::PathBuf;
-use std::time::SystemTime;
-
 use cgmath::Vector2;
 use wgpu::*;
 use winit::window::Window;
+
+mod swap_chain;
+mod pipeline;
+
+use self::swap_chain::SwapChain;
+use self::pipeline::Pipeline;
 
 pub struct Gpu {
     surface: Surface,
@@ -18,161 +20,6 @@ pub struct Gpu {
     // is only created as soon as we actually know what to draw
     swap_chain: SwapChain,
     pipeline: Pipeline,
-}
-
-pub struct SwapChain {
-    resolution: Vector2<u32>,
-    format: TextureFormat,
-    swap_chain: Option<wgpu::SwapChain>,
-}
-
-impl SwapChain {
-    pub fn new(format: TextureFormat) -> Self {
-        SwapChain {
-            resolution: Vector2::new(0, 0),
-            format,
-            swap_chain: None,
-        }
-    }
-
-    pub fn format(&self) -> TextureFormat {
-        self.format
-    }
-
-    pub fn next_frame(
-        &mut self,
-        device: &Device,
-        surface: &Surface,
-        resolution: Vector2<u32>,
-    ) -> SwapChainFrame {
-        loop {
-            let recreate_swapchain = self.swap_chain.is_none() || self.resolution != resolution;
-
-            if recreate_swapchain {
-                println!("Recrating swapchain!");
-                self.resolution = resolution;
-                self.swap_chain = Some(device.create_swap_chain(surface, &SwapChainDescriptor {
-                    usage: TextureUsage::RENDER_ATTACHMENT,
-                    format: self.format,
-                    width: resolution.x,
-                    height: resolution.y,
-                    present_mode: PresentMode::Mailbox,
-                }));
-            }
-
-            let swap_chain = self.swap_chain.as_ref().unwrap();
-
-            let frame = match swap_chain.get_current_frame() {
-                Ok(frame) => frame,
-                Err(e) => {
-                    dbg!(e);
-
-                    // swap chain has to be recreated
-                    // lets drop this frame
-                    self.swap_chain = None;
-                    continue;
-                },
-            };
-
-            if frame.suboptimal {
-                self.swap_chain = None;
-                continue;
-            }
-
-            return frame;
-        }
-    }
-}
-
-struct Pipeline {
-    pipeline: Option<RenderPipeline>,
-    path: PathBuf,
-    mtime: SystemTime,
-}
-
-impl Pipeline {
-    pub fn new(path: &str) -> Self {
-        Pipeline {
-            path: PathBuf::from(path),
-            pipeline: None,
-            mtime: SystemTime::UNIX_EPOCH,
-        }
-    }
-
-    pub fn is_wgsl_shader_valid(source: &str) -> bool {
-        use naga::valid::ValidationFlags;
-        use naga::valid::Validator;
-
-        let module = match naga::front::wgsl::parse_str(&source) {
-            Ok(m) => m,
-            Err(e) => {
-                dbg!(e);
-                return false;
-            },
-        };
-
-        // validate the IR
-        let _ = match Validator::new(ValidationFlags::all()).validate(&module) {
-            Ok(info) => Some(info),
-            Err(error) => {
-                dbg!(error);
-                return false;
-            },
-        };
-
-        return true;
-    }
-
-    pub fn load(&mut self, device: &Device, swap_chain_format: TextureFormat) -> &RenderPipeline {
-        let mtime = self.path.metadata().unwrap().modified().unwrap();
-
-        if self.pipeline.is_none() || mtime != self.mtime {
-            println!("Recrating pipeline!");
-
-            let source = std::fs::read_to_string(&self.path).unwrap();
-            self.mtime = mtime;
-
-            // NOTE: a bit sad, wgpu-rs does not directly expose shader errors here :(
-            // Currently we just use naga to validate the shader here manually,
-            // This is not very ideal, as wgpu-rs should just return a usefull Result type.
-            // NOTE: https://github.com/gfx-rs/wgpu-rs/blob/3634abb0d560a2906d20c74efee9c2f16afb2503/src/backend/direct.rs#L818
-            if Self::is_wgsl_shader_valid(&source) {
-                let shader = device.create_shader_module(&ShaderModuleDescriptor {
-                    label: None,
-                    source: ShaderSource::Wgsl(Cow::Owned(source)),
-                    flags: ShaderFlags::all(),
-                });
-
-                let pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
-                    label: None,
-                    bind_group_layouts: &[],
-                    push_constant_ranges: &[],
-                });
-
-                let pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
-                    label: None,
-                    layout: Some(&pipeline_layout),
-                    vertex: VertexState {
-                        module: &shader,
-                        entry_point: "vs_main",
-                        buffers: &[],
-                    },
-                    fragment: Some(FragmentState {
-                        module: &shader,
-                        entry_point: "fs_main",
-                        targets: &[swap_chain_format.into()],
-                    }),
-                    primitive: PrimitiveState::default(),
-                    depth_stencil: None,
-                    multisample: MultisampleState::default(),
-                });
-
-                self.pipeline = Some(pipeline);
-            }
-        }
-
-        self.pipeline.as_ref().unwrap()
-    }
 }
 
 /// This struct should contain whatever the gpu should show
@@ -217,7 +64,7 @@ impl Gpu {
             device,
             queue,
             swap_chain: SwapChain::new(swap_chain_format),
-            pipeline: Pipeline::new("src/shader.wgsl"),
+            pipeline: Pipeline::new("src/gpu/shader.wgsl"),
         }
     }
 
