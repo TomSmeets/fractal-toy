@@ -104,7 +104,12 @@ impl Gpu {
         let vertex_list = [
             Vertex { pos: Vector2::new(-1.0, -1.0) },
             Vertex { pos: Vector2::new( 1.0, -1.0) },
-            Vertex { pos: Vector2::new( 0.0,  1.0) },
+            Vertex { pos: Vector2::new(-1.0,  1.0) },
+
+            Vertex { pos: Vector2::new( 1.0, -1.0) },
+            Vertex { pos: Vector2::new( 1.0,  1.0) },
+            Vertex { pos: Vector2::new(-1.0,  1.0) },
+
         ];
         
         let vertex_buffer = self.device.create_buffer_init(&BufferInitDescriptor {
@@ -130,7 +135,7 @@ impl Gpu {
             });
             rpass.set_pipeline(&pipeline);
             rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
-            rpass.draw(0..3, 0..1);
+            rpass.draw(0..vertex_list.len() as u32, 0..1);
         }
 
         self.queue.submit(Some(encoder.finish()));
