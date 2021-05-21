@@ -17,6 +17,7 @@ pub struct Gpu {
 
     // is only created as soon as we actually know what to draw
     swap_chain: Option<SwapChain>,
+    pipeline:   Option<RenderPipeline>,
 }
 
 pub struct SwapChain {
@@ -65,6 +66,7 @@ impl Gpu {
             swap_chain_format,
 
             swap_chain: None,
+            pipeline: None,
         }
     }
 
@@ -90,36 +92,40 @@ impl Gpu {
             }
         }
 
-        let shader = self.device.create_shader_module(&ShaderModuleDescriptor {
-            label: None,
-            source: ShaderSource::Wgsl(Cow::Owned(std::fs::read_to_string("src/shader.wgsl").unwrap())),
-            flags: ShaderFlags::all(),
-        });
+        if self.pipeline.is_none() {
+            println!("Recrating pipeline!");
+            let shader = self.device.create_shader_module(&ShaderModuleDescriptor {
+                label: None,
+                source: ShaderSource::Wgsl(Cow::Owned(std::fs::read_to_string("src/shader.wgsl").unwrap())),
+                flags: ShaderFlags::all(),
+            });
 
-        let pipeline_layout = self.device.create_pipeline_layout(&PipelineLayoutDescriptor {
-            label: None,
-            bind_group_layouts: &[],
-            push_constant_ranges: &[],
-        });
+            let pipeline_layout = self.device.create_pipeline_layout(&PipelineLayoutDescriptor {
+                label: None,
+                bind_group_layouts: &[],
+                push_constant_ranges: &[],
+            });
 
-        let pipeline = self.device.create_render_pipeline(&RenderPipelineDescriptor {
-            label: None,
-            layout: Some(&pipeline_layout),
-            vertex: VertexState {
-                module: &shader,
-                entry_point: "vs_main",
-                buffers: &[],
-            },
-            fragment: Some(FragmentState {
-                module: &shader,
-                entry_point: "fs_main",
-                targets: &[self.swap_chain_format.into()],
-            }),
-            primitive: PrimitiveState::default(),
-            depth_stencil: None,
-            multisample: MultisampleState::default(),
-        });
+            let pipeline = self.device.create_render_pipeline(&RenderPipelineDescriptor {
+                label: None,
+                layout: Some(&pipeline_layout),
+                vertex: VertexState {
+                    module: &shader,
+                    entry_point: "vs_main",
+                    buffers: &[],
+                },
+                fragment: Some(FragmentState {
+                    module: &shader,
+                    entry_point: "fs_main",
+                    targets: &[self.swap_chain_format.into()],
+                }),
+                primitive: PrimitiveState::default(),
+                depth_stencil: None,
+                multisample: MultisampleState::default(),
+            });
 
+            self.pipeline = Some(pipeline);
+        }
         
 
         // TODO: is there a better way, instead of unwraping the swap_chain 2 times?
@@ -144,6 +150,11 @@ impl Gpu {
             self.swap_chain = None;
             return;
         }
+
+        let pipeline = match &self.pipeline {
+            Some(pipe) => pipe,
+            None => return,
+        };
 
         // We finally have a frame, now it is time to create the render commands
         let mut encoder = self.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
