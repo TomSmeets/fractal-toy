@@ -30,6 +30,31 @@ pub struct GpuInput {
     pub resolution: Vector2<u32>,
 }
 
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+pub struct Vertex {
+    pos: Vector2<f32>,
+}
+
+unsafe impl bytemuck::Pod      for Vertex {}
+unsafe impl bytemuck::Zeroable for Vertex {}
+
+impl Vertex {
+    pub fn layout() -> VertexBufferLayout<'static> {
+        VertexBufferLayout {
+            array_stride: std::mem::size_of::<Self>() as BufferAddress,
+            step_mode: InputStepMode::Vertex,
+            attributes: &[
+                VertexAttribute {
+                    format: VertexFormat::Float32x2,
+                    offset: 0,
+                    shader_location: 0,
+                },
+            ],
+        }
+    }
+}
+
 impl Gpu {
     pub fn init(window: &Window) -> Gpu {
         // choose whatever backend you want
@@ -75,14 +100,16 @@ impl Gpu {
 
         // We finally have a frame, now it is time to create the render commands
         let mut encoder = self.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
+
+        let vertex_list = [
+            Vertex { pos: Vector2::new(-1.0, -1.0) },
+            Vertex { pos: Vector2::new( 1.0, -1.0) },
+            Vertex { pos: Vector2::new( 0.0,  1.0) },
+        ];
         
         let vertex_buffer = self.device.create_buffer_init(&BufferInitDescriptor {
             label: None,
-            contents: bytemuck::cast_slice(&[
-                -1.0_f32, -1.0,
-                 1.0, -1.0,
-                 0.0,  1.0,
-            ]),
+            contents: bytemuck::cast_slice(&vertex_list),
             usage: BufferUsage::VERTEX,
         });
 

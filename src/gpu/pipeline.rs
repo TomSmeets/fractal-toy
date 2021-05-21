@@ -3,6 +3,8 @@ use std::path::PathBuf;
 use std::time::SystemTime;
 use wgpu::*;
 
+use crate::gpu::Vertex;
+
 pub struct Pipeline {
     pipeline: Option<RenderPipeline>,
     path: PathBuf,
@@ -86,7 +88,7 @@ impl Pipeline {
                     vertex: VertexState {
                         module: &shader,
                         entry_point: "vs_main",
-                        buffers: &vertex_buffers,
+                        buffers: &[Vertex::layout()],
                     },
                     fragment: Some(FragmentState {
                         module: &shader,
