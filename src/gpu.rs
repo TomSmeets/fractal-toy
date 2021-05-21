@@ -44,12 +44,8 @@ impl Vertex {
         VertexBufferLayout {
             array_stride: std::mem::size_of::<Self>() as BufferAddress,
             step_mode: InputStepMode::Vertex,
-            attributes: &[
-                VertexAttribute {
-                    format: VertexFormat::Float32x2,
-                    offset: 0,
-                    shader_location: 0,
-                },
+            attributes: &vertex_attr_array![
+                0 => Float32x2
             ],
         }
     }
