@@ -690,9 +690,9 @@ dependencies = [
 
 [[package]]
 name = "gpu-alloc"
-version = "0.4.5"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc76088804bb65a6f3b880bea9306fdaeffb25ebb453105fafa691282ee9fdba"
+checksum = "c83e37330a1881e1dae36553f2326b14f4fda84e7e40eab84f0c9bafa7c09230"
 dependencies = [
  "bitflags",
  "gpu-alloc-types",
@@ -1221,9 +1221,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.26"
+version = "1.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a152013215dca273577e18d2bf00fa862b89b24169fb78c4c95aeb07992c9cec"
+checksum = "f0d8caf72986c1a598726adc988bb5984792ef84f5ee5aa50209145ee8077038"
 dependencies = [
  "unicode-xid",
 ]
