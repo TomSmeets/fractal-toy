@@ -4,19 +4,17 @@
 
 mod gpu;
 
-use std::process::Command;
-use std::time::Instant;
-use std::time::Duration;
-
+use cgmath::Vector2;
 use gpu::{Gpu, GpuInput};
-use winit::window::Window;
-use winit::window::WindowBuilder;
-use winit::event_loop::{ControlFlow, EventLoop};
+use std::process::Command;
+use std::time::Duration;
+use std::time::Instant;
+use structopt::StructOpt;
 use winit::event::Event;
 use winit::event::WindowEvent;
-
-use cgmath::Vector2;
-use structopt::StructOpt;
+use winit::event_loop::{ControlFlow, EventLoop};
+use winit::window::Window;
+use winit::window::WindowBuilder;
 
 #[derive(Debug, StructOpt)]
 struct Config {
@@ -44,7 +42,7 @@ impl State {
     /// always called at regular intervals
     pub fn update(&mut self, dt: f32) {
         self.gpu.render(&GpuInput {
-            resolution: self.resolution
+            resolution: self.resolution,
         });
     }
 }
@@ -52,7 +50,10 @@ impl State {
 pub fn main() {
     let config = Config::from_args();
     let event_loop = EventLoop::new();
-    let window = WindowBuilder::new().with_title("Fractal Toy!").build(&event_loop).unwrap();
+    let window = WindowBuilder::new()
+        .with_title("Fractal Toy!")
+        .build(&event_loop)
+        .unwrap();
 
     dbg!(&config);
     if let Some(ws) = config.move_window {
@@ -64,7 +65,11 @@ pub fn main() {
         // was to lazy to modify my wm or so.
         // This actually works very well :)
         if let Some(id) = window.xlib_window() {
-            let _ = Command::new("wmctrl").arg("-i").arg("-r").arg(id.to_string()).arg("-t").arg(ws.to_string()).status();
+            let _ = Command::new("wmctrl")
+                .arg("-i")
+                .arg("-r").arg(id.to_string())
+                .arg("-t").arg(ws.to_string())
+                .status();
         }
     }
 
@@ -73,11 +78,10 @@ pub fn main() {
     // Decide what framerate we want to run
     let target_dt = 1.0 / 60.0;
 
-    
     // At what time do we want a new update
     let mut next_frame_time = Instant::now();
     let mut last_frame_time = Instant::now();
-    
+
     // NOTE: we are ignoring redraw requests for now,
     // and are both updating and rendering in MainEventsCleared.
     // This might result into issues in the web platform,
@@ -91,12 +95,12 @@ pub fn main() {
             // Respect window close button
             Event::WindowEvent {
                 window_id: _,
-                event: WindowEvent::CloseRequested
+                event: WindowEvent::CloseRequested,
             } => *control_flow = ControlFlow::Exit,
 
             Event::WindowEvent {
                 window_id: _,
-                event: WindowEvent::Resized(size)
+                event: WindowEvent::Resized(size),
             } => {
                 state.resolution.x = size.width;
                 state.resolution.y = size.height;
@@ -119,7 +123,13 @@ pub fn main() {
                         let dt_frame  = current_time - last_frame_time;
                         let dt_behind = current_time - next_frame_time;
                         let dt_update = Instant::now() - current_time;
-                        println!("{:.1} Hz, frame {:6?} µs, update {:6} µs, behind {:2?} µs", 1.0 / dt_frame.as_secs_f32(), dt_frame.as_micros(), dt_update.as_micros(), dt_behind.as_micros());
+                        println!(
+                            "{:.1} Hz, frame {:6?} µs, update {:6} µs, behind {:2?} µs",
+                            1.0 / dt_frame.as_secs_f32(),
+                            dt_frame.as_micros(),
+                            dt_update.as_micros(),
+                            dt_behind.as_micros()
+                        );
                         last_frame_time = current_time;
                     }
 

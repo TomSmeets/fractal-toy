@@ -2,9 +2,9 @@ use std::borrow::Cow;
 use std::path::PathBuf;
 use std::time::SystemTime;
 
+use cgmath::Vector2;
 use wgpu::*;
 use winit::window::Window;
-use cgmath::Vector2;
 
 pub struct Gpu {
     surface: Surface,
@@ -13,11 +13,11 @@ pub struct Gpu {
     device: Device,
 
     /// The queue is used to send commands to the gpu
-    queue: Queue, 
+    queue: Queue,
 
     // is only created as soon as we actually know what to draw
     swap_chain: SwapChain,
-    pipeline:   Pipeline,
+    pipeline: Pipeline,
 }
 
 pub struct SwapChain {
@@ -38,9 +38,13 @@ impl SwapChain {
     pub fn format(&self) -> TextureFormat {
         self.format
     }
-    
 
-    pub fn next_frame(&mut self, device: &Device, surface: &Surface, resolution: Vector2<u32>) -> SwapChainFrame {
+    pub fn next_frame(
+        &mut self,
+        device: &Device,
+        surface: &Surface,
+        resolution: Vector2<u32>,
+    ) -> SwapChainFrame {
         loop {
             let recreate_swapchain = self.swap_chain.is_none() || self.resolution != resolution;
 
@@ -50,14 +54,13 @@ impl SwapChain {
                 self.swap_chain = Some(device.create_swap_chain(surface, &SwapChainDescriptor {
                     usage: TextureUsage::RENDER_ATTACHMENT,
                     format: self.format,
-                    width:  resolution.x,
+                    width: resolution.x,
                     height: resolution.y,
                     present_mode: PresentMode::Mailbox,
                 }));
             }
 
             let swap_chain = self.swap_chain.as_ref().unwrap();
-
 
             let frame = match swap_chain.get_current_frame() {
                 Ok(frame) => frame,
@@ -73,7 +76,7 @@ impl SwapChain {
 
             if frame.suboptimal {
                 self.swap_chain = None;
-                    continue;
+                continue;
             }
 
             return frame;
@@ -105,7 +108,7 @@ impl Pipeline {
             Err(e) => {
                 dbg!(e);
                 return false;
-            }
+            },
         };
 
         // validate the IR
@@ -114,7 +117,7 @@ impl Pipeline {
             Err(error) => {
                 dbg!(error);
                 return false;
-            }
+            },
         };
 
         return true;
@@ -132,7 +135,7 @@ impl Pipeline {
             // NOTE: a bit sad, wgpu-rs does not directly expose shader errors here :(
             // Currently we just use naga to validate the shader here manually,
             // This is not very ideal, as wgpu-rs should just return a usefull Result type.
-            // NOTE: https://github.com/gfx-rs/wgpu-rs/blob/3634abb0d560a2906d20c74efee9c2f16afb2503/src/backend/direct.rs#L818 
+            // NOTE: https://github.com/gfx-rs/wgpu-rs/blob/3634abb0d560a2906d20c74efee9c2f16afb2503/src/backend/direct.rs#L818
             if Self::is_wgsl_shader_valid(&source) {
                 let shader = device.create_shader_module(&ShaderModuleDescriptor {
                     label: None,
@@ -191,18 +194,21 @@ impl Gpu {
         // I don't want to deal with async stuff, so just block here.
         // In the far future we might want to support multiple adapters,
         // but I am not doing that now.
-        let adapter = pollster::block_on(instance.request_adapter(&  RequestAdapterOptions {
+        let adapter = pollster::block_on(instance.request_adapter(&RequestAdapterOptions {
             power_preference: PowerPreference::default(),
             compatible_surface: Some(&surface),
         })).unwrap();
 
         // device, logical handle to the adapter.
-        // TODO: setup, and figure out how tracing works. 
-        let (device, queue) = pollster::block_on(adapter.request_device(&DeviceDescriptor {
-            label: None,
-            features: Features::empty(), // TODO: add appropiate features here?
-            limits: Limits::default(), // TODO: also set to whaterver we are using?
-        }, None)).unwrap();
+        // TODO: setup, and figure out how tracing works.
+        let (device, queue) = pollster::block_on(adapter.request_device(
+            &DeviceDescriptor {
+                label: None,
+                features: Features::empty(), // TODO: add appropiate features here?
+                limits: Limits::default(),   // TODO: also set to whaterver we are using?
+            },
+            None,
+        )).unwrap();
 
         let swap_chain_format = adapter.get_swap_chain_preferred_format(&surface).unwrap();
 
