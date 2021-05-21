@@ -3,6 +3,7 @@
 #![allow(unused_variables)]
 
 mod gpu;
+mod util;
 
 use cgmath::Vector2;
 use gpu::{Gpu, GpuInput};

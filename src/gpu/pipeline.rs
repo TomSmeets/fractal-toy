@@ -68,13 +68,25 @@ impl Pipeline {
                     push_constant_ranges: &[],
                 });
 
+               let vertex_buffers = [VertexBufferLayout {
+                    array_stride: (2*4) as BufferAddress,
+                    step_mode: InputStepMode::Vertex,
+                    attributes: &[
+                        VertexAttribute {
+                            format: VertexFormat::Float32x2,
+                            offset: 0,
+                            shader_location: 0,
+                        },
+                    ],
+                }];
+
                 let pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
                     label: None,
                     layout: Some(&pipeline_layout),
                     vertex: VertexState {
                         module: &shader,
                         entry_point: "vs_main",
-                        buffers: &[],
+                        buffers: &vertex_buffers,
                     },
                     fragment: Some(FragmentState {
                         module: &shader,

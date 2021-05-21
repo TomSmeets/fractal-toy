@@ -1,5 +1,6 @@
 use cgmath::Vector2;
 use wgpu::*;
+use wgpu::util::*;
 use winit::window::Window;
 
 mod swap_chain;
@@ -74,6 +75,16 @@ impl Gpu {
 
         // We finally have a frame, now it is time to create the render commands
         let mut encoder = self.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
+        
+        let vertex_buffer = self.device.create_buffer_init(&BufferInitDescriptor {
+            label: None,
+            contents: bytemuck::cast_slice(&[
+                -1.0_f32, -1.0,
+                 1.0, -1.0,
+                 0.0,  1.0,
+            ]),
+            usage: BufferUsage::VERTEX,
+        });
 
         // Render pass
         // TODO: what do we do with compute commands? do they block? do we do them async?
@@ -91,6 +102,7 @@ impl Gpu {
                 depth_stencil_attachment: None,
             });
             rpass.set_pipeline(&pipeline);
+            rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
             rpass.draw(0..3, 0..1);
         }
 
