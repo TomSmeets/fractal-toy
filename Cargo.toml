@@ -8,6 +8,7 @@ license = "GPL-v2"
 [dependencies]
 bytemuck = "1.5.1"
 cgmath = "0.18.0"
+naga = "0.4.1"
 pollster = "0.2.4"
 structopt = "0.3.21"
 wgpu = "0.8.1"
