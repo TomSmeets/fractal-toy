@@ -1,4 +1,6 @@
-use std::{borrow::Cow, path::PathBuf};
+use std::borrow::Cow;
+use std::path::PathBuf;
+use std::time::SystemTime;
 
 use wgpu::*;
 use winit::window::Window;
@@ -82,6 +84,7 @@ impl SwapChain {
 struct Pipeline {
     pipeline: Option<RenderPipeline>,
     path: PathBuf,
+    mtime: SystemTime,
 }
 
 impl Pipeline {
@@ -89,15 +92,22 @@ impl Pipeline {
         Pipeline {
             path: PathBuf::from(path),
             pipeline: None,
+            mtime: SystemTime::UNIX_EPOCH,
         }
     }
 
     pub fn load(&mut self, device: &Device, swap_chain_format: TextureFormat) -> &RenderPipeline {
-        if self.pipeline.is_none() {
+        let mtime = self.path.metadata().unwrap().modified().unwrap();
+
+        if self.pipeline.is_none() || mtime != self.mtime {
             println!("Recrating pipeline!");
+
+            let source = std::fs::read_to_string(&self.path).unwrap();
+            self.mtime = mtime;
+
             let shader = device.create_shader_module(&ShaderModuleDescriptor {
                 label: None,
-                source: ShaderSource::Wgsl(Cow::Owned(std::fs::read_to_string(&self.path).unwrap())),
+                source: ShaderSource::Wgsl(Cow::Owned(source)),
                 flags: ShaderFlags::all(),
             });
 
