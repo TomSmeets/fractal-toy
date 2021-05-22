@@ -21,6 +21,9 @@ pub struct Gpu {
     // is only created as soon as we actually know what to draw
     swap_chain: SwapChain,
     pipeline: Pipeline,
+
+    vertex_count: u32,
+    vertex_buffer: Buffer,
 }
 
 /// This struct should contain whatever the gpu should show
@@ -81,22 +84,6 @@ impl Gpu {
 
         let swap_chain_format = adapter.get_swap_chain_preferred_format(&surface).unwrap();
 
-        Gpu {
-            surface,
-            device,
-            queue,
-            swap_chain: SwapChain::new(swap_chain_format),
-            pipeline: Pipeline::new("src/gpu/shader.wgsl"),
-        }
-    }
-
-    pub fn render(&mut self, input: &GpuInput) {
-        let frame = self.swap_chain.next_frame(&self.device, &self.surface, input.resolution);
-        let pipeline = self.pipeline.load(&self.device, self.swap_chain.format());
-
-        // We finally have a frame, now it is time to create the render commands
-        let mut encoder = self.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
-
         let vertex_list = [
             Vertex { pos: Vector2::new(-1.0, -1.0) },
             Vertex { pos: Vector2::new( 1.0, -1.0) },
@@ -108,11 +95,29 @@ impl Gpu {
 
         ];
         
-        let vertex_buffer = self.device.create_buffer_init(&BufferInitDescriptor {
+        let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: None,
             contents: bytemuck::cast_slice(&vertex_list),
             usage: BufferUsage::VERTEX,
         });
+
+        Gpu {
+            surface,
+            device,
+            queue,
+            swap_chain: SwapChain::new(swap_chain_format),
+            pipeline: Pipeline::new("src/gpu/shader.wgsl"),
+            vertex_count:  vertex_list.len() as u32,
+            vertex_buffer,
+        }
+    }
+
+    pub fn render(&mut self, input: &GpuInput) {
+        let frame = self.swap_chain.next_frame(&self.device, &self.surface, input.resolution);
+        let pipeline = self.pipeline.load(&self.device, self.swap_chain.format());
+
+        // We finally have a frame, now it is time to create the render commands
+        let mut encoder = self.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
 
         // Render pass
         // TODO: what do we do with compute commands? do they block? do we do them async?
@@ -130,8 +135,8 @@ impl Gpu {
                 depth_stencil_attachment: None,
             });
             rpass.set_pipeline(&pipeline);
-            rpass.set_vertex_buffer(0, vertex_buffer.slice(..));
-            rpass.draw(0..vertex_list.len() as u32, 0..1);
+            rpass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+            rpass.draw(0..self.vertex_count, 0..1);
         }
 
         self.queue.submit(Some(encoder.finish()));
