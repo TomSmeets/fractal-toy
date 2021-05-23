@@ -24,5 +24,5 @@ rustPlatform.buildRustPackage rec {
   LD_LIBRARY_PATH="${vulkan-loader}/lib";
 
   hardeningDisable = [ "all" ];
-  cargoSha256 = "1pmjfi9gifzdyv6fzgzlvqlml7p8jh3hvfi75hnk77g39rngii4c";
+  cargoSha256 = "1nx8g5by631535k3y14178r4cp0qapgxarx7mb5iymfm1aficcfp";
 }
