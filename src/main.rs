@@ -36,13 +36,13 @@ impl State {
         let resolution = window.inner_size();
         State {
             resolution: Vector2::new(resolution.width, resolution.height),
-            gpu: Gpu::init(window),
+            gpu: Gpu::init(),
         }
     }
 
     /// always called at regular intervals
-    pub fn update(&mut self, dt: f32) {
-        self.gpu.render(&GpuInput {
+    pub fn update(&mut self, window: &Window, dt: f32) {
+        self.gpu.render(window, &GpuInput {
             resolution: self.resolution,
         });
     }
@@ -116,7 +116,7 @@ pub fn main() {
                 // NOTE: if it was a while loop it would loop forever if we couldent keep up
                 // now it still requests an instaint update, but gives the os some cpu time
                 if next_frame_time <= current_time {
-                    state.update(target_dt);
+                    state.update(&window, target_dt);
 
                     // check how accurate we actually are
                     // TODO: extract to timing struct

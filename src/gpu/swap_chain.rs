@@ -1,67 +1,59 @@
 use cgmath::Vector2;
 use wgpu::*;
 
-pub struct SwapChain {
-    resolution: Vector2<u32>,
-    format: TextureFormat,
-    swap_chain: Option<wgpu::SwapChain>,
+#[derive(Default)]
+pub struct SwapChainC {
+    pub inner: Option<SwapChain>,
 }
 
-impl SwapChain {
-    pub fn new(format: TextureFormat) -> Self {
-        SwapChain {
-            resolution: Vector2::new(0, 0),
-            format,
-            swap_chain: None,
-        }
-    }
-
-    pub fn format(&self) -> TextureFormat {
-        self.format
-    }
-
+impl SwapChainC {
     pub fn next_frame(
         &mut self,
         device: &Device,
         surface: &Surface,
+        format: TextureFormat,
         resolution: Vector2<u32>,
-    ) -> SwapChainFrame {
-        loop {
-            let recreate_swapchain = self.swap_chain.is_none() || self.resolution != resolution;
-
-            if recreate_swapchain {
-                println!("Recrating swapchain!");
-                self.resolution = resolution;
-                self.swap_chain = Some(device.create_swap_chain(surface, &SwapChainDescriptor {
-                    usage: TextureUsage::RENDER_ATTACHMENT,
-                    format: self.format,
-                    width: resolution.x,
-                    height: resolution.y,
-                    present_mode: PresentMode::Mailbox,
-                }));
+    ) -> (SwapChain, SwapChainFrame) {
+        if let Some(inner) = self.inner.take() {
+            if inner.resolution == resolution {
+                if let Ok(frame) = inner.swap_chain.get_current_frame() {
+                    if !frame.suboptimal {
+                        return (inner, frame);
+                    }
+                }
             }
-
-            let swap_chain = self.swap_chain.as_ref().unwrap();
-
-            let frame = match swap_chain.get_current_frame() {
-                Ok(frame) => frame,
-                Err(e) => {
-                    dbg!(e);
-
-                    // swap chain has to be recreated
-                    // lets drop this frame
-                    self.swap_chain = None;
-                    continue;
-                },
-            };
-
-            if frame.suboptimal {
-                self.swap_chain = None;
-                continue;
-            }
-
-            return frame;
         }
+
+        self.inner = Some(SwapChain::new(device, surface, format, resolution));
+
+        // if we did something wrong, this could loop, which is bad
+        self.next_frame(device, surface,  format, resolution)
     }
 }
 
+pub struct SwapChain {
+    pub resolution: Vector2<u32>,
+    pub swap_chain: wgpu::SwapChain,
+}
+
+impl SwapChain {
+    pub fn new(
+        device: &Device,
+        surface: &Surface,
+        format: TextureFormat,
+        resolution: Vector2<u32>,
+    ) -> Self {
+        let swap_chain = device.create_swap_chain(surface, &SwapChainDescriptor {
+            usage: TextureUsage::RENDER_ATTACHMENT,
+            format,
+            width: resolution.x,
+            height: resolution.y,
+            present_mode: PresentMode::Mailbox,
+        });
+
+        SwapChain {
+            resolution,
+            swap_chain,
+        }
+    }
+}

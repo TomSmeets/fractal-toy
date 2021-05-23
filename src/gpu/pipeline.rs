@@ -1,110 +1,79 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, convert::TryFrom};
 use std::path::PathBuf;
+use std::path::Path;
 use std::time::SystemTime;
 use wgpu::*;
 
 use crate::gpu::Vertex;
 
+pub struct ShaderLoader {}
+
 pub struct Pipeline {
-    pipeline: Option<RenderPipeline>,
+    pipeline: Option<ShaderModule>,
     path: PathBuf,
     mtime: SystemTime,
 }
 
 impl Pipeline {
-    pub fn new(path: &str) -> Self {
+    pub fn new() -> Self {
         Pipeline {
-            path: PathBuf::from(path),
             pipeline: None,
+            path: PathBuf::new(),
             mtime: SystemTime::UNIX_EPOCH,
         }
     }
 
-    pub fn is_wgsl_shader_valid(source: &str) -> bool {
-        use naga::valid::ValidationFlags;
-        use naga::valid::Validator;
+    pub fn load(&mut self, device: &Device, path: &str) -> (&ShaderModule, bool) {
+        let path = PathBuf::from(path);
+        let mtime = path.metadata().unwrap().modified().unwrap();
 
-        let module = match naga::front::wgsl::parse_str(&source) {
-            Ok(m) => m,
-            Err(e) => {
-                dbg!(e);
-                return false;
-            },
-        };
-
-        // validate the IR
-        let _ = match Validator::new(ValidationFlags::all()).validate(&module) {
-            Ok(info) => Some(info),
-            Err(error) => {
-                dbg!(error);
-                return false;
-            },
-        };
-
-        return true;
-    }
-
-    pub fn load(&mut self, device: &Device, swap_chain_format: TextureFormat) -> &RenderPipeline {
-        let mtime = self.path.metadata().unwrap().modified().unwrap();
-
-        if self.pipeline.is_none() || mtime != self.mtime {
+        if self.pipeline.is_none() || mtime != self.mtime || self.path != path {
             println!("Recrating pipeline!");
 
-            let source = std::fs::read_to_string(&self.path).unwrap();
+            let source = std::fs::read_to_string(&path).unwrap();
             self.mtime = mtime;
+            self.path = path;
 
             // NOTE: a bit sad, wgpu-rs does not directly expose shader errors here :(
             // Currently we just use naga to validate the shader here manually,
             // This is not very ideal, as wgpu-rs should just return a usefull Result type.
             // NOTE: https://github.com/gfx-rs/wgpu-rs/blob/3634abb0d560a2906d20c74efee9c2f16afb2503/src/backend/direct.rs#L818
-            if Self::is_wgsl_shader_valid(&source) {
+            if is_wgsl_shader_valid(&source) {
                 let shader = device.create_shader_module(&ShaderModuleDescriptor {
                     label: None,
                     source: ShaderSource::Wgsl(Cow::Owned(source)),
                     flags: ShaderFlags::all(),
                 });
-
-                let pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
-                    label: None,
-                    bind_group_layouts: &[],
-                    push_constant_ranges: &[],
-                });
-
-               let vertex_buffers = [VertexBufferLayout {
-                    array_stride: (2*4) as BufferAddress,
-                    step_mode: InputStepMode::Vertex,
-                    attributes: &[
-                        VertexAttribute {
-                            format: VertexFormat::Float32x2,
-                            offset: 0,
-                            shader_location: 0,
-                        },
-                    ],
-                }];
-
-                let pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
-                    label: None,
-                    layout: Some(&pipeline_layout),
-                    vertex: VertexState {
-                        module: &shader,
-                        entry_point: "vs_main",
-                        buffers: &[Vertex::layout()],
-                    },
-                    fragment: Some(FragmentState {
-                        module: &shader,
-                        entry_point: "fs_main",
-                        targets: &[swap_chain_format.into()],
-                    }),
-                    primitive: PrimitiveState::default(),
-                    depth_stencil: None,
-                    multisample: MultisampleState::default(),
-                });
-
-                self.pipeline = Some(pipeline);
+                self.pipeline = Some(shader);
             }
+            (self.pipeline.as_ref().unwrap(), true)
+        } else {
+            (self.pipeline.as_ref().unwrap(), false)
         }
-
-        self.pipeline.as_ref().unwrap()
     }
 }
 
+
+fn is_wgsl_shader_valid(source: &str) -> bool {
+    use naga::valid::ValidationFlags;
+    use naga::valid::Validator;
+
+    let module = match naga::front::wgsl::parse_str(&source) {
+        Ok(m) => m,
+        Err(e) => {
+            dbg!(e);
+            return false;
+        },
+    };
+
+    // validate the IR
+    let _ = match Validator::new(ValidationFlags::all()).validate(&module) {
+        Ok(info) => Some(info),
+        Err(error) => {
+            dbg!(error);
+            return false;
+        },
+    };
+
+    return true;
+}
