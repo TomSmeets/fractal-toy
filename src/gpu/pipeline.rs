@@ -1,23 +1,18 @@
-use std::{borrow::Cow, convert::TryFrom};
+use std::borrow::Cow;
 use std::path::PathBuf;
-use std::path::Path;
 use std::time::SystemTime;
 use wgpu::*;
 
-use crate::gpu::Vertex;
-
-pub struct ShaderLoader {}
-
-pub struct Pipeline {
-    pipeline: Option<ShaderModule>,
+pub struct ShaderLoader {
+    module: Option<ShaderModule>,
     path: PathBuf,
     mtime: SystemTime,
 }
 
-impl Pipeline {
+impl ShaderLoader {
     pub fn new() -> Self {
-        Pipeline {
-            pipeline: None,
+        ShaderLoader {
+            module: None,
             path: PathBuf::new(),
             mtime: SystemTime::UNIX_EPOCH,
         }
@@ -27,9 +22,7 @@ impl Pipeline {
         let path = PathBuf::from(path);
         let mtime = path.metadata().unwrap().modified().unwrap();
 
-        if self.pipeline.is_none() || mtime != self.mtime || self.path != path {
-            println!("Recrating pipeline!");
-
+        if self.module.is_none() || mtime != self.mtime || self.path != path {
             let source = std::fs::read_to_string(&path).unwrap();
             self.mtime = mtime;
             self.path = path;
@@ -44,11 +37,11 @@ impl Pipeline {
                     source: ShaderSource::Wgsl(Cow::Owned(source)),
                     flags: ShaderFlags::all(),
                 });
-                self.pipeline = Some(shader);
+                self.module = Some(shader);
             }
-            (self.pipeline.as_ref().unwrap(), true)
+            (self.module.as_ref().unwrap(), true)
         } else {
-            (self.pipeline.as_ref().unwrap(), false)
+            (self.module.as_ref().unwrap(), false)
         }
     }
 }

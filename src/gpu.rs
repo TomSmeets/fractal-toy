@@ -7,13 +7,12 @@ mod swap_chain;
 mod pipeline;
 
 use self::swap_chain::SwapChain;
-use self::swap_chain::SwapChainC;
-use self::pipeline::Pipeline;
+use self::pipeline::ShaderLoader;
 
 pub struct Gpu {
     device: Option<Device>,
     swap_chain: Option<SwapChain>,
-    shader: Pipeline,
+    shader: ShaderLoader,
     other: Option<Other>,
 }
 
@@ -25,6 +24,7 @@ pub struct Other {
 
     texture: Texture,
     sampler: Sampler,
+    uniform: Buffer,
 
     bind_group_layout: BindGroupLayout,
     bind_group: BindGroup,
@@ -74,7 +74,7 @@ impl Gpu {
             device: None,
             swap_chain: None,
             other: None,
-            shader: Pipeline::new()
+            shader: ShaderLoader::new()
         }
     }
 
@@ -161,6 +161,7 @@ impl Gpu {
         }
 
         let other = self.other.get_or_insert_with(|| {
+            // Vertex
             let vertex_list = [
                 Vertex { pos: Vector2::new(-1.0, -1.0), uv: Vector2::new(0.0, 1.0) },
                 Vertex { pos: Vector2::new( 1.0, -1.0), uv: Vector2::new(1.0, 1.0) },
@@ -178,7 +179,14 @@ impl Gpu {
                 usage: BufferUsage::VERTEX,
             });
 
+            // Uniform
+            let uniform_buffer = device.device.create_buffer_init(&BufferInitDescriptor {
+                label: None,
+                contents: bytemuck::cast_slice(&[input.resolution.x as f32, input.resolution.y as f32]),
+                usage: BufferUsage::UNIFORM | BufferUsage::COPY_DST,
+            });
 
+            // Texture
             let texture = device.device.create_texture_with_data(&device.queue, &TextureDescriptor {
                 label: None,
                 mip_level_count: 1,
@@ -228,6 +236,16 @@ impl Gpu {
                             filtering: true,
                         },
                         count: None,
+                    },
+                    BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: ShaderStage::VERTEX,
+                        ty: BindingType::Buffer {
+                            ty: BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
                     }
                 ],
             });
@@ -236,17 +254,11 @@ impl Gpu {
                 label: None,
                 layout: &bind_group_layout,
                 entries: &[
-                    BindGroupEntry {
-                        binding: 0,
-                        resource: BindingResource::TextureView(&texture_view)
-                    },
-                    BindGroupEntry {
-                        binding: 1,
-                        resource: BindingResource::Sampler(&sampler)
-                    }
+                    BindGroupEntry { binding: 0, resource: BindingResource::TextureView(&texture_view) },
+                    BindGroupEntry { binding: 1, resource: BindingResource::Sampler(&sampler) },
+                    BindGroupEntry { binding: 2, resource: uniform_buffer.as_entire_binding() }
                 ],
             });
-
 
             let pipeline_layout = device.device.create_pipeline_layout(&PipelineLayoutDescriptor {
                 label: None,
@@ -281,6 +293,8 @@ impl Gpu {
                 vertex_count:  vertex_list.len() as u32,
                 vertex_buffer,
 
+                uniform: uniform_buffer,
+
                 texture,
                 sampler,
 
@@ -288,6 +302,8 @@ impl Gpu {
                 bind_group,
             }
         });
+        
+        device.queue.write_buffer(&other.uniform, 0, bytemuck::cast_slice(&[input.resolution.x as f32, input.resolution.y as f32]));
 
         // We finally have a frame, now it is time to create the render commands
         let mut encoder = device.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
