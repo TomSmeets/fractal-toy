@@ -49,7 +49,6 @@ impl State {
         let mut tiles = Vec::new();
         let mut low = Vector2::new(input.mouse.x as f64 / input.resolution.x as f64, input.mouse.y as f64 / input.resolution.y as f64);
         low.y = 1.0 - low.y;
-        dbg!(low);
         for i in 0..10 {
             tiles.extend(TilePos::between(low, Vector2::new(0.9, 0.9), i, 1));
         }
