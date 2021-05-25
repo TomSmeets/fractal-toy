@@ -11,7 +11,8 @@ mod pipeline;
 use self::swap_chain::SwapChain;
 use self::pipeline::ShaderLoader;
 
-const MAX_VERTS: u64 = 1024*1024;
+// TODO: this is too much ofcourse
+const MAX_VERTS: u64 = 3*1024*1024;
 
 pub struct Gpu {
     device: Option<Device>,
