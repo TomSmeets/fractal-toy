@@ -1,7 +1,9 @@
+
 use cgmath::Vector2;
 use wgpu::*;
 use wgpu::util::*;
 use winit::window::Window;
+use crate::tilemap::TilePos;
 
 mod swap_chain;
 mod pipeline;
@@ -33,8 +35,9 @@ pub struct Other {
 /// This struct should contain whatever the gpu should show
 /// I don't like statefull apis, so this is the entire api
 /// Put in here whatever you like, and the gpu will try to show it
-pub struct GpuInput {
+pub struct GpuInput<'a> {
     pub resolution: Vector2<u32>,
+    pub tiles: &'a [TilePos],
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -161,22 +164,11 @@ impl Gpu {
         }
 
         let other = self.other.get_or_insert_with(|| {
-            // Vertex
-            let vertex_list = [
-                Vertex { pos: Vector2::new(-1.0, -1.0), uv: Vector2::new(0.0, 1.0) },
-                Vertex { pos: Vector2::new( 1.0, -1.0), uv: Vector2::new(1.0, 1.0) },
-                Vertex { pos: Vector2::new(-1.0,  1.0), uv: Vector2::new(0.0, 0.0) },
-
-                Vertex { pos: Vector2::new( 1.0, -1.0), uv: Vector2::new(1.0, 1.0) },
-                Vertex { pos: Vector2::new( 1.0,  1.0), uv: Vector2::new(1.0, 0.0) },
-                Vertex { pos: Vector2::new(-1.0,  1.0), uv: Vector2::new(0.0, 0.0) },
-
-            ];
-            
-            let vertex_buffer = device.device.create_buffer_init(&BufferInitDescriptor {
+            let vertex_buffer = device.device.create_buffer(&BufferDescriptor {
                 label: None,
-                contents: bytemuck::cast_slice(&vertex_list),
-                usage: BufferUsage::VERTEX,
+                size: std::mem::size_of::<Vertex>() as u64 * 1024,
+                mapped_at_creation: false,
+                usage: BufferUsage::VERTEX | BufferUsage::COPY_DST,
             });
 
             // Uniform
@@ -197,7 +189,7 @@ impl Gpu {
                 size: Extent3d { width: 2, height: 2, depth_or_array_layers: 1 },
             }, &[
                 255,   0,   0, 255, 0,   255,   0, 255,
-                0,     0, 255, 255, 0,     0,   0, 255,
+                0,     0, 255, 255, 255, 255,   0, 255,
             ]);
 
             let texture_view = texture.create_view(&TextureViewDescriptor::default());
@@ -290,7 +282,7 @@ impl Gpu {
 
             Other {
                 pipeline,
-                vertex_count:  vertex_list.len() as u32,
+                vertex_count:  0,
                 vertex_buffer,
 
                 uniform: uniform_buffer,
@@ -302,8 +294,45 @@ impl Gpu {
                 bind_group,
             }
         });
+
+        // Vertex
+        let vertex_list = [
+            Vertex { pos: Vector2::new(-1.0, -1.0), uv: Vector2::new(0.0, 1.0) },
+            Vertex { pos: Vector2::new( 1.0, -1.0), uv: Vector2::new(1.0, 1.0) },
+            Vertex { pos: Vector2::new(-1.0,  1.0), uv: Vector2::new(0.0, 0.0) },
+
+            Vertex { pos: Vector2::new( 1.0, -1.0), uv: Vector2::new(1.0, 1.0) },
+            Vertex { pos: Vector2::new( 1.0,  1.0), uv: Vector2::new(1.0, 0.0) },
+            Vertex { pos: Vector2::new(-1.0,  1.0), uv: Vector2::new(0.0, 0.0) },
+        ];
+
+        let mut vertex_list = Vec::with_capacity(input.tiles.len()*3*2);
+
+        for t in input.tiles {
+            let square = t.square();
+            let low  = square.corner_min();
+            let high = square.corner_max();
+
+            let lx = low.x as f32;
+            let ly = low.y as f32;
+            let hx = high.x as f32;
+            let hy = high.y as f32;
+
+            vertex_list.extend_from_slice(&[
+                Vertex { pos: Vector2::new(lx, ly), uv: Vector2::new(0.0, 1.0) },
+                Vertex { pos: Vector2::new(hx, ly), uv: Vector2::new(1.0, 1.0) },
+                Vertex { pos: Vector2::new(lx, hy), uv: Vector2::new(0.0, 0.0) },
+
+                Vertex { pos: Vector2::new(hx, ly), uv: Vector2::new(1.0, 1.0) },
+                Vertex { pos: Vector2::new(hx, hy), uv: Vector2::new(1.0, 0.0) },
+                Vertex { pos: Vector2::new(lx, hy), uv: Vector2::new(0.0, 0.0) },
+            ]);
+        }
+        
         
         device.queue.write_buffer(&other.uniform, 0, bytemuck::cast_slice(&[input.resolution.x as f32, input.resolution.y as f32]));
+        device.queue.write_buffer(&other.vertex_buffer, 0, bytemuck::cast_slice(&vertex_list));
+            
 
         // We finally have a frame, now it is time to create the render commands
         let mut encoder = device.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
@@ -326,7 +355,7 @@ impl Gpu {
             rpass.set_pipeline(&other.pipeline);
             rpass.set_vertex_buffer(0, other.vertex_buffer.slice(..));
             rpass.set_bind_group(0, &other.bind_group, &[]);
-            rpass.draw(0..other.vertex_count, 0..1);
+            rpass.draw(0..vertex_list.len() as u32, 0..1);
         }
 
         device.queue.submit(Some(encoder.finish()));

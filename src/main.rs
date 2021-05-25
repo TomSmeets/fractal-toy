@@ -4,9 +4,11 @@
 
 mod gpu;
 mod util;
+mod tilemap;
 
 use cgmath::Vector2;
 use gpu::{Gpu, GpuInput};
+use tilemap::TilePos;
 use std::process::Command;
 use std::time::Duration;
 use std::time::Instant;
@@ -44,6 +46,7 @@ impl State {
     pub fn update(&mut self, window: &Window, dt: f32) {
         self.gpu.render(window, &GpuInput {
             resolution: self.resolution,
+            tiles: &[ TilePos::root(), TilePos { x: 1, y: 1, z: 2 } ],
         });
     }
 }
@@ -56,7 +59,6 @@ pub fn main() {
         .build(&event_loop)
         .unwrap();
 
-    dbg!(&config);
     if let Some(ws) = config.move_window {
         let ws = ws.unwrap_or(9);
 

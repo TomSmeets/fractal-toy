@@ -23,7 +23,7 @@ fn vs_main(
     [[location(1)]] uv: vec2<f32>
 ) -> VertexOutput {
     var out: VertexOutput;
-    out.pos = vec4<f32>(pos.xy * 0.9 * vec2<f32>(uniform.resolution.y / uniform.resolution.x, 1.0), 0.0, 1.0);
+    out.pos = vec4<f32>(pos.xy*2.0 - 1.0, 0.0, 1.0);
     out.uv = uv;
     return out;
 }
