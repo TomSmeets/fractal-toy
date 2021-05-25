@@ -28,25 +28,35 @@ struct Config {
     debug: bool,
 }
 
-pub struct State {
+pub struct Input {
     resolution: Vector2<u32>,
+    mouse: Vector2<i32>,
+}
+
+pub struct State {
     gpu: Gpu,
 }
 
 impl State {
-    pub fn init(window: &Window) -> Self {
-        let resolution = window.inner_size();
+    pub fn init() -> Self {
         State {
-            resolution: Vector2::new(resolution.width, resolution.height),
             gpu: Gpu::init(),
         }
     }
 
     /// always called at regular intervals
-    pub fn update(&mut self, window: &Window, dt: f32) {
+    pub fn update(&mut self, window: &Window, input: &Input, dt: f32) {
+        let mut tiles = Vec::new();
+        let mut low = Vector2::new(input.mouse.x as f64 / input.resolution.x as f64, input.mouse.y as f64 / input.resolution.y as f64);
+        low.y = 1.0 - low.y;
+        dbg!(low);
+        for i in 0..10 {
+            tiles.extend(TilePos::between(low, Vector2::new(0.9, 0.9), i, 1));
+        }
+        // tiles.extend(TilePos::between(Vector2::new(0.3, 0.3), Vector2::new(0.7, 0.7), 3, 0));
         self.gpu.render(window, &GpuInput {
-            resolution: self.resolution,
-            tiles: &[ TilePos::root(), TilePos { x: 1, y: 1, z: 2 } ],
+            resolution: input.resolution,
+            tiles: &tiles,
         });
     }
 }
@@ -76,7 +86,13 @@ pub fn main() {
         }
     }
 
-    let mut state = State::init(&window);
+    let resolution = window.inner_size();
+    let mut input = Input {
+        resolution: Vector2::new(resolution.width, resolution.height),
+        mouse: Vector2::new(0, 0),
+    };
+
+    let mut state = State::init();
 
     // Decide what framerate we want to run
     let target_dt = 1.0 / 60.0;
@@ -105,8 +121,16 @@ pub fn main() {
                 window_id: _,
                 event: WindowEvent::Resized(size),
             } => {
-                state.resolution.x = size.width;
-                state.resolution.y = size.height;
+                input.resolution.x = size.width;
+                input.resolution.y = size.height;
+            },
+
+            Event::WindowEvent {
+                window_id: _,
+                event: WindowEvent::CursorMoved { position: pos, ..},
+            } => {
+                input.mouse.x = pos.x as _;
+                input.mouse.y = pos.y as _;
             },
 
             // After all events are handled, time to update.
@@ -118,7 +142,7 @@ pub fn main() {
                 // NOTE: if it was a while loop it would loop forever if we couldent keep up
                 // now it still requests an instaint update, but gives the os some cpu time
                 if next_frame_time <= current_time {
-                    state.update(&window, target_dt);
+                    state.update(&window, &input, target_dt);
 
                     // check how accurate we actually are
                     // TODO: extract to timing struct

@@ -11,6 +11,8 @@ mod pipeline;
 use self::swap_chain::SwapChain;
 use self::pipeline::ShaderLoader;
 
+const MAX_VERTS: u64 = 1024*1024;
+
 pub struct Gpu {
     device: Option<Device>,
     swap_chain: Option<SwapChain>,
@@ -153,7 +155,7 @@ impl Gpu {
                 self.swap_chain = None;
                 continue;
             }
-            
+
             break (swap_chain, frame);
         };
 
@@ -166,7 +168,7 @@ impl Gpu {
         let other = self.other.get_or_insert_with(|| {
             let vertex_buffer = device.device.create_buffer(&BufferDescriptor {
                 label: None,
-                size: std::mem::size_of::<Vertex>() as u64 * 1024,
+                size: std::mem::size_of::<Vertex>() as u64 * MAX_VERTS,
                 mapped_at_creation: false,
                 usage: BufferUsage::VERTEX | BufferUsage::COPY_DST,
             });
@@ -295,17 +297,6 @@ impl Gpu {
             }
         });
 
-        // Vertex
-        let vertex_list = [
-            Vertex { pos: Vector2::new(-1.0, -1.0), uv: Vector2::new(0.0, 1.0) },
-            Vertex { pos: Vector2::new( 1.0, -1.0), uv: Vector2::new(1.0, 1.0) },
-            Vertex { pos: Vector2::new(-1.0,  1.0), uv: Vector2::new(0.0, 0.0) },
-
-            Vertex { pos: Vector2::new( 1.0, -1.0), uv: Vector2::new(1.0, 1.0) },
-            Vertex { pos: Vector2::new( 1.0,  1.0), uv: Vector2::new(1.0, 0.0) },
-            Vertex { pos: Vector2::new(-1.0,  1.0), uv: Vector2::new(0.0, 0.0) },
-        ];
-
         let mut vertex_list = Vec::with_capacity(input.tiles.len()*3*2);
 
         for t in input.tiles {
@@ -328,11 +319,12 @@ impl Gpu {
                 Vertex { pos: Vector2::new(lx, hy), uv: Vector2::new(0.0, 0.0) },
             ]);
         }
-        
-        
+
+
+        let vertex_list = &vertex_list[0..vertex_list.len().min(MAX_VERTS as usize)];
+
         device.queue.write_buffer(&other.uniform, 0, bytemuck::cast_slice(&[input.resolution.x as f32, input.resolution.y as f32]));
         device.queue.write_buffer(&other.vertex_buffer, 0, bytemuck::cast_slice(&vertex_list));
-            
 
         // We finally have a frame, now it is time to create the render commands
         let mut encoder = device.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
