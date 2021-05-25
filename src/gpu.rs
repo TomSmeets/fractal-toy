@@ -12,6 +12,7 @@ use self::swap_chain::SwapChain;
 use self::pipeline::ShaderLoader;
 
 // TODO: this is too much ofcourse
+// (well, it is just 50 MB actually)
 const MAX_VERTS: u64 = 3*1024*1024;
 
 pub struct Gpu {
@@ -52,6 +53,15 @@ pub struct Vertex {
 
 unsafe impl bytemuck::Pod      for Vertex {}
 unsafe impl bytemuck::Zeroable for Vertex {}
+
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+pub struct UniformData {
+    resolution: Vector2<f32>
+}
+
+unsafe impl bytemuck::Pod      for UniformData {}
+unsafe impl bytemuck::Zeroable for UniformData {}
 
 impl Vertex {
     pub fn attrs() -> [VertexAttribute; 2] {
@@ -175,9 +185,10 @@ impl Gpu {
             });
 
             // Uniform
-            let uniform_buffer = device.device.create_buffer_init(&BufferInitDescriptor {
+            let uniform_buffer = device.device.create_buffer(&BufferDescriptor {
                 label: None,
-                contents: bytemuck::cast_slice(&[input.resolution.x as f32, input.resolution.y as f32]),
+                size: std::mem::size_of::<UniformData>() as u64,
+                mapped_at_creation: false,
                 usage: BufferUsage::UNIFORM | BufferUsage::COPY_DST,
             });
 
@@ -324,11 +335,14 @@ impl Gpu {
 
         let vertex_list = &vertex_list[0..vertex_list.len().min(MAX_VERTS as usize)];
 
-        device.queue.write_buffer(&other.uniform, 0, bytemuck::cast_slice(&[input.resolution.x as f32, input.resolution.y as f32]));
+        device.queue.write_buffer(&other.uniform, 0, bytemuck::bytes_of(&UniformData {
+            resolution: Vector2::new(input.resolution.x as _, input.resolution.y as _),
+        }));
         device.queue.write_buffer(&other.vertex_buffer, 0, bytemuck::cast_slice(&vertex_list));
 
         // We finally have a frame, now it is time to create the render commands
         let mut encoder = device.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
+
 
         // Render pass
         // TODO: what do we do with compute commands? do they block? do we do them async?
