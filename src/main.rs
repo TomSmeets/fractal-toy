@@ -52,12 +52,31 @@ impl State {
     pub fn gen_tile(&mut self, p: TilePos) -> Image {
         let size = 7;
         let mut data = Vec::with_capacity(size as usize * size as usize * 4);
+
+        let pos = p.square();
+
+        let min = pos.corner_min();
+        let max = pos.corner_max();
+
         for y in 0..size {
             for x in 0..size {
                 let border = (y == 0 || y == size  - 1) || (x == 0 || x == size-1);
-                data.push(if border { 255 } else { 0 });
-                data.push(if border { 255 } else { 0 });
-                data.push(if border { 255 } else { 0 });
+
+                let px = x as f32 / (size - 1) as f32;
+                let py = y as f32 / (size - 1) as f32;
+
+                let x = min.x as f32 *(1.0 - px) + max.x as f32 * px;
+                let y = min.y as f32 *(1.0 - py) + max.y as f32 * py;
+
+                let pi3 = std::f32::consts::FRAC_PI_3;
+                let t = (x*x + y*y).sqrt()*5.0;
+                let r = (t + pi3*0.0).sin()*0.5 + 0.5;
+                let g = (t + pi3*1.0).sin()*0.5 + 0.5;
+                let b = (t + pi3*2.0).sin()*0.5 + 0.5;
+
+                data.push((r * 255.0) as _);
+                data.push((g * 255.0) as _);
+                data.push((b * 255.0) as _);
                 data.push(255);
             }
         }
@@ -68,10 +87,15 @@ impl State {
     /// always called at regular intervals
     pub fn update(&mut self, window: &Window, input: &Input, dt: f32) {
         let mut tiles_todo = Vec::new();
-        let mut low = Vector2::new(input.mouse.x as f64 / input.resolution.x as f64, input.mouse.y as f64 / input.resolution.y as f64);
-        low.y = 1.0 - low.y;
-        for i in 0..4 {
-            tiles_todo.extend(TilePos::between(low, Vector2::new(0.9, 0.9), i, 1));
+        let mut min = Vector2::new(input.mouse.x as f64 / input.resolution.x as f64, input.mouse.y as f64 / input.resolution.y as f64);
+        min.y = 1.0 - min.y;
+
+        min = min*2.0 - Vector2::new(1.0, 1.0);
+
+        let max = min + Vector2::new(0.02, 0.02);
+        let min = min - Vector2::new(0.02, 0.02);
+        for i in 0..5 {
+            tiles_todo.extend(TilePos::between(min, max, i, 1));
         }
 
         let tiles = tiles_todo.into_iter().map(|x| (x, self.gen_tile(x))).collect::<Vec<_>>();

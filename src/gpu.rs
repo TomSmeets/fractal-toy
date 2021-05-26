@@ -1,5 +1,6 @@
 
 use cgmath::Vector2;
+use cgmath::Vector3;
 use wgpu::*;
 use wgpu::util::*;
 use winit::window::Window;
@@ -13,8 +14,8 @@ use self::pipeline::ShaderLoader;
 
 // TODO: this is too much ofcourse
 // (well, it is just 50 MB actually)
-const MAX_VERTS: u64 = 3*1024*1024;
 const MAX_TILES: u32 = 1024;
+const MAX_VERTS: u64 = MAX_TILES as u64 * 3 * 4;
 
 pub struct Gpu {
     device: Option<Device>,
@@ -49,7 +50,7 @@ pub struct GpuInput<'a> {
 #[repr(C)]
 pub struct Vertex {
     pos: Vector2<f32>,
-    uv:  Vector2<f32>,
+    uv:  Vector3<f32>,
 }
 
 unsafe impl bytemuck::Pod      for Vertex {}
@@ -68,7 +69,7 @@ impl Vertex {
     pub fn attrs() -> [VertexAttribute; 2] {
         vertex_attr_array![
             0 => Float32x2,
-            1 => Float32x2,
+            1 => Float32x3,
         ]
     }
 }
@@ -338,14 +339,15 @@ impl Gpu {
                 depth_or_array_layers: 1,
             });
 
+            let z = ix as f32 / MAX_TILES as f32;
             vertex_list.extend_from_slice(&[
-                Vertex { pos: Vector2::new(lx, ly), uv: Vector2::new(0.0, 1.0) },
-                Vertex { pos: Vector2::new(hx, ly), uv: Vector2::new(1.0, 1.0) },
-                Vertex { pos: Vector2::new(lx, hy), uv: Vector2::new(0.0, 0.0) },
+                Vertex { pos: Vector2::new(lx, ly), uv: Vector3::new(0.0, 0.0, z) },
+                Vertex { pos: Vector2::new(hx, ly), uv: Vector3::new(1.0, 0.0, z) },
+                Vertex { pos: Vector2::new(lx, hy), uv: Vector3::new(0.0, 1.0, z) },
 
-                Vertex { pos: Vector2::new(hx, ly), uv: Vector2::new(1.0, 1.0) },
-                Vertex { pos: Vector2::new(hx, hy), uv: Vector2::new(1.0, 0.0) },
-                Vertex { pos: Vector2::new(lx, hy), uv: Vector2::new(0.0, 0.0) },
+                Vertex { pos: Vector2::new(hx, ly), uv: Vector3::new(1.0, 0.0, z) },
+                Vertex { pos: Vector2::new(hx, hy), uv: Vector3::new(1.0, 1.0, z) },
+                Vertex { pos: Vector2::new(lx, hy), uv: Vector3::new(0.0, 1.0, z) },
             ]);
         }
 

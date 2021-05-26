@@ -1,6 +1,6 @@
 struct VertexOutput {
     [[builtin(position)]] pos: vec4<f32>;
-    [[location(0)]]       uv: vec2<f32>;
+    [[location(0)]]       uv: vec3<f32>;
 };
 
 [[block]]
@@ -49,10 +49,10 @@ fn mandel(p: vec2<f32>) -> vec2<f32> {
 [[stage(vertex)]]
 fn vs_main(
     [[location(0)]] pos: vec2<f32>,
-    [[location(1)]] uv: vec2<f32>
+    [[location(1)]] uv: vec3<f32>
 ) -> VertexOutput {
     var out: VertexOutput;
-    out.pos = vec4<f32>(pos.xy*2.0 - 1.0, 0.0, 1.0);
+    out.pos = vec4<f32>(pos.xy, 0.0, 1.0);
     out.uv = uv;
     return out;
 }
@@ -84,6 +84,6 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     let g = lo*(1.0-g) + hi*g;
     let b = lo*(1.0-b) + hi*b;
 
-    let col = textureSample(texture, sampler, vec3<f32>(in.uv.xy, 0.0));
+    let col = textureSample(texture, sampler, in.uv);
     return vec4<f32>(col.rgb, 1.0);
 }
