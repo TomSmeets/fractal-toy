@@ -70,9 +70,34 @@ impl State {
 
                 let pi3 = std::f32::consts::FRAC_PI_3;
                 let t = (x*x + y*y).sqrt()*5.0;
-                let r = (t + pi3*0.0).sin()*0.5 + 0.5;
-                let g = (t + pi3*1.0).sin()*0.5 + 0.5;
-                let b = (t + pi3*2.0).sin()*0.5 + 0.5;
+
+
+                let c = Vector2::new(x, y);
+                let mut z = Vector2::new(0.0, 0.0);
+                let mut t = 0.0;
+                for i in 0..32 {
+                    z = Vector2::new(
+                        z.x*z.x - z.y*z.y,
+                        2.0*z.x*z.y
+                    ) + c;
+
+                    let d = z.x*z.x + z.y*z.y;
+                    if d > 256.0 {
+                        t += -d.log2().log2() + 4.0;
+                        break;
+                    }
+                    t += 1.0;
+                }
+
+                let a = (1.0 - (t/32.0).powi(2)).min(1.0).max(0.0);
+                let t = t*0.1;
+                let r = a * ((0.5 - t)*3.0*pi3 + pi3*0.0).sin();
+                let g = a * ((0.5 - t)*3.0*pi3 + pi3*1.0).sin();
+                let b = a * ((0.5 - t)*3.0*pi3 + pi3*2.0).sin();
+
+                let r = r*r;
+                let g = g*g;
+                let b = b*b;
 
                 data.push((r * 255.0) as _);
                 data.push((g * 255.0) as _);
@@ -94,7 +119,7 @@ impl State {
 
         let max = min + Vector2::new(0.02, 0.02);
         let min = min - Vector2::new(0.02, 0.02);
-        for i in 0..5 {
+        for i in 0..7 {
             tiles_todo.extend(TilePos::between(min, max, i, 1));
         }
 
