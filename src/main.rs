@@ -37,6 +37,11 @@ pub struct State {
     gpu: Gpu,
 }
 
+pub struct Image {
+    size: Vector2<u32>,
+    data: Vec<u8>,
+}
+
 impl State {
     pub fn init() -> Self {
         State {
@@ -44,14 +49,33 @@ impl State {
         }
     }
 
+    pub fn gen_tile(&mut self, p: TilePos) -> Image {
+        let size = 7;
+        let mut data = Vec::with_capacity(size as usize * size as usize * 4);
+        for y in 0..size {
+            for x in 0..size {
+                let border = (y == 0 || y == size  - 1) || (x == 0 || x == size-1);
+                data.push(if border { 255 } else { 0 });
+                data.push(if border { 255 } else { 0 });
+                data.push(if border { 255 } else { 0 });
+                data.push(255);
+            }
+        }
+
+        Image { size: Vector2::new(size, size), data }
+    }
+
     /// always called at regular intervals
     pub fn update(&mut self, window: &Window, input: &Input, dt: f32) {
-        let mut tiles = Vec::new();
+        let mut tiles_todo = Vec::new();
         let mut low = Vector2::new(input.mouse.x as f64 / input.resolution.x as f64, input.mouse.y as f64 / input.resolution.y as f64);
         low.y = 1.0 - low.y;
-        for i in 0..10 {
-            tiles.extend(TilePos::between(low, Vector2::new(0.9, 0.9), i, 1));
+        for i in 0..4 {
+            tiles_todo.extend(TilePos::between(low, Vector2::new(0.9, 0.9), i, 1));
         }
+
+        let tiles = tiles_todo.into_iter().map(|x| (x, self.gen_tile(x))).collect::<Vec<_>>();
+
         // tiles.extend(TilePos::between(Vector2::new(0.3, 0.3), Vector2::new(0.7, 0.7), 3, 0));
         self.gpu.render(window, &GpuInput {
             resolution: input.resolution,

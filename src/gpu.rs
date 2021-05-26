@@ -3,7 +3,7 @@ use cgmath::Vector2;
 use wgpu::*;
 use wgpu::util::*;
 use winit::window::Window;
-use crate::tilemap::TilePos;
+use crate::{Image, tilemap::TilePos};
 
 mod swap_chain;
 mod pipeline;
@@ -14,6 +14,7 @@ use self::pipeline::ShaderLoader;
 // TODO: this is too much ofcourse
 // (well, it is just 50 MB actually)
 const MAX_VERTS: u64 = 3*1024*1024;
+const MAX_TILES: u32 = 1024;
 
 pub struct Gpu {
     device: Option<Device>,
@@ -41,7 +42,7 @@ pub struct Other {
 /// Put in here whatever you like, and the gpu will try to show it
 pub struct GpuInput<'a> {
     pub resolution: Vector2<u32>,
-    pub tiles: &'a [TilePos],
+    pub tiles: &'a [(TilePos, Image)],
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -193,18 +194,15 @@ impl Gpu {
             });
 
             // Texture
-            let texture = device.device.create_texture_with_data(&device.queue, &TextureDescriptor {
+            let texture = device.device.create_texture(&TextureDescriptor {
                 label: None,
                 mip_level_count: 1,
-                dimension: TextureDimension::D2,
+                dimension: TextureDimension::D3,
                 format:  TextureFormat::Rgba8UnormSrgb,
                 usage: TextureUsage::COPY_DST | TextureUsage::SAMPLED,
                 sample_count: 1,
-                size: Extent3d { width: 2, height: 2, depth_or_array_layers: 1 },
-            }, &[
-                255,   0,   0, 255, 0,   255,   0, 255,
-                0,     0, 255, 255, 255, 255,   0, 255,
-            ]);
+                size: Extent3d { width: 7, height: 7, depth_or_array_layers: MAX_TILES },
+            });
 
             let texture_view = texture.create_view(&TextureViewDescriptor::default());
 
@@ -214,7 +212,7 @@ impl Gpu {
                 address_mode_v: AddressMode::ClampToEdge,
                 address_mode_w: AddressMode::ClampToEdge,
 
-                mag_filter: FilterMode::Linear,
+                mag_filter: FilterMode::Nearest,
                 min_filter: FilterMode::Linear,
 
                 mipmap_filter: FilterMode::Linear,
@@ -230,7 +228,7 @@ impl Gpu {
                         ty: BindingType::Texture {
                             multisampled: false,
                             sample_type: TextureSampleType::Float { filterable: true },
-                            view_dimension: TextureViewDimension::D2,
+                            view_dimension: TextureViewDimension::D3,
                         },
                         count: None,
                     },
@@ -311,8 +309,8 @@ impl Gpu {
 
         let mut vertex_list = Vec::with_capacity(input.tiles.len()*3*2);
 
-        for t in input.tiles {
-            let square = t.square();
+        for (ix, (p, img))  in input.tiles.iter().enumerate().take(MAX_TILES as usize) {
+            let square = p.square();
             let low  = square.corner_min();
             let high = square.corner_max();
 
@@ -320,6 +318,25 @@ impl Gpu {
             let ly = low.y as f32;
             let hx = high.x as f32;
             let hy = high.y as f32;
+            
+
+            device.queue.write_texture(ImageCopyTexture {
+                texture: &other.texture,
+                mip_level: 0,
+                origin: Origin3d {
+                    x: 0,
+                    y: 0,
+                    z: ix as u32,
+                },
+            }, &img.data, ImageDataLayout {
+                offset: 0,
+                bytes_per_row: Some(std::num::NonZeroU32::new(4*img.size.x).unwrap()),
+                rows_per_image: Some(std::num::NonZeroU32::new(img.size.y).unwrap()),
+            }, Extent3d {
+                width: img.size.x,
+                height: img.size.y,
+                depth_or_array_layers: 1,
+            });
 
             vertex_list.extend_from_slice(&[
                 Vertex { pos: Vector2::new(lx, ly), uv: Vector2::new(0.0, 1.0) },

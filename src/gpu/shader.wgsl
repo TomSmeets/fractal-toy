@@ -9,7 +9,7 @@ struct UniformData {
 };
 
 [[group(0), binding(0)]]
-var texture: texture_2d<f32>;
+var texture: texture_3d<f32>;
 
 [[group(0), binding(1)]]
 var sampler: sampler;
@@ -84,6 +84,6 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     let g = lo*(1.0-g) + hi*g;
     let b = lo*(1.0-b) + hi*b;
 
-    let col = textureSample(texture, sampler, in.uv.xy);
-    return vec4<f32>(vec3<f32>(r, g, b)*(1.0 - y*y), 1.0);
+    let col = textureSample(texture, sampler, vec3<f32>(in.uv.xy, 0.0));
+    return vec4<f32>(col.rgb, 1.0);
 }
