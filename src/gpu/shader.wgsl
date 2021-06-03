@@ -1,6 +1,7 @@
 struct VertexOutput {
     [[builtin(position)]] pos: vec4<f32>;
-    [[location(0)]]       uv: vec3<f32>;
+    [[location(0)]]       uv: vec2<f32>;
+    [[location(1)]]       ix: i32;
 };
 
 [[block]]
@@ -9,7 +10,7 @@ struct UniformData {
 };
 
 [[group(0), binding(0)]]
-var texture: texture_3d<f32>;
+var texture: texture_2d_array<f32>;
 
 [[group(0), binding(1)]]
 var sampler: sampler;
@@ -49,12 +50,14 @@ fn mandel(p: vec2<f32>) -> vec2<f32> {
 [[stage(vertex)]]
 fn vs_main(
     [[location(0)]] pos: vec2<f32>,
-    [[location(1)]] uv: vec3<f32>
+    [[location(1)]] uv: vec2<f32>,
+    [[location(2)]] ix: i32
 ) -> VertexOutput {
     var out: VertexOutput;
     out.pos = vec4<f32>(pos.xy * 1.0 / uniform.resolution * 2.0 - 1.0, 0.0, 1.0);
     out.pos.y = out.pos.y * -1.0;
     out.uv = uv;
+    out.ix = ix;
     return out;
 }
 
@@ -85,6 +88,6 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     let g = lo*(1.0-g) + hi*g;
     let b = lo*(1.0-b) + hi*b;
 
-    let col = textureSample(texture, sampler, in.uv);
+    let col = textureSample(texture, sampler, in.uv, in.ix);
     return vec4<f32>(col.rgb, 1.0);
 }

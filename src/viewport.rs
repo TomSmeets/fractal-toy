@@ -34,7 +34,6 @@ impl Viewport {
         self.scale = 0.5_f64.powf(self.zoom);
 
         if let Some((w1, s)) = input.world2screen {
-            dbg!(s);
             let w2 = self.screen_to_world(s);
 
             // currently s is at w2, but should be at w1

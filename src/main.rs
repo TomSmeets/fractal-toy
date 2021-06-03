@@ -11,7 +11,7 @@ use cgmath::Vector2;
 use self::gpu::{Gpu, GpuInput};
 use self::tilemap::TilePos;
 use self::viewport::{Viewport, ViewportInput};
-use std::process::Command;
+use std::{collections::BTreeMap, process::Command};
 use std::time::Duration;
 use std::time::Instant;
 use structopt::StructOpt;
@@ -40,6 +40,8 @@ pub struct State {
     viewport: Viewport,
     gpu: Gpu,
     drag: Option<Vector2<f64>>,
+
+    cache:  BTreeMap<TilePos, Image>,
 }
 
 pub struct Image {
@@ -53,11 +55,12 @@ impl State {
             viewport: Viewport::new(),
             gpu: Gpu::init(),
             drag: None,
+            cache: BTreeMap::new(),
         }
     }
 
-    pub fn gen_tile(p: TilePos) -> Image {
-        let size = 7;
+    pub fn gen_tile(p: &TilePos) -> Image {
+        let size = 256;
         let mut data = Vec::with_capacity(size as usize * size as usize * 4);
 
         let pos = p.square();
@@ -133,19 +136,28 @@ impl State {
             self.drag = None;
         }
 
-        dbg!(vp);
-
         let mut tiles_todo = Vec::new();
-        let mut min = vp.screen_to_world(input.mouse);
+        let min = vp.screen_to_world(input.mouse);
         let max = min + Vector2::new(0.02, 0.02);
         let min = min - Vector2::new(0.02, 0.02);
-        for i in 0..6 {
-            tiles_todo.extend(TilePos::between(min, max, i, 1));
+        for i in 0..4 {
+            tiles_todo.extend(TilePos::between(min, max, i, 0));
         }
 
-        let tiles = tiles_todo.into_iter().map(|x| (x, Self::gen_tile(x))).collect::<Vec<_>>();
+        for k in tiles_todo.iter() {
+            if !self.cache.contains_key(k) {
+                dbg!(k);
+                let v = Self::gen_tile(k);
+                self.cache.insert(*k, v);
+                break;
+            }
+        }
 
-        // tiles.extend(TilePos::between(Vector2::new(0.3, 0.3), Vector2::new(0.7, 0.7), 3, 0));
+        let cache = &self.cache;
+        let tiles = tiles_todo.iter().filter_map(|p| cache.get(p).map(|i| (p, i))).collect::<Vec<_>>();
+
+        dbg!(tiles.len());
+        
         self.gpu.render(window, &GpuInput {
             resolution: input.resolution,
             viewport: &vp,
