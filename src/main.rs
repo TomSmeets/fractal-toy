@@ -5,15 +5,17 @@
 mod gpu;
 mod util;
 mod tilemap;
+mod viewport;
 
 use cgmath::Vector2;
-use gpu::{Gpu, GpuInput};
-use tilemap::TilePos;
+use self::gpu::{Gpu, GpuInput};
+use self::tilemap::TilePos;
+use self::viewport::{Viewport, ViewportInput};
 use std::process::Command;
 use std::time::Duration;
 use std::time::Instant;
 use structopt::StructOpt;
-use winit::event::Event;
+use winit::event::{ElementState, Event, MouseButton};
 use winit::event::WindowEvent;
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::Window;
@@ -31,10 +33,13 @@ struct Config {
 pub struct Input {
     resolution: Vector2<u32>,
     mouse: Vector2<i32>,
+    mouse_down: bool,
 }
 
 pub struct State {
+    viewport: Viewport,
     gpu: Gpu,
+    drag: Option<Vector2<f64>>,
 }
 
 pub struct Image {
@@ -45,11 +50,13 @@ pub struct Image {
 impl State {
     pub fn init() -> Self {
         State {
+            viewport: Viewport::new(),
             gpu: Gpu::init(),
+            drag: None,
         }
     }
 
-    pub fn gen_tile(&mut self, p: TilePos) -> Image {
+    pub fn gen_tile(p: TilePos) -> Image {
         let size = 7;
         let mut data = Vec::with_capacity(size as usize * size as usize * 4);
 
@@ -111,23 +118,37 @@ impl State {
 
     /// always called at regular intervals
     pub fn update(&mut self, window: &Window, input: &Input, dt: f32) {
+
+        let vp = self.viewport.update(dt as f64, &ViewportInput {
+            resolution: input.resolution,
+            world2screen: self.drag.map(|d| (d, input.mouse)),
+        });
+
+
+        if input.mouse_down && self.drag.is_none() {
+            self.drag = Some(vp.screen_to_world(input.mouse));
+        }
+
+        if !input.mouse_down && self.drag.is_some() {
+            self.drag = None;
+        }
+
+        dbg!(vp);
+
         let mut tiles_todo = Vec::new();
-        let mut min = Vector2::new(input.mouse.x as f64 / input.resolution.x as f64, input.mouse.y as f64 / input.resolution.y as f64);
-        min.y = 1.0 - min.y;
-
-        min = min*2.0 - Vector2::new(1.0, 1.0);
-
+        let mut min = vp.screen_to_world(input.mouse);
         let max = min + Vector2::new(0.02, 0.02);
         let min = min - Vector2::new(0.02, 0.02);
-        for i in 0..7 {
+        for i in 0..6 {
             tiles_todo.extend(TilePos::between(min, max, i, 1));
         }
 
-        let tiles = tiles_todo.into_iter().map(|x| (x, self.gen_tile(x))).collect::<Vec<_>>();
+        let tiles = tiles_todo.into_iter().map(|x| (x, Self::gen_tile(x))).collect::<Vec<_>>();
 
         // tiles.extend(TilePos::between(Vector2::new(0.3, 0.3), Vector2::new(0.7, 0.7), 3, 0));
         self.gpu.render(window, &GpuInput {
             resolution: input.resolution,
+            viewport: &vp,
             tiles: &tiles,
         });
     }
@@ -162,6 +183,7 @@ pub fn main() {
     let mut input = Input {
         resolution: Vector2::new(resolution.width, resolution.height),
         mouse: Vector2::new(0, 0),
+        mouse_down: false,
     };
 
     let mut state = State::init();
@@ -195,6 +217,15 @@ pub fn main() {
             } => {
                 input.resolution.x = size.width;
                 input.resolution.y = size.height;
+            },
+
+            Event::WindowEvent {
+                window_id: _,
+                event: WindowEvent::MouseInput { button, state, .. },
+            } => {
+                if button == MouseButton::Left {
+                    input.mouse_down = state == ElementState::Pressed;
+                }
             },
 
             Event::WindowEvent {

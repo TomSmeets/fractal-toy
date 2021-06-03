@@ -1,52 +1,57 @@
 // TODO: If we want to make texture_size dynamic then we need to get rid of this import
-use super::TEXTURE_SIZE;
-use crate::math::*;
-use crate::state::Reload;
-use serde::{Deserialize, Serialize};
-use tilemap::TilePos;
+use cgmath::prelude::*;
+use crate::TilePos;
+use crate::util::V2;
 
-#[derive(Serialize, Deserialize)]
-pub struct ViewportSave {
-    zoom: f64,
-    offset: V2,
+pub struct ViewportInput {
+    pub resolution: V2<u32>,
+    // translate: V2,
+    // zoom: f64,
+
+    pub world2screen: Option<(V2, V2<i32>)>,
 }
 
-impl Reload for Viewport {
-    type Storage = ViewportSave;
-
-    fn load(&mut self, data: ViewportSave) {
-        self.zoom = data.zoom;
-        self.offset = data.offset;
-    }
-
-    fn save(&self) -> ViewportSave {
-        ViewportSave {
-            zoom: self.zoom,
-            offset: self.offset,
-        }
-    }
-}
-
+#[derive(Debug)]
 pub struct Viewport {
-    pub zoom: f64,
+    zoom: f64,
+    scale: f64,
     pub offset: V2,
     size_in_pixels: V2,
 }
 
 impl Viewport {
-    pub fn new(size_in_pixels: Vector2<u32>) -> Self {
+    pub fn new() -> Self {
         Viewport {
             zoom: 0.,
-            size_in_pixels: to_v2(size_in_pixels),
+            scale: 0.,
+            size_in_pixels: V2::zero(),
             offset: V2::zero(),
         }
     }
 
-    pub fn resize(&mut self, size_in_pixels: Vector2<u32>) {
-        self.size_in_pixels = to_v2(size_in_pixels);
+    pub fn update(&mut self, dt: f64, input: &ViewportInput) -> &Self {
+        self.size_in_pixels = input.resolution.map(|x| x as f64);
+        self.scale = 0.5_f64.powf(self.zoom);
+
+        if let Some((w1, s)) = input.world2screen {
+            dbg!(s);
+            let w2 = self.screen_to_world(s);
+
+            // currently s is at w2, but should be at w1
+            self.offset += w1 - w2;
+        }
+
+        // offset.y *= -1.0;
+        // offset *= self.pixel_size();
+
+        // self.offset += dt*input.translate;
+        self.offset.x = self.offset.x.min(3.0).max(-3.0);
+        self.offset.y = self.offset.y.min(3.0).max(-3.0);
+
+        self
     }
 
-    pub fn world_to_screen(&self, mut p: V2) -> V2i {
+    pub fn world_to_screen(&self, mut p: V2) -> V2<i32> {
         // offset is in world space
         p -= self.offset;
 
@@ -60,11 +65,11 @@ impl Viewport {
         p.x += self.size_in_pixels.x / 2.0;
         p.y += self.size_in_pixels.y / 2.0;
 
-        Vector2::new(p.x as i32, p.y as i32)
+        V2::new(p.x as i32, p.y as i32)
     }
 
     /// Convert a screen-space position to a world position as seen by this viewport
-    pub fn screen_to_world(&self, p: V2i) -> V2 {
+    pub fn screen_to_world(&self, p: V2<i32>) -> V2 {
         let mut p = V2::new(p.x as f64, p.y as f64);
 
         // make center of screen 0,0
@@ -85,6 +90,7 @@ impl Viewport {
         p
     }
 
+    /*
     /// Apply a translation in pixels
     pub fn translate(&mut self, offset: V2i) {
         let mut offset = to_v2(offset);
@@ -112,6 +118,7 @@ impl Viewport {
     pub fn zoom_in(&mut self, amount: f64) {
         self.zoom = (self.zoom + amount).min(48.5).max(-2.5);
     }
+    */
 
     /// scale of the entire viewport
     pub fn scale(&self) -> f64 {
@@ -123,6 +130,7 @@ impl Viewport {
         self.scale() / self.size_in_pixels.x
     }
 
+    /*
     /// Returns an iterator with sorted tiles, the ordering is the same according to
     /// the ord implementation for TilePos
     pub fn get_pos_all(&self) -> impl Iterator<Item = TilePos> {
@@ -176,17 +184,22 @@ impl Viewport {
         let max = self.world_to_screen(max);
         mk_rect(min, max)
     }
-
-    pub fn size_in_pixels(&self) -> V2 {
-        self.size_in_pixels
-    }
+    */
 }
 
+/*
 #[test]
 fn test_viewport_pos_sorted() {
-    let v = Viewport::new(Vector2::new(800, 600));
+    let mut v = Viewport::new();
+    let v = v.update(1.0, &ViewportInput {
+        resolution: V2::new(800, 600),
+        translate: V2::zero(),
+        zoom: 0.0,
+        world2screen: None,
+    });
     let xs: Vec<_> = v.get_pos_all().collect();
     let mut ys = xs.clone();
     ys.sort();
     assert_eq!(xs, ys);
 }
+*/

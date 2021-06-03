@@ -43,3 +43,25 @@ This means:
 * no more top level generics
 * less generics overall
 * acutally prifile compile time
+
+
+## Perturbation theory
+
+```
+https://fractalwiki.org/wiki/Perturbation_theory
+
+Z_n => cpu computed mandelbrot value
+z_n => gpu computed offset
+
+Z_(n+1) = Z_n^2 + C
+Z_(n+1) + z_(n+1) = (Z_n+z_n)^2 + C + c
+Z_(n+1) + z_(n+1) = Z_n^2 + z_n^2 + 2*Z_n*z_n + C + c
+Z_(n+1) + z_(n+1) = (Z_n^2 + C) + (z_n^2 + c) + 2*Z_n*z_n
+Z_(n+1) + z_(n+1) = Z_(n+1) + (z_n^2 + c) + 2*Z_n*z_n
+          z_(n+1) = z_n^2 + c + 2*Z_n*z_n
+
+```
+
+TODO: test first with 64 bit cpu and 32 bit gpu!
+
+we calculate one cpu Z for every tile. makes sense.

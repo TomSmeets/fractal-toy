@@ -4,7 +4,7 @@ use cgmath::Vector3;
 use wgpu::*;
 use wgpu::util::*;
 use winit::window::Window;
-use crate::{Image, tilemap::TilePos};
+use crate::{Image, tilemap::TilePos, viewport::Viewport};
 
 mod swap_chain;
 mod pipeline;
@@ -43,6 +43,7 @@ pub struct Other {
 /// Put in here whatever you like, and the gpu will try to show it
 pub struct GpuInput<'a> {
     pub resolution: Vector2<u32>,
+    pub viewport: &'a Viewport,
     pub tiles: &'a [(TilePos, Image)],
 }
 
@@ -136,7 +137,6 @@ impl Gpu {
 
         let (swap_chain, frame) = loop {
             let swap_chain = self.swap_chain.get_or_insert_with(|| {
-                println!("recreate");
                 let swap_chain = device.device.create_swap_chain(&device.surface, &SwapChainDescriptor {
                     usage: TextureUsage::RENDER_ATTACHMENT,
                     format: device.swap_chain_format,
@@ -150,7 +150,6 @@ impl Gpu {
 
             if swap_chain.resolution != input.resolution {
                 self.swap_chain = None;
-                println!("Resize");
                 continue;
             }
 
@@ -164,7 +163,6 @@ impl Gpu {
             };
 
             if frame.suboptimal {
-                println!("suboptional");
                 self.swap_chain = None;
                 continue;
             }
@@ -312,8 +310,8 @@ impl Gpu {
 
         for (ix, (p, img))  in input.tiles.iter().enumerate().take(MAX_TILES as usize) {
             let square = p.square();
-            let low  = square.corner_min();
-            let high = square.corner_max();
+            let low  = input.viewport.world_to_screen(square.corner_min());
+            let high = input.viewport.world_to_screen(square.corner_max());
 
             let lx = low.x as f32;
             let ly = low.y as f32;
