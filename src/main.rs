@@ -72,8 +72,8 @@ impl State {
             for x in 0..size {
                 let border = (y == 0 || y == size  - 1) || (x == 0 || x == size-1);
 
-                let px = x as f32 / (size - 1) as f32;
-                let py = y as f32 / (size - 1) as f32;
+                let px = (x as f32 + 0.5) / size as f32;
+                let py = (y as f32 + 0.5) / size as f32;
 
                 let x = min.x as f32 *(1.0 - px) + max.x as f32 * px;
                 let y = min.y as f32 *(1.0 - py) + max.y as f32 * py;
@@ -85,7 +85,7 @@ impl State {
                 let c = Vector2::new(x, y);
                 let mut z = Vector2::new(0.0, 0.0);
                 let mut t = 0.0;
-                for i in 0..32 {
+                for i in 0..64 {
                     z = Vector2::new(
                         z.x*z.x - z.y*z.y,
                         2.0*z.x*z.y
@@ -99,7 +99,7 @@ impl State {
                     t += 1.0;
                 }
 
-                let a = (1.0 - (t/32.0).powi(2)).min(1.0).max(0.0);
+                let a = (1.0 - (t/64.0).powi(2)).min(1.0).max(0.0);
                 let t = t*0.1;
                 let r = a * ((0.5 - t)*3.0*pi3 + pi3*0.0).sin();
                 let g = a * ((0.5 - t)*3.0*pi3 + pi3*1.0).sin();
@@ -140,7 +140,7 @@ impl State {
         let min = vp.screen_to_world(input.mouse);
         let max = min + Vector2::new(0.02, 0.02);
         let min = min - Vector2::new(0.02, 0.02);
-        for i in 0..4 {
+        for i in 0..5 {
             tiles_todo.extend(TilePos::between(min, max, i, 0));
         }
 

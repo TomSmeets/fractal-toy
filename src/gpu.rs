@@ -14,7 +14,7 @@ use self::pipeline::ShaderLoader;
 
 // TODO: this is too much ofcourse
 // (well, it is just 50 MB actually)
-const MAX_TILES: u32 = 16;
+const MAX_TILES: u32 = 256;
 const MAX_VERTS: u64 = MAX_TILES as u64 * 3 * 4;
 
 pub struct Gpu {
