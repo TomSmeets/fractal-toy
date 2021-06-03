@@ -12,9 +12,7 @@ mod pipeline;
 use self::swap_chain::SwapChain;
 use self::pipeline::ShaderLoader;
 
-// TODO: this is too much ofcourse
-// (well, it is just 50 MB actually)
-const MAX_TILES: u32 = 256;
+const MAX_TILES: u32 = 512;
 const MAX_VERTS: u64 = MAX_TILES as u64 * 3 * 4;
 
 pub struct Gpu {
@@ -44,7 +42,7 @@ pub struct Other {
 pub struct GpuInput<'a> {
     pub resolution: Vector2<u32>,
     pub viewport: &'a Viewport,
-    pub tiles: &'a [(&'a TilePos, &'a Image)],
+    pub tiles: &'a [(TilePos, &'a Image)],
 }
 
 #[derive(Debug, Clone, Copy)]

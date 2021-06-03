@@ -6,7 +6,7 @@ use crate::util::V2;
 pub struct ViewportInput {
     pub resolution: V2<u32>,
     // translate: V2,
-    // zoom: f64,
+    pub zoom: (f64, V2<i32>),
 
     pub world2screen: Option<(V2, V2<i32>)>,
 }
@@ -31,6 +31,10 @@ impl Viewport {
 
     pub fn update(&mut self, dt: f64, input: &ViewportInput) -> &Self {
         self.size_in_pixels = input.resolution.map(|x| x as f64);
+
+        let w0 = self.screen_to_world(input.zoom.1);
+
+        self.zoom += 0.1 * input.zoom.0;
         self.scale = 0.5_f64.powf(self.zoom);
 
         if let Some((w1, s)) = input.world2screen {
@@ -38,6 +42,9 @@ impl Viewport {
 
             // currently s is at w2, but should be at w1
             self.offset += w1 - w2;
+        } else {
+            let w2 = self.screen_to_world(input.zoom.1);
+            self.offset += w0 - w2;
         }
 
         // offset.y *= -1.0;
@@ -129,7 +136,7 @@ impl Viewport {
         self.scale() / self.size_in_pixels.x
     }
 
-    /*
+
     /// Returns an iterator with sorted tiles, the ordering is the same according to
     /// the ord implementation for TilePos
     pub fn get_pos_all(&self) -> impl Iterator<Item = TilePos> {
@@ -142,7 +149,7 @@ impl Viewport {
         // z = log(tile_size)/log(1/2)
         // z = -log2(tile_size)
         let px_size = self.pixel_size();
-        let tile_size = px_size * TEXTURE_SIZE as f64;
+        let tile_size = px_size * 256.0 as f64;
         let z_max = -tile_size.log2();
         let z_max = z_max.max(0.0).ceil() as i32;
         let z_min = (z_max - 8).max(0);
@@ -158,6 +165,7 @@ impl Viewport {
         })
     }
 
+    /*
     /// Convert a TilePos to a screen-space Rectangle as seen by this viewport
     pub fn pos_to_rect(&self, p: &TilePos) -> Rect {
         fn mk_rect(a: V2i, b: V2i) -> Rect {
