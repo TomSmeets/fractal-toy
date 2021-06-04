@@ -1,8 +1,6 @@
 
 use cgmath::Vector2;
-use cgmath::Vector3;
 use wgpu::*;
-use wgpu::util::*;
 use winit::window::Window;
 use crate::{Image, tilemap::TilePos, viewport::Viewport};
 
@@ -12,6 +10,7 @@ mod pipeline;
 use self::swap_chain::SwapChain;
 use self::pipeline::ShaderLoader;
 
+// GPU mem = MAX_TILES * (vtx(5*4)*3*4 + 256*256)
 const MAX_TILES: u32 = 512;
 const MAX_VERTS: u64 = MAX_TILES as u64 * 3 * 4;
 

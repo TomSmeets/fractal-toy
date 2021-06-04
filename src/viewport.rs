@@ -158,9 +158,18 @@ impl Viewport {
         let pad = 1;
         let off = self.offset;
         let viewport_half_size = 0.5 * px_size * self.size_in_pixels;
+
+        fn clamp(v: V2) -> V2 {
+            V2 {
+                x: v.x.min(2.9).max(-2.9),
+                y: v.y.min(2.9).max(-2.9),
+            }
+        }
+
+        let min = clamp(off - viewport_half_size);
+        let max = clamp(off + viewport_half_size);
+
         (z_min as u8..z_max as u8 + 1).flat_map(move |z| {
-            let min = off - viewport_half_size;
-            let max = off + viewport_half_size;
             TilePos::between(min, max, z, pad)
         })
     }
