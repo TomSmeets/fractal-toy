@@ -30,7 +30,17 @@ impl TilePos {
         let max = TilePos::at(max.x, max.y, z);
         let rx = (min.x - pad)..(max.x + pad + 1);
         let ry = (min.y - pad)..(max.y + pad + 1);
-        rx.flat_map(move |x| ry.clone().map(move |y| TilePos { x, y, z }))
+
+        let cx = (min.x + max.x) / 2;
+        let cy = (min.y + max.y) / 2;
+
+        let mut v = rx.flat_map(move |x| ry.clone().map(move |y| TilePos { x, y, z })).collect::<Vec<_>>();
+        v.sort_by_key(|p| {
+            let dx = p.x - cx;
+            let dy = p.y - cy;
+            dx*dx + dy*dy
+        });
+        v.into_iter()
     }
 
     /// the size of this tile in both x and y (all tiles are square)
