@@ -4,3 +4,4 @@ result
 /pics
 /other/ui/Cargo.lock
 /.fractal-toy
+/callgrind.out.*

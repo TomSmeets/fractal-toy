@@ -1,9 +1,7 @@
 use super::Square;
-use serde::{Deserialize, Serialize};
+use crate::util::V2;
 
-type V2 = cgmath::Vector2<f64>;
-
-#[derive(Serialize, Deserialize, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Debug)]
 pub struct TilePos {
     pub z: u8,
     pub x: i64,

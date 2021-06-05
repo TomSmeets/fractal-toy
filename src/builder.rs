@@ -1,10 +1,10 @@
-use cgmath::Vector2;
+use crate::util::*;
 use crate::tilemap::TilePos;
+use crate::Image;
+
 use std::collections::BTreeMap;
 use crossbeam_channel::{Sender, bounded};
 use crossbeam_channel::Receiver;
-
-use crate::Image;
 
 pub struct TileBuilder {
     cache: BTreeMap<TilePos, Image>,
@@ -58,8 +58,8 @@ impl TileBuilder {
                 let t = (x*x + y*y).sqrt()*5.0;
 
 
-                let c = Vector2::new(x, y);
-                let mut z = Vector2::new(0.0, 0.0);
+                let c = V2::new(x, y);
+                let mut z = V2::zero();
                 let mut t = 0.0;
 
                 let c2 = c.x*c.x + c.y*c.y;
@@ -74,7 +74,7 @@ impl TileBuilder {
                     t = 255.0;
                 } else {
                     for i in 0..256 {
-                        z = Vector2::new(
+                        z = V2::new(
                             z.x*z.x - z.y*z.y,
                             2.0*z.x*z.y
                         ) + c;
@@ -105,7 +105,7 @@ impl TileBuilder {
             }
         }
 
-        Image { size: Vector2::new(size, size), data }
+        Image { size: V2::new(size, size), data }
     }
 
     pub fn build(&mut self, pos: &[TilePos]) -> &BTreeMap<TilePos, Image> {

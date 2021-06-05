@@ -1,6 +1,5 @@
 use super::TilePos;
-
-type V2 = cgmath::Vector2<f64>;
+use crate::util::V2;
 
 /// A rectangle but all sides are equal
 pub struct Square {

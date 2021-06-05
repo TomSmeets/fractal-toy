@@ -1,8 +1,10 @@
-
-use cgmath::Vector2;
 use wgpu::*;
 use winit::window::Window;
-use crate::{Image, tilemap::TilePos, viewport::Viewport};
+
+use crate::util::*;
+use crate::Image;
+use crate::tilemap::TilePos;
+use crate::viewport::Viewport;
 
 mod swap_chain;
 mod pipeline;
@@ -39,7 +41,7 @@ pub struct Other {
 /// I don't like statefull apis, so this is the entire api
 /// Put in here whatever you like, and the gpu will try to show it
 pub struct GpuInput<'a> {
-    pub resolution: Vector2<u32>,
+    pub resolution: V2<u32>,
     pub viewport: &'a Viewport,
     pub tiles: &'a [(TilePos, &'a Image)],
 }
@@ -47,8 +49,8 @@ pub struct GpuInput<'a> {
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
 pub struct Vertex {
-    pos: Vector2<f32>,
-    uv:  Vector2<f32>,
+    pos: V2<f32>,
+    uv:  V2<f32>,
     ix: i32,
 }
 
@@ -58,7 +60,7 @@ unsafe impl bytemuck::Zeroable for Vertex {}
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
 pub struct UniformData {
-    resolution: Vector2<f32>
+    resolution: V2<f32>
 }
 
 unsafe impl bytemuck::Pod      for UniformData {}
@@ -338,13 +340,13 @@ impl Gpu {
 
             let ix = ix as i32;
             vertex_list.extend_from_slice(&[
-                Vertex { pos: Vector2::new(lx, ly), uv: Vector2::new(0.0, 0.0), ix },
-                Vertex { pos: Vector2::new(hx, ly), uv: Vector2::new(1.0, 0.0), ix },
-                Vertex { pos: Vector2::new(lx, hy), uv: Vector2::new(0.0, 1.0), ix },
+                Vertex { pos: V2::new(lx, ly), uv: V2::new(0.0, 0.0), ix },
+                Vertex { pos: V2::new(hx, ly), uv: V2::new(1.0, 0.0), ix },
+                Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0, 1.0), ix },
 
-                Vertex { pos: Vector2::new(hx, ly), uv: Vector2::new(1.0, 0.0), ix },
-                Vertex { pos: Vector2::new(hx, hy), uv: Vector2::new(1.0, 1.0), ix },
-                Vertex { pos: Vector2::new(lx, hy), uv: Vector2::new(0.0, 1.0), ix },
+                Vertex { pos: V2::new(hx, ly), uv: V2::new(1.0, 0.0), ix },
+                Vertex { pos: V2::new(hx, hy), uv: V2::new(1.0, 1.0), ix },
+                Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0, 1.0), ix },
             ]);
         }
 
@@ -352,7 +354,7 @@ impl Gpu {
         let vertex_list = &vertex_list[0..vertex_list.len().min(MAX_VERTS as usize)];
 
         device.queue.write_buffer(&other.uniform, 0, bytemuck::bytes_of(&UniformData {
-            resolution: Vector2::new(input.resolution.x as _, input.resolution.y as _),
+            resolution: V2::new(input.resolution.x as _, input.resolution.y as _),
         }));
         device.queue.write_buffer(&other.vertex_buffer, 0, bytemuck::cast_slice(&vertex_list));
 

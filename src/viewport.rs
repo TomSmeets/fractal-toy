@@ -1,7 +1,5 @@
-// TODO: If we want to make texture_size dynamic then we need to get rid of this import
-use cgmath::prelude::*;
 use crate::TilePos;
-use crate::util::V2;
+use crate::util::*;
 
 pub struct ViewportInput {
     pub resolution: V2<u32>,

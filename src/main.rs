@@ -12,8 +12,8 @@ use self::builder::TileBuilder;
 use self::gpu::{Gpu, GpuInput};
 use self::tilemap::TilePos;
 use self::viewport::{Viewport, ViewportInput};
+use self::util::*;
 
-use cgmath::Vector2;
 use std::process::Command;
 use std::time::Duration;
 use std::time::Instant;
@@ -34,8 +34,8 @@ struct Config {
 }
 
 pub struct Input {
-    resolution: Vector2<u32>,
-    mouse: Vector2<i32>,
+    resolution: V2<u32>,
+    mouse: V2<i32>,
     mouse_down: bool,
     mouse_scroll: f32,
 }
@@ -46,11 +46,11 @@ pub struct State {
 
     // actual state that is relevant
     viewport: Viewport,
-    drag: Option<Vector2<f64>>,
+    drag: Option<V2<f64>>,
 }
 
 pub struct Image {
-    size: Vector2<u32>,
+    size: V2<u32>,
     data: Vec<u8>,
 }
 
@@ -120,8 +120,8 @@ pub fn main() {
 
     let resolution = window.inner_size();
     let mut input = Input {
-        resolution: Vector2::new(resolution.width, resolution.height),
-        mouse: Vector2::new(0, 0),
+        resolution: V2::new(resolution.width, resolution.height),
+        mouse: V2::new(0, 0),
         mouse_down: false,
         mouse_scroll: 0.0,
     };
