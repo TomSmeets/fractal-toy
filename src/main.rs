@@ -82,10 +82,18 @@ impl State {
         }
 
         let mut todo = Vec::new();
-        vp.get_pos_all(&mut todo);
 
+        // build padded
+        vp.get_pos_all(&mut todo, 1);
         let cache = self.builder.build(&todo);
-        let tiles = cache.iter().map(|(k, v)| (*k, v)).collect::<Vec<_>>();
+
+        // display unpadded
+        todo.clear();
+        vp.get_pos_all(&mut todo, 0);
+        let tiles = todo.iter().flat_map(|k| cache.get_key_value(k)).collect::<Vec<_>>();
+
+        dbg!(cache.len());
+        dbg!(tiles.len());
 
         self.gpu.render(window, &GpuInput {
             resolution: input.resolution,

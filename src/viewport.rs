@@ -137,7 +137,7 @@ impl Viewport {
 
     /// Returns an iterator with sorted tiles, the ordering is the same according to
     /// the ord implementation for TilePos
-    pub fn get_pos_all(&self, dst: &mut Vec<TilePos>) {
+    pub fn get_pos_all(&self, dst: &mut Vec<TilePos>, pad: i64) {
         // size of single pixel:
         // scale is width of entire viewport in the world
         //
@@ -153,7 +153,6 @@ impl Viewport {
         let z_min = (z_max - 8).max(0);
 
         // extra padding in poportion to tile size
-        let pad = 1;
         let off = self.offset;
         let viewport_half_size = 0.5 * px_size * self.size_in_pixels;
 

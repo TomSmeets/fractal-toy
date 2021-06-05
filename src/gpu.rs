@@ -43,7 +43,7 @@ pub struct Other {
 pub struct GpuInput<'a> {
     pub resolution: V2<u32>,
     pub viewport: &'a Viewport,
-    pub tiles: &'a [(TilePos, &'a Image)],
+    pub tiles: &'a [(&'a TilePos, &'a Image)],
 }
 
 #[derive(Debug, Clone, Copy)]
