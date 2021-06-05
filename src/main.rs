@@ -81,7 +81,9 @@ impl State {
             self.drag = None;
         }
 
-        let todo = vp.get_pos_all().collect::<Vec<_>>();
+        let mut todo = Vec::new();
+        vp.get_pos_all(&mut todo);
+
         let cache = self.builder.build(&todo);
         let tiles = cache.iter().map(|(k, v)| (*k, v)).collect::<Vec<_>>();
 

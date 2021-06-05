@@ -137,7 +137,7 @@ impl Viewport {
 
     /// Returns an iterator with sorted tiles, the ordering is the same according to
     /// the ord implementation for TilePos
-    pub fn get_pos_all(&self) -> impl Iterator<Item = TilePos> {
+    pub fn get_pos_all(&self, dst: &mut Vec<TilePos>) {
         // size of single pixel:
         // scale is width of entire viewport in the world
         //
@@ -167,9 +167,9 @@ impl Viewport {
         let min = clamp(off - viewport_half_size);
         let max = clamp(off + viewport_half_size);
 
-        (z_min as u8..z_max as u8 + 1).flat_map(move |z| {
-            TilePos::between(min, max, z, pad)
-        })
+        for z in (z_min as u8) .. (z_max as u8 + 1) {
+            TilePos::between(min, max, z, pad, dst);
+        }
     }
 
     /*

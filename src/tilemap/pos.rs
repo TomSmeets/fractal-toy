@@ -25,22 +25,33 @@ impl TilePos {
     }
 
     // Iterate over tiles between 'min' and 'max'
-    pub fn between(min: V2, max: V2, z: u8, pad: i64) -> impl Iterator<Item = TilePos> {
-        let min = TilePos::at(min.x, min.y, z);
-        let max = TilePos::at(max.x, max.y, z);
-        let rx = (min.x - pad)..(max.x + pad + 1);
-        let ry = (min.y - pad)..(max.y + pad + 1);
+    pub fn between(min: V2, max: V2, z: u8, pad: i64, dst: &mut Vec<TilePos>) {
+        let mut min = TilePos::at(min.x, min.y, z);
+        let mut max = TilePos::at(max.x, max.y, z);
+
+        // add padding
+        min.x -= pad;
+        min.y -= pad;
+        max.x += pad;
+        max.y += pad;
 
         let cx = (min.x + max.x) / 2;
         let cy = (min.y + max.y) / 2;
 
-        let mut v = rx.flat_map(move |x| ry.clone().map(move |y| TilePos { x, y, z })).collect::<Vec<_>>();
-        v.sort_by_key(|p| {
+        let start = dst.len();
+        dst.reserve(((max.x - min.x + 1)*(max.y - min.y + 1)) as usize);
+        for y in min.y..max.y+1 {
+            for x in min.x..max.x+1 {
+                dst.push(TilePos { x, y, z });
+            }
+        }
+
+        // sort center tiles first
+        dst[start..].sort_by_key(|p| {
             let dx = p.x - cx;
             let dy = p.y - cy;
             dx*dx + dy*dy
         });
-        v.into_iter()
     }
 
     /// the size of this tile in both x and y (all tiles are square)
