@@ -35,8 +35,8 @@ impl TilePos {
         max.x += pad;
         max.y += pad;
 
-        let cx = (min.x + max.x) / 2;
-        let cy = (min.y + max.y) / 2;
+        let cx = min.x / 2 + max.x / 2;
+        let cy = min.y / 2 + max.y / 2;
 
         let start = dst.len();
         dst.reserve(((max.x - min.x + 1)*(max.y - min.y + 1)) as usize);
