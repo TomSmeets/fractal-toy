@@ -8,10 +8,10 @@ license = "GPL-v2"
 [dependencies]
 bytemuck = "1.5"
 cgmath = "0.18"
-crossbeam-channel = "0.5.0"
-naga = "0.4.1"
-pollster = "0.2.4"
-serde = { version = "1.0.126", features = [ "derive" ] }
-structopt = "0.3.21"
-wgpu = "0.8.1"
-winit = "0.25.0"
+crossbeam-channel = "0.5"
+naga = "0.4"
+pollster = "0.2"
+serde = { version = "1.0", features = [ "derive" ] }
+structopt = "0.3"
+wgpu = "0.8"
+winit = "0.25"
