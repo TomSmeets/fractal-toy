@@ -128,7 +128,7 @@ impl TileBuilder {
             }
         }
 
-        println!("todo: {}, done: {}", todo_count, done_count);
+        // println!("todo: {}, done: {}", todo_count, done_count);
 
         self.cache = new_cache;
         &self.cache

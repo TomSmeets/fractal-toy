@@ -21,6 +21,7 @@ pub struct Gpu {
     swap_chain: Option<SwapChain>,
     shader: ShaderLoader,
     other: Option<Other>,
+    used: Vec<Option<TilePos>>,
 }
 
 pub struct Other {
@@ -94,7 +95,9 @@ impl Gpu {
             device: None,
             swap_chain: None,
             other: None,
-            shader: ShaderLoader::new()
+            shader: ShaderLoader::new(),
+
+            used: Vec::new(),
         }
     }
 
@@ -309,6 +312,8 @@ impl Gpu {
 
         let mut vertex_list = Vec::with_capacity(input.tiles.len()*3*2);
 
+        let mut upload_count = 0;
+        self.used.resize(input.tiles.len(), None);
         for (ix, (p, img))  in input.tiles.iter().enumerate().take(MAX_TILES as usize) {
             let square = p.square();
             let low  = input.viewport.world_to_screen(square.corner_min());
@@ -319,24 +324,29 @@ impl Gpu {
             let hx = high.x as f32;
             let hy = high.y as f32;
             
-
-            device.queue.write_texture(ImageCopyTexture {
-                texture: &other.texture,
-                mip_level: 0,
-                origin: Origin3d {
-                    x: 0,
-                    y: 0,
-                    z: ix as u32,
-                },
-            }, &img.data, ImageDataLayout {
-                offset: 0,
-                bytes_per_row: Some(std::num::NonZeroU32::new(4*img.size.x).unwrap()),
-                rows_per_image: Some(std::num::NonZeroU32::new(img.size.y).unwrap()),
-            }, Extent3d {
-                width: img.size.x,
-                height: img.size.y,
-                depth_or_array_layers: 1,
-            });
+            // This is ofcourse very bad, but still bettern than nothing
+            // TODO: improve, some kind of slotmap?
+            if self.used[ix] != Some(**p) {
+                upload_count += 1;
+                device.queue.write_texture(ImageCopyTexture {
+                    texture: &other.texture,
+                    mip_level: 0,
+                    origin: Origin3d {
+                        x: 0,
+                        y: 0,
+                        z: ix as u32,
+                    },
+                }, &img.data, ImageDataLayout {
+                    offset: 0,
+                    bytes_per_row: Some(std::num::NonZeroU32::new(4*img.size.x).unwrap()),
+                    rows_per_image: Some(std::num::NonZeroU32::new(img.size.y).unwrap()),
+                }, Extent3d {
+                    width: img.size.x,
+                    height: img.size.y,
+                    depth_or_array_layers: 1,
+                });
+                self.used[ix] = Some(**p);
+            }
 
             let ix = ix as i32;
             vertex_list.extend_from_slice(&[
@@ -350,6 +360,9 @@ impl Gpu {
             ]);
         }
 
+        if upload_count > 0 {
+            println!("upload_count: {}", upload_count);
+        }
 
         let vertex_list = &vertex_list[0..vertex_list.len().min(MAX_VERTS as usize)];
 

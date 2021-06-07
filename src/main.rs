@@ -92,9 +92,6 @@ impl State {
         vp.get_pos_all(&mut todo, 0);
         let tiles = todo.iter().flat_map(|k| cache.get_key_value(k)).collect::<Vec<_>>();
 
-        dbg!(cache.len());
-        dbg!(tiles.len());
-
         self.gpu.render(window, &GpuInput {
             resolution: input.resolution,
             viewport: &vp,
