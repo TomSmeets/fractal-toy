@@ -52,6 +52,7 @@ pub struct State {
 pub struct Image {
     size: V2<u32>,
     data: Vec<u8>,
+    anchor: V2<f64>,
 }
 
 impl State {

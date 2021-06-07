@@ -150,7 +150,7 @@ impl Viewport {
         let tile_size = px_size * 256.0 as f64;
         let z_max = -tile_size.log2();
         let z_max = z_max.max(0.0).ceil() as i32;
-        let z_min = (z_max - 8).max(0);
+        let z_min = 0; // (z_max - 8).max(0);
 
         // extra padding in poportion to tile size
         let off = self.offset;

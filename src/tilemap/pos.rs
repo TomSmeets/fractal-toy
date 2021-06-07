@@ -14,6 +14,14 @@ impl TilePos {
         TilePos { x: 0, y: 0, z: 0 }
     }
 
+    pub fn parent(&self) -> Option<TilePos> {
+        if self.z == 0 {
+            return None;
+        }
+
+        Some(TilePos { x: self.x / 2, y: self.y / 2, z: self.z - 1})
+    }
+
     /// Create a tile at these coordinates and at a spesific depth
     pub fn at(x: f64, y: f64, z: u8) -> TilePos {
         let s = (1_u64 << z) as f64;
