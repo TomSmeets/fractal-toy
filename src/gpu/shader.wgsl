@@ -63,31 +63,6 @@ fn vs_main(
 
 [[stage(fragment)]]
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
-    let v = mandel((in.uv.xy*2.0 - 1.0)*1.5);
-    let t = v.x*0.1;
-    let y = v.y;
-
-    let lo = 0.0;
-    let hi = 1.0;
-
-    let pi     = 3.141592653;
-    let pi_1_3 = pi / 3.0;
-    let pi_2_3 = pi * 2.0 / 3.0;
-
-    let x = (0.5 - t) * pi;
-
-    let r = sin(x);
-    let g = sin(x+pi_1_3);
-    let b = sin(x+pi_2_3);
-
-    let r = r*r;
-    let g = g*g;
-    let b = b*b;
-
-    let r = lo*(1.0-r) + hi*r;
-    let g = lo*(1.0-g) + hi*g;
-    let b = lo*(1.0-b) + hi*b;
-
     let col = textureSample(texture, sampler, in.uv, in.ix);
     return vec4<f32>(col.rgb, 1.0);
 }
