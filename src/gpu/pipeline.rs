@@ -28,45 +28,34 @@ impl ShaderLoader {
             self.path = path;
 
             // NOTE: a bit sad, wgpu-rs does not directly expose shader errors here :(
-            // Currently we just use naga to validate the shader here manually,
-            // This is not very ideal, as wgpu-rs should just return a usefull Result type.
+            // We have to do this until error scopes are implemented in wgpu-rs,
             // NOTE: https://github.com/gfx-rs/wgpu-rs/blob/3634abb0d560a2906d20c74efee9c2f16afb2503/src/backend/direct.rs#L818
-            if is_wgsl_shader_valid(&source) {
-                let shader = device.create_shader_module(&ShaderModuleDescriptor {
-                    label: None,
-                    source: ShaderSource::Wgsl(Cow::Owned(source)),
-                    flags: ShaderFlags::all(),
-                });
-                self.module = Some(shader);
-            }
+            // NOTE: https://github.com/niklaskorz/linon/commit/63477a34110eca93bc7b70c97be91c262fca811b
+            let (tx, rx) = crossbeam_channel::bounded(1);
+            device.on_uncaptured_error(move |e: wgpu::Error| {
+                tx.send(e).unwrap();
+            });
+
+            let shader = device.create_shader_module(&ShaderModuleDescriptor {
+                label: None,
+                source: ShaderSource::Wgsl(Cow::Owned(source)),
+                flags: ShaderFlags::all(),
+            });
+
+            device.on_uncaptured_error(move |e: wgpu::Error| panic!("{:#?}", e));
+
+            match rx.try_recv() {
+                Ok(e) => {
+                    dbg!(e);
+                },
+                Err(_) => {
+                    self.module = Some(shader);
+                },
+            };
+
             (self.module.as_ref().unwrap(), true)
         } else {
             (self.module.as_ref().unwrap(), false)
         }
     }
-}
-
-
-fn is_wgsl_shader_valid(source: &str) -> bool {
-    use naga::valid::ValidationFlags;
-    use naga::valid::Validator;
-
-    let module = match naga::front::wgsl::parse_str(&source) {
-        Ok(m) => m,
-        Err(e) => {
-            dbg!(e);
-            return false;
-        },
-    };
-
-    // validate the IR
-    let _ = match Validator::new(ValidationFlags::all()).validate(&module) {
-        Ok(info) => Some(info),
-        Err(error) => {
-            dbg!(error);
-            return false;
-        },
-    };
-
-    return true;
 }

@@ -500,7 +500,6 @@ dependencies = [
  "bytemuck",
  "cgmath",
  "crossbeam-channel",
- "naga",
  "pollster",
  "serde",
  "structopt",

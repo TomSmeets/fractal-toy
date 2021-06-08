@@ -178,6 +178,7 @@ impl Gpu {
 
         if shader_changed {
             self.other = None;
+            self.used.clear();
         }
 
         let other = self.other.get_or_insert_with(|| {

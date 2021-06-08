@@ -9,7 +9,6 @@ license = "GPL-v2"
 bytemuck = "1.5"
 cgmath = "0.18"
 crossbeam-channel = "0.5"
-naga = "0.4"
 pollster = "0.2"
 serde = { version = "1.0", features = [ "derive" ] }
 structopt = "0.3"
