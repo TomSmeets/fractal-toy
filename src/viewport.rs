@@ -12,7 +12,7 @@ pub struct ViewportInput {
 #[derive(Debug)]
 pub struct Viewport {
     zoom: f64,
-    scale: f64,
+    pub scale: f64,
     pub offset: V2,
     size_in_pixels: V2,
 }

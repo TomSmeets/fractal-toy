@@ -65,3 +65,23 @@ Z_(n+1) + z_(n+1) = Z_(n+1) + (z_n^2 + c) + 2*Z_n*z_n
 TODO: test first with 64 bit cpu and 32 bit gpu!
 
 we calculate one cpu Z for every tile. makes sense.
+
+
+## Style
+
+### Immediate mode
+for t in viewport.visible_tiles() {
+    let img = builder.build(p);
+    gpu.tile(p, img);
+}
+
+gpu.draw(&viewport);
+
+
+### Declarative mode
+self.gpu.render(window, &GpuInput {
+    resolution: input.resolution,
+    viewport: &vp,
+    tiles: &tiles,
+});
+

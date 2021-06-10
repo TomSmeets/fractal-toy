@@ -7,7 +7,8 @@ use crossbeam_channel::{Sender, bounded};
 use crossbeam_channel::Receiver;
 
 pub struct TileBuilder {
-    cache: BTreeMap<TilePos, Image>,
+    cache: BTreeMap<TilePos, Option<(Image, u32)>>,
+
     sender: Sender<(TilePos, V2)>,
     receiver: Receiver<(TilePos, Image)>,
 }
@@ -17,7 +18,7 @@ impl TileBuilder {
         let (req_send,  req_recv)  = bounded(16);
         let (tile_send, tile_recv) = bounded(16);
 
-        for _ in 0..6 {
+        for _ in 0..12 {
             let tile_send = tile_send.clone();
             let req_recv = req_recv.clone();
             std::thread::spawn(move || {
@@ -35,6 +36,10 @@ impl TileBuilder {
     }
 
     pub fn gen_tile(p: &TilePos, a: V2) -> Image {
+        const iter_count: usize = 1024;
+        let iter_count_f = iter_count as f32;
+
+
         // the sin() and log2() can be optimized
         let size = 256;
         let mut data = Vec::with_capacity(size as usize * size as usize * 4);
@@ -50,16 +55,20 @@ impl TileBuilder {
         let max_r = max - a;
 
         let mut anchor = a;
-        let mut anchor_dist = 1000000.0;
+        let mut anchor_dist = f64::INFINITY;
 
         let c_big = a;
-        let mut z_big = [V2::zero(); 1024];
+        let mut z_big_array = [[V2::zero(); 2]; iter_count];
 
         {
             let mut z = V2::zero();
             let c = c_big;
-            for i in 0..1024 {
-                z_big[i] = z;
+            for i in 0..iter_count {
+                z_big_array[i][0].x = z.x as f32;
+                z_big_array[i][0].y = z.y as f32;
+                z_big_array[i][1].x = (z.x - z_big_array[i][0].x as f64) as f32;
+                z_big_array[i][1].y = (z.y - z_big_array[i][0].y as f64) as f32;
+
                 z = V2::new(
                     z.x*z.x - z.y*z.y,
                     2.0*z.x*z.y
@@ -71,17 +80,18 @@ impl TileBuilder {
             for x in 0..size {
                 let border = (y == 0 || y == size  - 1) || (x == 0 || x == size-1);
 
-                let px = (x as f64 + 0.5) / size as f64;
-                let py = (y as f64 + 0.5) / size as f64;
+                let px = (x as f32) / size as f32;
+                let py = (y as f32) / size as f32;
 
-                let x = min_r.x as f64 *(1.0 - px) + max_r.x as f64 * px;
-                let y = min_r.y as f64 *(1.0 - py) + max_r.y as f64 * py;
+                let x = min_r.x as f32 * (1.0 - px) + max_r.x as f32 * px;
+                let y = min_r.y as f32 * (1.0 - py) + max_r.y as f32 * py;
 
-                let pi3 = std::f64::consts::FRAC_PI_3;
+                let pi3 = std::f32::consts::FRAC_PI_3;
 
 
                 let c_rel = V2::new(x, y);
-                let c = c_rel + a;
+                let c = c_rel + V2::new(a.x as f32, a.y as f32);
+
                 let mut z = V2::zero();
                 let mut t = 0.0;
 
@@ -94,23 +104,32 @@ impl TileBuilder {
                 let in_m2 = 16.0*(c2+2.0*c.x+1.0) - 1.0 < 0.0;
 
                 let mut escape = false;
-                if in_m1 || in_m2 {
-                    t = 255.0;
-                } else {
-                    for i in 0..1024 {
-                        let z_big = z_big[i];
+                // if in_m1 || in_m2 {
+                //     t = iter_count_f - 1.0;
+                // } else
+                let mut d_tot = 0.0;
+                {
+                    for i in 0..iter_count {
+                        let z_big  = z_big_array[i][0];
+                        let z_big1 = z_big_array[i][1];
 
-                        // 2*z_n*Z_n
+                        // 2*z_n*(Z_n + Z2_n)
+                        // 2*z_n*Z_n + 2*z_n*Z2_n
                         let zz_x = 2.0*(z.x*z_big.x - z.y*z_big.y);
                         let zz_y = 2.0*(z.x*z_big.y + z.y*z_big.x);
 
+                        let zz_1x = 2.0*(z.x*z_big1.x - z.y*z_big1.y);
+                        let zz_1y = 2.0*(z.x*z_big1.y + z.y*z_big1.x);
+
                         z = V2::new(
-                            z.x*z.x - z.y*z.y + zz_x,
-                            2.0*z.x*z.y       + zz_y
+                            z.x*z.x - z.y*z.y + zz_x + zz_1x,
+                            2.0*z.x*z.y       + zz_y + zz_1y,
                         ) + c_rel;
 
+
                         let d = z.x*z.x + z.y*z.y;
-                        if d > 1024.0 {
+                        d_tot += d;
+                        if d > 256.0 {
                             t += -d.log2().log2() + 4.0;
                             // t = (a - c).magnitude() * 10.0 / p.tile_scale();
                             escape = true;
@@ -120,11 +139,17 @@ impl TileBuilder {
                     }
                 }
 
+                if border {
+//                    t = 1.0
+                }
+
                 if !escape {
-                    let d1 = (center - c).magnitude2();
-                    if d1 <= anchor_dist {
+                    let d1 = (a + z.cast().unwrap()).magnitude2();
+                    if d1 < anchor_dist {
+                        let c = a + c_rel.cast().unwrap();
                         anchor = c;
                         anchor_dist = d1;
+                        t = 0.0;
                     }
                 }
 
@@ -156,37 +181,66 @@ impl TileBuilder {
     //     
     // }
 
-    pub fn build(&mut self, pos: &[TilePos]) -> &BTreeMap<TilePos, Image> {
-        let mut old_cache = std::mem::take(&mut self.cache);
+
+    pub fn tile(&mut self, p: &TilePos) -> Option<Image> {
+
+        // Check cache
+        if let Some(cache_entry) = self.cache.get_mut(p) {
+            match cache_entry {
+                // The tile was cached
+                Some((img, count)) => {
+                    *count += 1;
+                    return Some(img.clone());
+                },
+
+                // The tile is already queud, just not done yet
+                None => return None,
+            };
+        }
+
+        // Check parent for an anchor
+        let anchor = match p.parent() {
+            Some(p) => match self.tile(&p) {
+                // Parent is cached
+                Some(t) => t.anchor,
+
+                // Parent is not done yet, all we can do is wait
+                None => return None,
+            },
+
+            // This tile is the root tile, default to 0,0 as anchor
+            None => V2::new(0.0, 0.0),
+        };
+
+        // tell a builder to build this tile
+        if let Ok(_) = self.sender.try_send((*p, anchor)) {
+            // Tile is queued, don't request it again
+            self.cache.insert(*p, None);
+        }
+
+        None
+    }
+
+    pub fn update(&mut self) {
         let mut new_cache = BTreeMap::new();
 
-        while let Ok((k, v)) = self.receiver.try_recv() {
-            old_cache.insert(k, v);
+        dbg!(self.cache.len());
+        for (k, v) in std::mem::take(&mut self.cache) {
+            match v {
+                Some((img, cnt)) if cnt > 0 => { new_cache.insert(k, Some((img, 0))); },
+                None => { new_cache.insert(k, None); } ,
+                _ => (),
+            };
         }
 
-        let mut todo_count = 0;
-        let mut done_count = 0;
-        for p in pos {
-            if let Some(v) = old_cache.remove(p) {
-                new_cache.insert(*p, v);
-                done_count += 1;
-            } else {
-                let anchor = match p.parent() {
-                    Some(p) => old_cache.get(&p).or_else(|| new_cache.get(&p)).map(|x| x.anchor),
-                    None => Some(V2::new(0.0, 0.0)),
-                };
+        // TODO: clear cache?
 
-                if let Some(anchor) = anchor {
-                    let _ = self.sender.try_send((*p, anchor));
-                }
-                todo_count += 1;
-            }
+        // Check for finished tiles
+        while let Ok((p, i)) = self.receiver.try_recv() {
+            new_cache.insert(p, Some((i, 1)));
         }
-
-        // println!("todo: {}, done: {}", todo_count, done_count);
 
         self.cache = new_cache;
-        &self.cache
     }
 }
 

@@ -44,7 +44,7 @@ pub struct Other {
 pub struct GpuInput<'a> {
     pub resolution: V2<u32>,
     pub viewport: &'a Viewport,
-    pub tiles: &'a [(&'a TilePos, &'a Image)],
+    pub tiles: &'a [(TilePos, Image)],
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -327,7 +327,7 @@ impl Gpu {
             
             // This is ofcourse very bad, but still bettern than nothing
             // TODO: improve, some kind of slotmap?
-            if self.used[ix] != Some(**p) {
+            if self.used[ix] != Some(*p) {
                 upload_count += 1;
                 device.queue.write_texture(ImageCopyTexture {
                     texture: &other.texture,
@@ -346,7 +346,7 @@ impl Gpu {
                     height: img.size.y,
                     depth_or_array_layers: 1,
                 });
-                self.used[ix] = Some(**p);
+                self.used[ix] = Some(*p);
             }
 
             let ix = ix as i32;
@@ -362,7 +362,7 @@ impl Gpu {
         }
 
         if upload_count > 0 {
-            println!("upload_count: {}", upload_count);
+            // println!("upload_count: {}", upload_count);
         }
 
         let vertex_list = &vertex_list[0..vertex_list.len().min(MAX_VERTS as usize)];

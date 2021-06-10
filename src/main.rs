@@ -49,6 +49,7 @@ pub struct State {
     drag: Option<V2<f64>>,
 }
 
+#[derive(Clone)]
 pub struct Image {
     size: V2<u32>,
     data: Vec<u8>,
@@ -83,21 +84,34 @@ impl State {
         }
 
         let mut todo = Vec::new();
+        let mut tiles = Vec::new();
 
-        // build padded
+        // also build padded
         vp.get_pos_all(&mut todo, 1);
-        let cache = self.builder.build(&todo);
+        for p in &todo {
+            let _ = self.builder.tile(&p);
+        }
 
-        // display unpadded
+        // draw unpadded tiles
         todo.clear();
         vp.get_pos_all(&mut todo, 0);
-        let tiles = todo.iter().flat_map(|k| cache.get_key_value(k)).collect::<Vec<_>>();
+        for p in todo {
+            // Image is borrowed here, so use it only here
+            let img = self.builder.tile(&p);
+
+            if let Some(img) = img {
+                // draw the tile
+                tiles.push((p, img));
+            }
+        }
 
         self.gpu.render(window, &GpuInput {
             resolution: input.resolution,
             viewport: &vp,
             tiles: &tiles,
         });
+
+        self.builder.update();
     }
 }
 
