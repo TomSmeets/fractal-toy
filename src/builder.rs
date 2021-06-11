@@ -37,7 +37,6 @@ impl TileBuilder {
         }
     }
     
-
     pub fn calculate_refernce_with(c: V2) -> [[V2<f32>; 2]; ITER_COUNT] {
         let mut z_values = [[V2::zero(); 2]; ITER_COUNT];
         let mut z = V2::zero();
@@ -70,31 +69,23 @@ impl TileBuilder {
 
         let center = min*0.5 + max*0.5;
 
-        let min_r = min - a;
-        let max_r = max - a;
-
-        let mut anchor = a;
-        let mut anchor_dist = f64::INFINITY;
-
-        let z_big_array = Self::calculate_refernce_with(a);
-
         for y in 0..size {
             for x in 0..size {
                 let border = (y == 0 || y == size  - 1) || (x == 0 || x == size-1);
 
-                let px = (x as f32) / size as f32;
-                let py = (y as f32) / size as f32;
-
-                let x = min_r.x as f32 * (1.0 - px) + max_r.x as f32 * px;
-                let y = min_r.y as f32 * (1.0 - py) + max_r.y as f32 * py;
-
-                let pi3 = std::f32::consts::FRAC_PI_3;
+                let px = (x as f64 + 0.5) / (size) as f64;
+                let py = (y as f64 + 0.5) / (size) as f64;
 
 
-                let c_rel = V2::new(x, y);
-                let c = c_rel + V2::new(a.x as f32, a.y as f32);
+                let x = min.x as f64 * (1.0 - px) + max.x as f64 * px;
+                let y = min.y as f64 * (1.0 - py) + max.y as f64 * py;
 
-                let mut z = V2::zero();
+                let pi3 = std::f64::consts::FRAC_PI_3;
+
+
+                let c = V2::new(x, y);
+
+                let mut z: V2<f64> = V2::zero();
                 let mut t = 0.0;
 
                 let c2 = c.x*c.x + c.y*c.y;
@@ -105,53 +96,28 @@ impl TileBuilder {
                 // skip computation inside M2 - http://iquilezles.org/www/articles/mset_2bulb/mset2bulb.htm
                 let in_m2 = 16.0*(c2+2.0*c.x+1.0) - 1.0 < 0.0;
 
-                let mut escape = false;
                 if in_m1 || in_m2 {
-                    t = ITER_COUNT as f32 - 1.0;
+                    t = ITER_COUNT as f64 - 1.0;
                 } else {
                     for i in 0..ITER_COUNT {
-                        let z_big0 = z_big_array[i][0];
-                        let z_big1 = z_big_array[i][1];
-
-                        // 2*z_n*(Z_n + Z2_n)
-                        // 2*z_n*Z_n + 2*z_n*Z2_n
-                        let zz_0x = 2.0*(z.x*z_big0.x - z.y*z_big0.y);
-                        let zz_0y = 2.0*(z.x*z_big0.y + z.y*z_big0.x);
-
-                        let zz_1x = 2.0*(z.x*z_big1.x - z.y*z_big1.y);
-                        let zz_1y = 2.0*(z.x*z_big1.y + z.y*z_big1.x);
-
                         z = V2::new(
-                            z.x*z.x - z.y*z.y + zz_0x + zz_1x,
-                            2.0*z.x*z.y       + zz_0y + zz_1y,
-                        ) + c_rel;
+                            z.x*z.x - z.y*z.y + c.x,
+                            2.0*z.x*z.y       + c.y,
+                        );
 
 
                         let d = z.x*z.x + z.y*z.y;
                         if d > 256.0 {
                             t += -d.log2().log2() + 4.0;
-                            // t = (a - c).magnitude() * 10.0 / p.tile_scale();
-                            escape = true;
                             break;
                         }
                         t += 1.0;
                     }
                 }
 
-                if border {
-                    t = 1.0
-                }
-
-                if !escape {
-                    let d1 = (a + z.cast().unwrap()).magnitude2();
-                    if d1 < anchor_dist {
-                        let c = a + c_rel.cast().unwrap();
-                        anchor = c;
-                        anchor_dist = d1;
-                        t = 0.0;
-                    }
-                    t = 0.0;
-                }
+                // if border {
+                //     t = 1.0
+                // }
 
                 let a = (1.0 - (t/(1024.0)).powi(2)).min(1.0).max(0.0);
                 let t = t*0.1;
@@ -170,7 +136,7 @@ impl TileBuilder {
             }
         }
 
-        Image { size: V2::new(size, size), data, anchor }
+        Image { size: V2::new(size, size), data, anchor: a }
     }
 
     // pub fn tile(&mut self, p: &TilePos) -> Option<&Image> {
