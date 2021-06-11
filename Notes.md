@@ -77,6 +77,15 @@ for t in viewport.visible_tiles() {
 
 gpu.draw(&viewport);
 
++ functions can return
++ less allocation?
++ in this cace nicer interface, (but lets  make the borrow checker happy first :/)
+- more chance of bugs?
++ imgui works like this, and that works very nicely
++ combines lookup and request
+
+TODO: compare with declarative with other types of tasks
+
 
 ### Declarative mode
 self.gpu.render(window, &GpuInput {
@@ -85,3 +94,6 @@ self.gpu.render(window, &GpuInput {
     tiles: &tiles,
 });
 
++ Has full knowledge of everything
++ backend  can be anything, gpu just takes a list
+- tiles has to be exactly that type. can't just convert between &[A], &[&A]] and BTreeMap<K, A>, etc

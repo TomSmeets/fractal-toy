@@ -84,7 +84,6 @@ impl State {
         }
 
         let mut todo = Vec::new();
-        let mut tiles = Vec::new();
 
         // also build padded
         vp.get_pos_all(&mut todo, 1);
@@ -101,14 +100,13 @@ impl State {
 
             if let Some(img) = img {
                 // draw the tile
-                tiles.push((p, img));
+                self.gpu.tile(vp, &p, &img)
             }
         }
 
         self.gpu.render(window, &GpuInput {
             resolution: input.resolution,
             viewport: &vp,
-            tiles: &tiles,
         });
 
         self.builder.update();
