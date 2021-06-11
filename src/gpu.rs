@@ -116,32 +116,32 @@ impl Gpu {
             self.used.push(None);
         }
 
-            let square = p.square();
-            let low  = vp.world_to_screen(square.corner_min());
-            let high = vp.world_to_screen(square.corner_max());
+        let square = p.square();
+        let low  = vp.world_to_screen(square.corner_min());
+        let high = vp.world_to_screen(square.corner_max());
 
-            let lx = low.x as f32;
-            let ly = low.y as f32;
-            let hx = high.x as f32;
-            let hy = high.y as f32;
-            
-            // This is ofcourse very bad, but still bettern than nothing
-            // TODO: improve, some kind of slotmap?
-            if self.used[ix as usize] != Some(*p) {
-                self.upload_list.push((ix, img.clone()));
-                self.used[ix as usize] = Some(*p);
-            }
+        let lx = low.x as f32;
+        let ly = low.y as f32;
+        let hx = high.x as f32;
+        let hy = high.y as f32;
 
-            let ix = ix as i32;
-            self.vertex_list.extend_from_slice(&[
-                Vertex { pos: V2::new(lx, ly), uv: V2::new(0.0, 0.0), ix },
-                Vertex { pos: V2::new(hx, ly), uv: V2::new(1.0, 0.0), ix },
-                Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0, 1.0), ix },
+        // This is ofcourse very bad, but still bettern than nothing
+        // TODO: improve, some kind of slotmap?
+        if self.used[ix as usize] != Some(*p) {
+            self.upload_list.push((ix, img.clone()));
+            self.used[ix as usize] = Some(*p);
+        }
 
-                Vertex { pos: V2::new(hx, ly), uv: V2::new(1.0, 0.0), ix },
-                Vertex { pos: V2::new(hx, hy), uv: V2::new(1.0, 1.0), ix },
-                Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0, 1.0), ix },
-            ]);
+        let ix = ix as i32;
+        self.vertex_list.extend_from_slice(&[
+            Vertex { pos: V2::new(lx, ly), uv: V2::new(0.0, 0.0), ix },
+            Vertex { pos: V2::new(hx, ly), uv: V2::new(1.0, 0.0), ix },
+            Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0, 1.0), ix },
+
+            Vertex { pos: V2::new(hx, ly), uv: V2::new(1.0, 0.0), ix },
+            Vertex { pos: V2::new(hx, hy), uv: V2::new(1.0, 1.0), ix },
+            Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0, 1.0), ix },
+        ]);
     }
 
     pub fn render(&mut self, window: &Window, input: &GpuInput) {
@@ -149,6 +149,7 @@ impl Gpu {
             // choose whatever backend you want
             // NOTE: does not have to be kept alive
             let instance = Instance::new(BackendBit::all());
+            dbg!(&instance);
 
             // surface and adapter
             let surface = unsafe { instance.create_surface(window) };
@@ -221,6 +222,7 @@ impl Gpu {
 
         if shader_changed {
             self.other = None;
+            // TODO: this is too late now, fix it
             self.used.clear();
         }
 

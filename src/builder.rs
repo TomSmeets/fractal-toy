@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 use crossbeam_channel::{Sender, bounded};
 use crossbeam_channel::Receiver;
 
-const ITER_COUNT: usize = 1024;
+const ITER_COUNT: usize = 1024*8;
 
 pub struct TileBuilder {
     cache: BTreeMap<TilePos, Option<(Image, u32)>>,
@@ -184,7 +184,6 @@ impl TileBuilder {
     pub fn update(&mut self) {
         let mut new_cache = BTreeMap::new();
 
-        dbg!(self.cache.len());
         for (k, v) in std::mem::take(&mut self.cache) {
             match v {
                 Some((img, cnt)) if cnt > 0 => { new_cache.insert(k, Some((img, 0))); },
@@ -201,4 +200,3 @@ impl TileBuilder {
         self.cache = new_cache;
     }
 }
-
