@@ -37,7 +37,7 @@ impl TileBuilder {
         }
     }
     
-    pub fn calculate_refernce_with(c: V2) -> [[V2<f32>; 2]; ITER_COUNT] {
+    fn calculate_refernce_with(c: V2) -> [[V2<f32>; 2]; ITER_COUNT] {
         let mut z_values = [[V2::zero(); 2]; ITER_COUNT];
         let mut z = V2::zero();
         for i in 0..ITER_COUNT {
@@ -57,7 +57,7 @@ impl TileBuilder {
         z_values
     }
 
-    pub fn gen_tile(p: &TilePos, a: V2) -> Image {
+    fn gen_tile(p: &TilePos, a: V2) -> Image {
         // the sin() and log2() can be optimized
         let size = 256;
         let mut data = Vec::with_capacity(size as usize * size as usize * 4);
@@ -139,15 +139,7 @@ impl TileBuilder {
         Image { size: V2::new(size, size), data, anchor: a }
     }
 
-    // pub fn tile(&mut self, p: &TilePos) -> Option<&Image> {
-    //     // check cache
-    //     // build
-    //     // find refernce point
-    //     let parent = self.tile(&p.parent().unwrap()).unwrap();
-    //     
-    // }
-
-
+    /// Either return a cached tile, or add it to the build queue
     pub fn tile(&mut self, p: &TilePos) -> Option<&Image> {
         let in_cache = self.cache.contains_key(p);
 
@@ -188,6 +180,7 @@ impl TileBuilder {
         }
     }
 
+    /// update the cache, removing unused tiles and inserting newly finished tiles
     pub fn update(&mut self) {
         let mut new_cache = BTreeMap::new();
 
@@ -195,12 +188,10 @@ impl TileBuilder {
         for (k, v) in std::mem::take(&mut self.cache) {
             match v {
                 Some((img, cnt)) if cnt > 0 => { new_cache.insert(k, Some((img, 0))); },
-                None => { new_cache.insert(k, None); } ,
+                None => { new_cache.insert(k, None); },
                 _ => (),
             };
         }
-
-        // TODO: clear cache?
 
         // Check for finished tiles
         while let Ok((p, i)) = self.receiver.try_recv() {
