@@ -6,6 +6,8 @@ use std::collections::BTreeMap;
 use crossbeam_channel::{Sender, bounded};
 use crossbeam_channel::Receiver;
 
+const ITER_COUNT: usize = 1024;
+
 pub struct TileBuilder {
     cache: BTreeMap<TilePos, Option<(Image, u32)>>,
 
@@ -34,12 +36,29 @@ impl TileBuilder {
             receiver: tile_recv,
         }
     }
+    
+
+    pub fn calculate_refernce_with(c: V2) -> [[V2<f32>; 2]; ITER_COUNT] {
+        let mut z_values = [[V2::zero(); 2]; ITER_COUNT];
+        let mut z = V2::zero();
+        for i in 0..ITER_COUNT {
+            z_values[i][0].x = z.x as f32;
+            z_values[i][0].y = z.y as f32;
+
+            // NOTE: does this even work?, also does it help
+            z_values[i][1].x = (z.x - z_values[i][0].x as f64) as f32;
+            z_values[i][1].y = (z.y - z_values[i][0].y as f64) as f32;
+
+            z = V2::new(
+                z.x*z.x - z.y*z.y,
+                2.0*z.x*z.y
+            ) + c;
+        }
+
+        z_values
+    }
 
     pub fn gen_tile(p: &TilePos, a: V2) -> Image {
-        const iter_count: usize = 1024;
-        let iter_count_f = iter_count as f32;
-
-
         // the sin() and log2() can be optimized
         let size = 256;
         let mut data = Vec::with_capacity(size as usize * size as usize * 4);
@@ -57,24 +76,7 @@ impl TileBuilder {
         let mut anchor = a;
         let mut anchor_dist = f64::INFINITY;
 
-        let c_big = a;
-        let mut z_big_array = [[V2::zero(); 2]; iter_count];
-
-        {
-            let mut z = V2::zero();
-            let c = c_big;
-            for i in 0..iter_count {
-                z_big_array[i][0].x = z.x as f32;
-                z_big_array[i][0].y = z.y as f32;
-                z_big_array[i][1].x = (z.x - z_big_array[i][0].x as f64) as f32;
-                z_big_array[i][1].y = (z.y - z_big_array[i][0].y as f64) as f32;
-
-                z = V2::new(
-                    z.x*z.x - z.y*z.y,
-                    2.0*z.x*z.y
-                ) + c;
-            }
-        }
+        let z_big_array = Self::calculate_refernce_with(a);
 
         for y in 0..size {
             for x in 0..size {
@@ -104,31 +106,28 @@ impl TileBuilder {
                 let in_m2 = 16.0*(c2+2.0*c.x+1.0) - 1.0 < 0.0;
 
                 let mut escape = false;
-                // if in_m1 || in_m2 {
-                //     t = iter_count_f - 1.0;
-                // } else
-                let mut d_tot = 0.0;
-                {
-                    for i in 0..iter_count {
-                        let z_big  = z_big_array[i][0];
+                if in_m1 || in_m2 {
+                    t = ITER_COUNT as f32 - 1.0;
+                } else {
+                    for i in 0..ITER_COUNT {
+                        let z_big0 = z_big_array[i][0];
                         let z_big1 = z_big_array[i][1];
 
                         // 2*z_n*(Z_n + Z2_n)
                         // 2*z_n*Z_n + 2*z_n*Z2_n
-                        let zz_x = 2.0*(z.x*z_big.x - z.y*z_big.y);
-                        let zz_y = 2.0*(z.x*z_big.y + z.y*z_big.x);
+                        let zz_0x = 2.0*(z.x*z_big0.x - z.y*z_big0.y);
+                        let zz_0y = 2.0*(z.x*z_big0.y + z.y*z_big0.x);
 
                         let zz_1x = 2.0*(z.x*z_big1.x - z.y*z_big1.y);
                         let zz_1y = 2.0*(z.x*z_big1.y + z.y*z_big1.x);
 
                         z = V2::new(
-                            z.x*z.x - z.y*z.y + zz_x + zz_1x,
-                            2.0*z.x*z.y       + zz_y + zz_1y,
+                            z.x*z.x - z.y*z.y + zz_0x + zz_1x,
+                            2.0*z.x*z.y       + zz_0y + zz_1y,
                         ) + c_rel;
 
 
                         let d = z.x*z.x + z.y*z.y;
-                        d_tot += d;
                         if d > 256.0 {
                             t += -d.log2().log2() + 4.0;
                             // t = (a - c).magnitude() * 10.0 / p.tile_scale();
@@ -140,7 +139,7 @@ impl TileBuilder {
                 }
 
                 if border {
-//                    t = 1.0
+                    t = 1.0
                 }
 
                 if !escape {
@@ -151,6 +150,7 @@ impl TileBuilder {
                         anchor_dist = d1;
                         t = 0.0;
                     }
+                    t = 0.0;
                 }
 
                 let a = (1.0 - (t/(1024.0)).powi(2)).min(1.0).max(0.0);

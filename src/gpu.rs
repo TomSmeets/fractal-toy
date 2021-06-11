@@ -407,10 +407,6 @@ impl Gpu {
 
         device.queue.submit(Some(encoder.finish()));
 
-        dbg!(self.vertex_list.len());
-        dbg!(self.tile_count);
-        dbg!(self.upload_list.len());
-
         self.vertex_list.clear();
         self.tile_count = 0;
     }

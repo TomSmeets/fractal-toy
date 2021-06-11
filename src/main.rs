@@ -100,13 +100,13 @@ impl State {
 
             if let Some(img) = img {
                 // draw the tile
-                self.gpu.tile(vp, &p, &img)
+                self.gpu.tile(vp, &p, img)
             }
         }
 
         self.gpu.render(window, &GpuInput {
             resolution: input.resolution,
-            viewport: &vp,
+            viewport: vp,
         });
 
         self.builder.update();
