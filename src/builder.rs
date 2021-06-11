@@ -182,43 +182,44 @@ impl TileBuilder {
     // }
 
 
-    pub fn tile(&mut self, p: &TilePos) -> Option<Image> {
+    pub fn tile(&mut self, p: &TilePos) -> Option<&Image> {
+        let in_cache = self.cache.contains_key(p);
 
-        // Check cache
-        if let Some(cache_entry) = self.cache.get_mut(p) {
+        if !in_cache {
+            // Check parent for an anchor
+            let anchor = match p.parent() {
+                Some(p) => match self.tile(&p) {
+                    // Parent is cached
+                    Some(t) => t.anchor,
+
+                    // Parent is not done yet, all we can do is wait
+                    None => return None,
+                },
+
+                // This tile is the root tile, default to 0,0 as anchor
+                None => V2::new(0.0, 0.0),
+            };
+
+            // tell a builder to build this tile
+            if let Ok(_) = self.sender.try_send((*p, anchor)) {
+                // Tile is queued, don't request it again
+                self.cache.insert(*p, None);
+            }
+
+            None
+        } else {
+            let cache_entry = self.cache.get_mut(p).unwrap();
             match cache_entry {
                 // The tile was cached
                 Some((img, count)) => {
                     *count += 1;
-                    return Some(img.clone());
+                    return Some(img);
                 },
 
                 // The tile is already queud, just not done yet
                 None => return None,
             };
         }
-
-        // Check parent for an anchor
-        let anchor = match p.parent() {
-            Some(p) => match self.tile(&p) {
-                // Parent is cached
-                Some(t) => t.anchor,
-
-                // Parent is not done yet, all we can do is wait
-                None => return None,
-            },
-
-            // This tile is the root tile, default to 0,0 as anchor
-            None => V2::new(0.0, 0.0),
-        };
-
-        // tell a builder to build this tile
-        if let Ok(_) = self.sender.try_send((*p, anchor)) {
-            // Tile is queued, don't request it again
-            self.cache.insert(*p, None);
-        }
-
-        None
     }
 
     pub fn update(&mut self) {
