@@ -142,7 +142,6 @@ impl TileBuilder {
             id: Image::mk_id(),
             size: V2::new(size, size),
             data,
-            anchor: a,
         }
     }
 
@@ -151,22 +150,8 @@ impl TileBuilder {
         let in_cache = self.cache.contains_key(p);
 
         if !in_cache {
-            // Check parent for an anchor
-            let anchor = match p.parent() {
-                Some(p) => match self.tile(&p) {
-                    // Parent is cached
-                    Some(t) => t.anchor,
-
-                    // Parent is not done yet, all we can do is wait
-                    None => return None,
-                },
-
-                // This tile is the root tile, default to 0,0 as anchor
-                None => V2::new(0.0, 0.0),
-            };
-
             // tell a builder to build this tile
-            if let Ok(_) = self.sender.try_send((*p, anchor)) {
+            if let Ok(_) = self.sender.try_send((*p, V2::zero())) {
                 // Tile is queued, don't request it again
                 self.cache.insert(*p, None);
             }

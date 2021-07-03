@@ -22,6 +22,13 @@ impl Rect {
         }
     }
 
+    pub fn center_size(center: V2, size: V2) -> Self {
+        Rect {
+            min: center - size * 0.5,
+            max: center + size * 0.5,
+        }
+    }
+
     pub fn corner_min(&self) -> V2 {
         self.min
     }

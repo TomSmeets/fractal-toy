@@ -54,7 +54,6 @@ pub struct Image {
     id: u32,
     size: V2<u32>,
     data: Vec<u8>,
-    anchor: V2<f64>,
 }
 
 use std::sync::atomic::AtomicU32;
