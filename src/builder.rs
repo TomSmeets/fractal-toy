@@ -139,6 +139,7 @@ impl TileBuilder {
         }
 
         Image {
+            id: Image::mk_id(),
             size: V2::new(size, size),
             data,
             anchor: a,

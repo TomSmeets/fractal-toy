@@ -22,7 +22,7 @@ pub struct Gpu {
     shader: ShaderLoader,
     other: Option<Other>,
 
-    used: Vec<Option<TilePos>>,
+    used: Vec<u32>,
     tile_count: u32,
     vertex_list: Vec<Vertex>,
     upload_list: Vec<(u32, Image)>,
@@ -148,7 +148,7 @@ impl Gpu {
         self.tile_count += 1;
 
         while self.used.len() <= ix as usize {
-            self.used.push(None);
+            self.used.push(0);
         }
 
         let square = p.square();
@@ -162,9 +162,9 @@ impl Gpu {
 
         // This is ofcourse very bad, but still bettern than nothing
         // TODO: improve, some kind of slotmap?
-        if self.used[ix as usize] != Some(*p) {
+        if self.used[ix as usize] != img.id {
             self.upload_list.push((ix, img.clone()));
-            self.used[ix as usize] = Some(*p);
+            self.used[ix as usize] = img.id;
         }
 
         let ix = ix as i32;

@@ -53,9 +53,22 @@ pub struct State {
 
 #[derive(Clone)]
 pub struct Image {
+    id: u32,
     size: V2<u32>,
     data: Vec<u8>,
     anchor: V2<f64>,
+}
+
+use std::sync::atomic::AtomicU32;
+// reserve the id 0 to represent nothing
+static IMAGE_COUNTER: AtomicU32 = AtomicU32::new(1);
+
+impl Image {
+    pub fn mk_id() -> u32 {
+        // this will wrap eventually (after running for around 50 days or so)
+        // but that should not be a problem. If it is, then just use u64
+        IMAGE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    }
 }
 
 impl State {
