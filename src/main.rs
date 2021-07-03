@@ -127,8 +127,7 @@ impl State {
     pub fn update(&mut self, window: &Window, input: &Input, dt: f32) {
         // viewport stuff
         self.viewport.size(input.resolution);
-        self.viewport
-            .zoom_at(input.mouse_scroll as f64, input.mouse);
+        self.viewport.zoom_at(input.mouse_scroll as f64, input.mouse);
 
         if input.mouse_down {
             self.viewport.drag(input.mouse);
@@ -146,6 +145,10 @@ impl State {
         // which tiles to build
         for p in self.viewport.get_pos_all(1) {
             self.builder.tile(&p);
+        }
+
+        if let Some(t) = self.builder.tile(&TilePos::root()) {
+            self.gpu.blit(&Rect::center_size(input.mouse.map(|x| x as _), V2::new(500.0, 500.0)), t);
         }
 
         // submit
