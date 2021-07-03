@@ -4,3 +4,37 @@ use cgmath::Vector3;
 
 pub type V2<S = f64> = Vector2<S>;
 pub type V3<S = f64> = Vector3<S>;
+
+pub struct Rect {
+    min: V2,
+    max: V2,
+}
+
+impl Rect {
+    pub fn min_max(min: V2, max: V2) -> Self {
+        Rect { min, max }
+    }
+
+    pub fn corner_size(corner: V2, size: V2) -> Self {
+        Rect {
+            min: corner,
+            max: corner + size,
+        }
+    }
+
+    pub fn corner_min(&self) -> V2 {
+        self.min
+    }
+
+    pub fn corner_max(&self) -> V2 {
+        self.max
+    }
+
+    pub fn center(&self) -> V2 {
+        (self.max + self.min) * 0.5
+    }
+
+    pub fn size(&self) -> V2 {
+        self.max - self.min
+    }
+}

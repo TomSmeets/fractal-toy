@@ -1,5 +1,4 @@
-use super::Square;
-use crate::util::V2;
+use crate::util::{Rect, V2};
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Debug)]
 pub struct TilePos {
@@ -71,11 +70,11 @@ impl TilePos {
         1.0 / self.max_size() as f64
     }
 
-    pub fn square(&self) -> Square {
+    pub fn square(&self) -> Rect {
         let s = self.tile_scale();
         let x = self.x as f64 * s;
         let y = self.y as f64 * s;
-        Square::new(x, y, s)
+        Rect::corner_size(V2::new(x, y), V2::new(s, s))
     }
 
     fn max_size(&self) -> u64 {

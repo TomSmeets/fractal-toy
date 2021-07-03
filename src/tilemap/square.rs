@@ -1,4 +1,3 @@
-use super::TilePos;
 use crate::util::V2;
 
 /// A rectangle but all sides are equal
@@ -41,11 +40,5 @@ impl Square {
     /// The center of this tile
     pub fn center(&self) -> V2 {
         V2::new(self.x + self.w * 0.5, self.y + self.w * 0.5)
-    }
-}
-
-impl From<TilePos> for Square {
-    fn from(p: TilePos) -> Self {
-        p.square()
     }
 }

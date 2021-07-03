@@ -91,6 +91,16 @@ impl Viewport {
         self.did_drag = false;
     }
 
+    pub fn world_to_screen_rect(&self, r: &Rect) -> Rect {
+        let min = r.corner_min();
+        let max = r.corner_max();
+
+        let min = self.world_to_screen(min).map(|x| x as _);
+        let max = self.world_to_screen(max).map(|x| x as _);
+
+        Rect::min_max(min, max)
+    }
+
     pub fn world_to_screen(&self, mut p: V2) -> V2<i32> {
         // offset is in world space
         p -= self.offset;

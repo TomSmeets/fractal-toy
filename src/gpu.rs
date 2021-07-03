@@ -143,7 +143,7 @@ impl Gpu {
     }
 
     #[rustfmt::skip]
-    pub fn tile(&mut self, vp: &Viewport, p: &TilePos, img: &Image) {
+    pub fn blit(&mut self, rect: &Rect, img: &Image) {
         let ix = self.tile_count;
         self.tile_count += 1;
 
@@ -151,14 +151,10 @@ impl Gpu {
             self.used.push(0);
         }
 
-        let square = p.square();
-        let low = vp.world_to_screen(square.corner_min());
-        let high = vp.world_to_screen(square.corner_max());
-
-        let lx = low.x as f32;
-        let ly = low.y as f32;
-        let hx = high.x as f32;
-        let hy = high.y as f32;
+        let lx = rect.corner_min().x as f32;
+        let ly = rect.corner_min().y as f32;
+        let hx = rect.corner_max().x as f32;
+        let hy = rect.corner_max().y as f32;
 
         // This is ofcourse very bad, but still bettern than nothing
         // TODO: improve, some kind of slotmap?
@@ -176,6 +172,11 @@ impl Gpu {
             Vertex { pos: V2::new(hx, hy), uv: V2::new(1.0, 1.0), ix, },
             Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0, 1.0), ix, },
         ]);
+    }
+
+    pub fn tile(&mut self, vp: &Viewport, p: &TilePos, img: &Image) {
+        let rect = vp.world_to_screen_rect(&p.square());
+        self.blit(&rect, img);
     }
 
     #[rustfmt::skip]

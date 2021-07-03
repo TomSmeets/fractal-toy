@@ -47,8 +47,6 @@ pub struct State {
 
     // actual state that is relevant
     viewport: Viewport,
-    drag: Option<V2<f64>>,
-    tile_pos_cache: Vec<TilePos>,
 }
 
 #[derive(Clone)]
@@ -77,8 +75,6 @@ impl State {
             gpu: Gpu::init(window),
             builder: TileBuilder::new(),
             viewport: Viewport::new(),
-            drag: None,
-            tile_pos_cache: Vec::new(),
         }
     }
 
@@ -140,16 +136,16 @@ impl State {
 
         self.viewport.update(dt as f64);
 
-        // which tiles to build
-        for p in self.viewport.get_pos_all(1) {
-            self.builder.tile(&p);
-        }
-
         // which tiles to draw
         for p in self.viewport.get_pos_all(0) {
             if let Some(img) = self.builder.tile(&p) {
                 self.gpu.tile(&self.viewport, &p, img);
             }
+        }
+
+        // which tiles to build
+        for p in self.viewport.get_pos_all(1) {
+            self.builder.tile(&p);
         }
 
         // submit
