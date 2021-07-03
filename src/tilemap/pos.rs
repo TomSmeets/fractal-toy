@@ -19,7 +19,11 @@ impl TilePos {
             return None;
         }
 
-        Some(TilePos { x: self.x / 2, y: self.y / 2, z: self.z - 1})
+        Some(TilePos {
+            x: self.x / 2,
+            y: self.y / 2,
+            z: self.z - 1,
+        })
     }
 
     /// Create a tile at these coordinates and at a spesific depth
@@ -47,9 +51,9 @@ impl TilePos {
         let cy = min.y / 2 + max.y / 2;
 
         let start = dst.len();
-        dst.reserve(((max.x - min.x + 1)*(max.y - min.y + 1)) as usize);
-        for y in min.y..max.y+1 {
-            for x in min.x..max.x+1 {
+        dst.reserve(((max.x - min.x + 1) * (max.y - min.y + 1)) as usize);
+        for y in min.y..max.y + 1 {
+            for x in min.x..max.x + 1 {
                 dst.push(TilePos { x, y, z });
             }
         }
@@ -58,7 +62,7 @@ impl TilePos {
         dst[start..].sort_by_key(|p| {
             let dx = p.x - cx;
             let dy = p.y - cy;
-            dx*dx + dy*dy
+            dx * dx + dy * dy
         });
     }
 

@@ -1,5 +1,5 @@
-use super::TilePos;
 use super::compare_iter::{CompareIter, ComparedValue};
+use super::TilePos;
 use std::collections::BTreeMap;
 
 type Iter<'a, T> = std::collections::btree_map::Iter<'a, TilePos, T>;

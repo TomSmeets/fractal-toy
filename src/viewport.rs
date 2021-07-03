@@ -1,13 +1,5 @@
-use crate::TilePos;
 use crate::util::*;
-
-pub struct ViewportInput {
-    pub resolution: V2<u32>,
-    // translate: V2,
-    pub zoom: (f64, V2<i32>),
-
-    pub world2screen: Option<(V2, V2<i32>)>,
-}
+use crate::TilePos;
 
 #[derive(Debug)]
 pub struct Viewport {
@@ -15,6 +7,12 @@ pub struct Viewport {
     pub scale: f64,
     pub offset: V2,
     pub size_in_pixels: V2,
+    pub size_in_pixels_i: V2<u32>,
+    pub move_vel: V2,
+    pub zoom_vel: f64,
+
+    pub drag_anchor: Option<V2<f64>>,
+    pub did_drag: bool,
 }
 
 impl Viewport {
@@ -23,36 +21,74 @@ impl Viewport {
             zoom: 0.,
             scale: 0.,
             size_in_pixels: V2::zero(),
+            size_in_pixels_i: V2::zero(),
             offset: V2::zero(),
+            move_vel: V2::zero(),
+            zoom_vel: 0.0,
+
+            drag_anchor: None,
+            did_drag: false,
         }
     }
 
-    pub fn update(&mut self, dt: f64, input: &ViewportInput) -> &Self {
-        self.size_in_pixels = input.resolution.map(|x| x as f64);
+    pub fn size(&mut self, resolution: V2<u32>) {
+        self.size_in_pixels = resolution.map(|x| x as f64);
+        self.size_in_pixels_i = resolution;
+    }
 
-        let w0 = self.screen_to_world(input.zoom.1);
-
-        self.zoom += 0.1 * input.zoom.0;
-        self.scale = 0.5_f64.powf(self.zoom);
-
-        if let Some((w1, s)) = input.world2screen {
-            let w2 = self.screen_to_world(s);
-
-            // currently s is at w2, but should be at w1
-            self.offset += w1 - w2;
-        } else {
-            let w2 = self.screen_to_world(input.zoom.1);
-            self.offset += w0 - w2;
+    pub fn zoom_at(&mut self, amount: f64, target: V2<i32>) {
+        if amount * amount < 1e-6 {
+            return;
         }
 
-        // offset.y *= -1.0;
-        // offset *= self.pixel_size();
+        let target_world = self.screen_to_world(target);
+        self.zoom_center(amount);
+        let current_world = self.screen_to_world(target);
+        self.offset += target_world - current_world;
+    }
 
-        // self.offset += dt*input.translate;
+    pub fn zoom_center(&mut self, amount: f64) {
+        let amount = amount * 0.1;
+        self.zoom_vel += amount;
+        self.zoom += amount;
+        self.scale = 0.5_f64.powf(self.zoom);
+    }
+
+    pub fn drag(&mut self, mouse: V2<i32>) {
+        let current = self.screen_to_world(mouse);
+
+        match self.drag_anchor {
+            None => {
+                self.drag_anchor = Some(current);
+            },
+
+            Some(target) => {
+                self.offset -= current;
+                self.offset += target;
+                self.move_vel = target - current;
+            },
+        };
+
+        self.did_drag = true;
+    }
+
+    pub fn update(&mut self, dt: f64) {
+        if self.drag_anchor.is_some() && !self.did_drag {
+            self.drag_anchor = None;
+        }
+
+        if !self.did_drag {
+            self.offset += self.move_vel;
+            self.move_vel *= 1.0 - dt * 5.0;
+        }
+
+        // self.zoom += self.zoom_vel*0.1;
+        // self.scale = 0.5_f64.powf(self.zoom);
+        // self.zoom_vel *= 1.0 - 5.0*dt;
+
         self.offset.x = self.offset.x.min(3.0).max(-3.0);
         self.offset.y = self.offset.y.min(3.0).max(-3.0);
-
-        self
+        self.did_drag = false;
     }
 
     pub fn world_to_screen(&self, mut p: V2) -> V2<i32> {
@@ -94,36 +130,6 @@ impl Viewport {
         p
     }
 
-    /*
-    /// Apply a translation in pixels
-    pub fn translate(&mut self, offset: V2i) {
-        let mut offset = to_v2(offset);
-        offset.y *= -1.0;
-        offset *= self.pixel_size();
-        self.offset += offset;
-        self.offset.x = self.offset.x.min(3.0).max(-3.0);
-        self.offset.y = self.offset.y.min(3.0).max(-3.0);
-    }
-
-    /// Zoom in or out towards a screen position
-    pub fn zoom_in_at(&mut self, amount: f64, screen_pos: V2i) {
-        if amount * amount < 0.001 {
-            return;
-        }
-
-        let diff_in_pixels = screen_pos - to_v2i(self.size_in_pixels * 0.5);
-        self.translate(diff_in_pixels);
-        self.zoom_in(amount);
-        self.translate(-diff_in_pixels);
-    }
-
-    /// Zoom in or out towards the screen center
-    /// see also: [`Viewport::zoom_in_at`]
-    pub fn zoom_in(&mut self, amount: f64) {
-        self.zoom = (self.zoom + amount).min(48.5).max(-2.5);
-    }
-    */
-
     /// scale of the entire viewport
     pub fn scale(&self) -> f64 {
         0.5_f64.powf(self.zoom)
@@ -134,10 +140,11 @@ impl Viewport {
         self.scale() / self.size_in_pixels.x
     }
 
-
     /// Returns an iterator with sorted tiles, the ordering is the same according to
     /// the ord implementation for TilePos
-    pub fn get_pos_all(&self, dst: &mut Vec<TilePos>, pad: i64) {
+    pub fn get_pos_all(&self, pad: i64) -> impl Iterator<Item = TilePos> {
+        let mut cache = Vec::new();
+
         // size of single pixel:
         // scale is width of entire viewport in the world
         //
@@ -166,9 +173,11 @@ impl Viewport {
         let min = clamp(off - viewport_half_size);
         let max = clamp(off + viewport_half_size);
 
-        for z in (z_min as u8) .. (z_max as u8 + 1) {
-            TilePos::between(min, max, z, pad, dst);
+        for z in (z_min as u8)..(z_max as u8 + 1) {
+            TilePos::between(min, max, z, pad, &mut cache);
         }
+
+        cache.into_iter()
     }
 
     /*

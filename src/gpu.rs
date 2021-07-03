@@ -1,27 +1,26 @@
 use wgpu::*;
 use winit::window::Window;
 
-use crate::util::*;
-use crate::Image;
 use crate::tilemap::TilePos;
+use crate::util::*;
 use crate::viewport::Viewport;
+use crate::Image;
 
-mod swap_chain;
 mod pipeline;
+mod swap_chain;
 
-use self::swap_chain::SwapChain;
 use self::pipeline::ShaderLoader;
+use self::swap_chain::SwapChain;
 
 // GPU mem = MAX_TILES * (vtx(5*4)*3*4 + 256*256)
 const MAX_TILES: u32 = 512;
 const MAX_VERTS: u64 = MAX_TILES as u64 * 3 * 4;
 
 pub struct Gpu {
-    device: Option<Device>,
+    device: Device,
     swap_chain: Option<SwapChain>,
     shader: ShaderLoader,
     other: Option<Other>,
-
 
     used: Vec<Option<TilePos>>,
     tile_count: u32,
@@ -54,20 +53,20 @@ pub struct GpuInput<'a> {
 #[repr(C)]
 pub struct Vertex {
     pos: V2<f32>,
-    uv:  V2<f32>,
+    uv: V2<f32>,
     ix: i32,
 }
 
-unsafe impl bytemuck::Pod      for Vertex {}
+unsafe impl bytemuck::Pod for Vertex {}
 unsafe impl bytemuck::Zeroable for Vertex {}
 
 #[derive(Debug, Clone, Copy)]
 #[repr(C)]
 pub struct UniformData {
-    resolution: V2<f32>
+    resolution: V2<f32>,
 }
 
-unsafe impl bytemuck::Pod      for UniformData {}
+unsafe impl bytemuck::Pod for UniformData {}
 unsafe impl bytemuck::Zeroable for UniformData {}
 
 impl Vertex {
@@ -93,9 +92,44 @@ pub struct Device {
 }
 
 impl Gpu {
-    pub fn init() -> Gpu {
+    pub fn init(window: &Window) -> Gpu {
+        // NOTE: does not have to be kept alive
+        let instance = Instance::new(BackendBit::all());
+
+        // surface and adapter
+        let surface = unsafe { instance.create_surface(window) };
+
+        // I don't want to deal with async stuff, so just block here.
+        // In the far future we might want to support multiple adapters,
+        // but I am not doing that now.
+        let adapter = pollster::block_on(instance.request_adapter(&RequestAdapterOptions {
+            power_preference: PowerPreference::default(),
+            compatible_surface: Some(&surface),
+        }))
+        .unwrap();
+
+        // device, logical handle to the adapter.
+        // TODO: setup, and figure out how tracing works.
+        let (device, queue) = pollster::block_on(adapter.request_device(
+            &DeviceDescriptor {
+                label: None,
+                features: Features::empty(), // TODO: add appropiate features here?
+                limits: Limits::default(),   // TODO: also set to whaterver we are using?
+            },
+            None,
+        ))
+        .unwrap();
+
+        let swap_chain_format = adapter.get_swap_chain_preferred_format(&surface).unwrap();
+
         Gpu {
-            device: None,
+            device: Device {
+                surface,
+                device,
+                queue,
+                swap_chain_format,
+            },
+
             swap_chain: None,
             other: None,
             shader: ShaderLoader::new(),
@@ -108,6 +142,7 @@ impl Gpu {
         }
     }
 
+    #[rustfmt::skip]
     pub fn tile(&mut self, vp: &Viewport, p: &TilePos, img: &Image) {
         let ix = self.tile_count;
         self.tile_count += 1;
@@ -117,7 +152,7 @@ impl Gpu {
         }
 
         let square = p.square();
-        let low  = vp.world_to_screen(square.corner_min());
+        let low = vp.world_to_screen(square.corner_min());
         let high = vp.world_to_screen(square.corner_max());
 
         let lx = low.x as f32;
@@ -134,69 +169,36 @@ impl Gpu {
 
         let ix = ix as i32;
         self.vertex_list.extend_from_slice(&[
-            Vertex { pos: V2::new(lx, ly), uv: V2::new(0.0, 0.0), ix },
-            Vertex { pos: V2::new(hx, ly), uv: V2::new(1.0, 0.0), ix },
-            Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0, 1.0), ix },
-
-            Vertex { pos: V2::new(hx, ly), uv: V2::new(1.0, 0.0), ix },
-            Vertex { pos: V2::new(hx, hy), uv: V2::new(1.0, 1.0), ix },
-            Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0, 1.0), ix },
+            Vertex { pos: V2::new(lx, ly), uv: V2::new(0.0, 0.0), ix, },
+            Vertex { pos: V2::new(hx, ly), uv: V2::new(1.0, 0.0), ix, },
+            Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0, 1.0), ix, },
+            Vertex { pos: V2::new(hx, ly), uv: V2::new(1.0, 0.0), ix, },
+            Vertex { pos: V2::new(hx, hy), uv: V2::new(1.0, 1.0), ix, },
+            Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0, 1.0), ix, },
         ]);
     }
 
-    pub fn render(&mut self, window: &Window, input: &GpuInput) {
-        let device = self.device.get_or_insert_with(|| {
-            // choose whatever backend you want
-            // NOTE: does not have to be kept alive
-            let instance = Instance::new(BackendBit::all());
-            dbg!(&instance);
-
-            // surface and adapter
-            let surface = unsafe { instance.create_surface(window) };
-
-            // I don't want to deal with async stuff, so just block here.
-            // In the far future we might want to support multiple adapters,
-            // but I am not doing that now.
-            let adapter = pollster::block_on(instance.request_adapter(&RequestAdapterOptions {
-                power_preference: PowerPreference::default(),
-                compatible_surface: Some(&surface),
-            })).unwrap();
-
-            // device, logical handle to the adapter.
-            // TODO: setup, and figure out how tracing works.
-            let (device, queue) = pollster::block_on(adapter.request_device(
-                &DeviceDescriptor {
-                    label: None,
-                    features: Features::empty(), // TODO: add appropiate features here?
-                    limits: Limits::default(),   // TODO: also set to whaterver we are using?
-                },
-                None,
-            )).unwrap();
-
-            let swap_chain_format = adapter.get_swap_chain_preferred_format(&surface).unwrap();
-
-            Device {
-                surface,
-                device,
-                queue,
-                swap_chain_format,
-            }
-        });
+    #[rustfmt::skip]
+    pub fn render(&mut self, window: &Window, viewport: &Viewport) {
+        let device = &mut self.device;
 
         let (swap_chain, frame) = loop {
             let swap_chain = self.swap_chain.get_or_insert_with(|| {
                 let swap_chain = device.device.create_swap_chain(&device.surface, &SwapChainDescriptor {
                     usage: TextureUsage::RENDER_ATTACHMENT,
                     format: device.swap_chain_format,
-                    width: input.resolution.x,
-                    height: input.resolution.y,
+                    width: viewport.size_in_pixels_i.x,
+                    height: viewport.size_in_pixels_i.y,
                     present_mode: PresentMode::Mailbox,
                 });
 
-                SwapChain { swap_chain, resolution: input.resolution }
+                SwapChain {
+                    swap_chain,
+                    resolution: viewport.size_in_pixels_i,
+                }
             });
 
-            if swap_chain.resolution != input.resolution {
+            if swap_chain.resolution != viewport.size_in_pixels_i {
                 self.swap_chain = None;
                 continue;
             }
@@ -247,10 +249,14 @@ impl Gpu {
                 label: None,
                 mip_level_count: 1,
                 dimension: TextureDimension::D2,
-                format:  TextureFormat::Rgba8UnormSrgb,
+                format: TextureFormat::Rgba8UnormSrgb,
                 usage: TextureUsage::COPY_DST | TextureUsage::SAMPLED,
                 sample_count: 1,
-                size: Extent3d { width: 256, height: 256, depth_or_array_layers: MAX_TILES },
+                size: Extent3d {
+                    width: 256,
+                    height: 256,
+                    depth_or_array_layers: MAX_TILES,
+                },
             });
 
             let texture_view = texture.create_view(&TextureViewDescriptor::default());
@@ -299,7 +305,7 @@ impl Gpu {
                             min_binding_size: None,
                         },
                         count: None,
-                    }
+                    },
                 ],
             });
 
@@ -307,9 +313,18 @@ impl Gpu {
                 label: None,
                 layout: &bind_group_layout,
                 entries: &[
-                    BindGroupEntry { binding: 0, resource: BindingResource::TextureView(&texture_view) },
-                    BindGroupEntry { binding: 1, resource: BindingResource::Sampler(&sampler) },
-                    BindGroupEntry { binding: 2, resource: uniform_buffer.as_entire_binding() }
+                    BindGroupEntry {
+                        binding: 0,
+                        resource: BindingResource::TextureView(&texture_view),
+                    },
+                    BindGroupEntry {
+                        binding: 1,
+                        resource: BindingResource::Sampler(&sampler),
+                    },
+                    BindGroupEntry {
+                        binding: 2,
+                        resource: uniform_buffer.as_entire_binding(),
+                    },
                 ],
             });
 
@@ -356,35 +371,46 @@ impl Gpu {
         });
 
         for (ix, img) in self.upload_list.drain(..) {
-            device.queue.write_texture(ImageCopyTexture {
-                texture: &other.texture,
-                mip_level: 0,
-                origin: Origin3d {
-                    x: 0,
-                    y: 0,
-                    z: ix as u32,
+            device.queue.write_texture(
+                ImageCopyTexture {
+                    texture: &other.texture,
+                    mip_level: 0,
+                    origin: Origin3d {
+                        x: 0,
+                        y: 0,
+                        z: ix as u32,
+                    },
                 },
-            }, &img.data, ImageDataLayout {
-                offset: 0,
-                bytes_per_row: Some(std::num::NonZeroU32::new(4*img.size.x).unwrap()),
-                rows_per_image: Some(std::num::NonZeroU32::new(img.size.y).unwrap()),
-            }, Extent3d {
-                width: img.size.x,
-                height: img.size.y,
-                depth_or_array_layers: 1,
-            });
+                &img.data,
+                ImageDataLayout {
+                    offset: 0,
+                    bytes_per_row: Some(std::num::NonZeroU32::new(4 * img.size.x).unwrap()),
+                    rows_per_image: Some(std::num::NonZeroU32::new(img.size.y).unwrap()),
+                },
+                Extent3d {
+                    width: img.size.x,
+                    height: img.size.y,
+                    depth_or_array_layers: 1,
+                },
+            );
         }
 
         let vertex_list = &self.vertex_list[0..self.vertex_list.len().min(MAX_VERTS as usize)];
 
-        device.queue.write_buffer(&other.uniform, 0, bytemuck::bytes_of(&UniformData {
-            resolution: V2::new(input.resolution.x as _, input.resolution.y as _),
-        }));
+        device.queue.write_buffer(
+            &other.uniform,
+            0,
+            bytemuck::bytes_of(&UniformData {
+                resolution: V2::new(
+                    viewport.size_in_pixels_i.x as _,
+                    viewport.size_in_pixels_i.y as _,
+                ),
+            }),
+        );
         device.queue.write_buffer(&other.vertex_buffer, 0, bytemuck::cast_slice(&vertex_list));
 
         // We finally have a frame, now it is time to create the render commands
         let mut encoder = device.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
-
 
         // Render pass
         // TODO: what do we do with compute commands? do they block? do we do them async?

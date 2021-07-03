@@ -2,24 +2,25 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-mod gpu;
-mod util;
-mod tilemap;
-mod viewport;
 mod builder;
+mod gpu;
+mod pack;
+mod tilemap;
+mod util;
+mod viewport;
 
 use self::builder::TileBuilder;
-use self::gpu::{Gpu, GpuInput};
+use self::gpu::Gpu;
 use self::tilemap::TilePos;
-use self::viewport::{Viewport, ViewportInput};
 use self::util::*;
+use self::viewport::Viewport;
 
 use std::process::Command;
 use std::time::Duration;
 use std::time::Instant;
 use structopt::StructOpt;
-use winit::event::{ElementState, Event, MouseButton, MouseScrollDelta};
 use winit::event::WindowEvent;
+use winit::event::{ElementState, Event, MouseButton, MouseScrollDelta};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::Window;
 use winit::window::WindowBuilder;
@@ -47,6 +48,7 @@ pub struct State {
     // actual state that is relevant
     viewport: Viewport,
     drag: Option<V2<f64>>,
+    tile_pos_cache: Vec<TilePos>,
 }
 
 #[derive(Clone)]
@@ -57,58 +59,88 @@ pub struct Image {
 }
 
 impl State {
-    pub fn init() -> Self {
+    pub fn init(window: &Window) -> Self {
         State {
-            gpu: Gpu::init(),
+            gpu: Gpu::init(window),
             builder: TileBuilder::new(),
             viewport: Viewport::new(),
             drag: None,
+            tile_pos_cache: Vec::new(),
         }
+    }
+
+    pub fn distance(scale: f64) -> String {
+        let mut result = String::new();
+        let scales = [
+            ("*10^6 km", 1e9),
+            ("*10^3 km", 1e6),
+            ("km", 1e3),
+            (" m", 1e1),
+            ("mm", 1e-3),
+            ("um", 1e-6),
+            ("nm", 1e-9),
+            ("pm", 1e-12),
+        ];
+
+        // TODO: visual scale indicator,
+        // Small solarsystem -> eart -> tree -> etc
+        let objects = [
+            ("solar system", 8.99683742e12),
+            ("the sun", 1.391e9),
+            ("earth", 1.2742018e7),
+            ("europe", 13791e3),
+            ("The Netherlands", 115e3),
+            ("City", 6.3e3),
+            ("Street", 146.0),
+            ("House", 16.0),
+        ];
+
+        let size_meters = scale * 9e12;
+
+        for (n, s) in scales.iter() {
+            if size_meters > *s {
+                result += &format!("{:6.2} {}", size_meters / s, n);
+                break;
+            }
+        }
+
+        for (n, s) in objects.iter().rev() {
+            if size_meters <= *s * 2.0 {
+                result += &format!(" {:6.1} x {}", size_meters / s, n);
+                break;
+            }
+        }
+
+        result
     }
 
     /// always called at regular intervals
     pub fn update(&mut self, window: &Window, input: &Input, dt: f32) {
+        // viewport stuff
+        self.viewport.size(input.resolution);
+        self.viewport
+            .zoom_at(input.mouse_scroll as f64, input.mouse);
 
-        let vp = self.viewport.update(dt as f64, &ViewportInput {
-            resolution: input.resolution,
-            zoom: (input.mouse_scroll as f64, input.mouse),
-            world2screen: self.drag.map(|d| (d, input.mouse)),
-        });
-
-        if input.mouse_down && self.drag.is_none() {
-            self.drag = Some(vp.screen_to_world(input.mouse));
+        if input.mouse_down {
+            self.viewport.drag(input.mouse);
         }
 
-        if !input.mouse_down && self.drag.is_some() {
-            self.drag = None;
+        self.viewport.update(dt as f64);
+
+        // which tiles to build
+        for p in self.viewport.get_pos_all(1) {
+            self.builder.tile(&p);
         }
 
-        let mut todo = Vec::new();
-
-        // also build padded
-        vp.get_pos_all(&mut todo, 1);
-        for p in &todo {
-            let _ = self.builder.tile(&p);
-        }
-
-        // draw unpadded tiles
-        todo.clear();
-        vp.get_pos_all(&mut todo, 0);
-        for p in todo {
-            // Image is borrowed here, so use it only here
-            let img = self.builder.tile(&p);
-
-            if let Some(img) = img {
-                // draw the tile
-                self.gpu.tile(vp, &p, img)
+        // which tiles to draw
+        for p in self.viewport.get_pos_all(0) {
+            if let Some(img) = self.builder.tile(&p) {
+                self.gpu.tile(&self.viewport, &p, img);
             }
         }
 
-        self.gpu.render(window, &GpuInput {
-            resolution: input.resolution,
-            viewport: vp,
-        });
-
+        // submit
+        self.gpu.render(window, &self.viewport);
         self.builder.update();
     }
 }
@@ -132,8 +164,10 @@ pub fn main() {
         if let Some(id) = window.xlib_window() {
             let _ = Command::new("wmctrl")
                 .arg("-i")
-                .arg("-r").arg(id.to_string())
-                .arg("-t").arg(ws.to_string())
+                .arg("-r")
+                .arg(id.to_string())
+                .arg("-t")
+                .arg(ws.to_string())
                 .status();
         }
     }
@@ -146,7 +180,7 @@ pub fn main() {
         mouse_scroll: 0.0,
     };
 
-    let mut state = State::init();
+    let mut state = State::init(&window);
 
     // Decide what framerate we want to run
     let target_dt = 1.0 / 180.0;
@@ -190,14 +224,18 @@ pub fn main() {
 
             Event::WindowEvent {
                 window_id: _,
-                event: WindowEvent::MouseWheel { delta: MouseScrollDelta::LineDelta(dx, dy), ..},
+                event:
+                    WindowEvent::MouseWheel {
+                        delta: MouseScrollDelta::LineDelta(dx, dy),
+                        ..
+                    },
             } => {
                 input.mouse_scroll += dy;
             },
 
             Event::WindowEvent {
                 window_id: _,
-                event: WindowEvent::CursorMoved { position: pos, ..},
+                event: WindowEvent::CursorMoved { position: pos, .. },
             } => {
                 input.mouse.x = pos.x as _;
                 input.mouse.y = pos.y as _;
@@ -218,7 +256,7 @@ pub fn main() {
                     // check how accurate we actually are
                     // TODO: extract to timing struct
                     if config.debug {
-                        let dt_frame  = current_time - last_frame_time;
+                        let dt_frame = current_time - last_frame_time;
                         let dt_behind = current_time - next_frame_time;
                         let dt_update = Instant::now() - current_time;
                         println!(
