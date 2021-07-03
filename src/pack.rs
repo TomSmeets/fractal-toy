@@ -4,6 +4,7 @@ use crate::*;
 #[derive(Clone, Eq, PartialEq)]
 struct Block {
     pos: V2<i32>,
+    depth: i32,
     size: i32,
 }
 
@@ -11,44 +12,58 @@ impl Block {
     #[rustfmt::skip]
     pub fn split(self) -> [Block; 4] {
         let size = self.size / 2;
+        let depth = self.depth;
 
         [
-            Block { pos: self.pos + V2::new(0,    0),    size, },
-            Block { pos: self.pos + V2::new(size, 0),    size, },
-            Block { pos: self.pos + V2::new(0,    size), size, },
-            Block { pos: self.pos + V2::new(size, size), size, },
+            Block { depth, pos: self.pos + V2::new(0,    0),    size, },
+            Block { depth, pos: self.pos + V2::new(size, 0),    size, },
+            Block { depth, pos: self.pos + V2::new(0,    size), size, },
+            Block { depth, pos: self.pos + V2::new(size, size), size, },
         ]
     }
 
     pub fn parent(&self) -> Block {
         let size = self.size * 2;
         let pos = (self.pos / size) * size;
-        Block { pos, size }
+        Block {
+            pos,
+            size,
+            depth: self.depth,
+        }
     }
 }
 
 struct Pack {
     size: i32,
+    depth: i32,
     free: Vec<Block>,
 }
 
 impl Pack {
-    pub fn new(size: i32) -> Self {
+    pub fn new(size: i32, depth: i32) -> Self {
         Pack {
             size,
-            free: vec![Block {
-                pos: V2::zero(),
-                size,
-            }],
+            depth,
+            free: (0..depth)
+                .map(|i| Block {
+                    pos: V2::new(0, 0),
+                    depth: i,
+                    size,
+                })
+                .collect(),
         }
     }
 
     pub fn alloc(&mut self, size: V2<i32>) -> Option<Block> {
         let size = block_size(size);
 
-        // NOTE: no real need to go in reverse, tbh
-        let block = self.free.iter().rposition(|x| x.size >= size)?;
-        let mut block = self.free.swap_remove(block);
+        let (ix, _) = self
+            .free
+            .iter()
+            .enumerate()
+            .filter(|(_, x)| x.size >= size)
+            .min_by_key(|(_, x)| x.size)?;
+        let mut block = self.free.swap_remove(ix);
 
         // split while it is big
         while block.size > size {
@@ -111,11 +126,22 @@ impl Pack {
 
 #[test]
 pub fn test_it() {
-    let mut p = Pack::new(16);
-    let a = p.alloc(V2::new(2, 2)).unwrap();
+    let mut p = Pack::new(16, 4);
+    p.dbg();
+
+    let a = p.alloc(V2::new(4, 4)).unwrap();
+    p.dbg();
+
     let b = p.alloc(V2::new(4, 4)).unwrap();
-    let c = p.alloc(V2::new(5, 5)).unwrap();
-    let d = p.alloc(V2::new(2, 2)).unwrap();
+    p.dbg();
+
+    let c = p.alloc(V2::new(4, 4)).unwrap();
+    p.dbg();
+
+    let d = p.alloc(V2::new(4, 4)).unwrap();
+    p.dbg();
+
+    let e = p.alloc(V2::new(4, 4)).unwrap();
     p.dbg();
 
     p.free(a);
@@ -128,6 +154,9 @@ pub fn test_it() {
     p.dbg();
 
     p.free(d);
+    p.dbg();
+
+    p.free(e);
     p.dbg();
 }
 
