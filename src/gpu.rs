@@ -20,7 +20,7 @@ pub struct Gpu {
     device: Device,
     swap_chain: Option<SwapChain>,
     shader: ShaderLoader,
-    other: Option<Other>,
+    draw_tiles: Option<DrawTiles>,
 
     used: Vec<u32>,
     tile_count: u32,
@@ -28,7 +28,7 @@ pub struct Gpu {
     upload_list: Vec<(u32, Image)>,
 }
 
-pub struct Other {
+pub struct DrawTiles {
     pipeline: RenderPipeline,
 
     vertex_buffer: Buffer,
@@ -131,7 +131,7 @@ impl Gpu {
             },
 
             swap_chain: None,
-            other: None,
+            draw_tiles: None,
             shader: ShaderLoader::new(),
 
             used: Vec::new(),
@@ -223,12 +223,12 @@ impl Gpu {
         let (shader, shader_changed) = self.shader.load(&device.device, "src/gpu/shader.wgsl");
 
         if shader_changed {
-            self.other = None;
+            self.draw_tiles = None;
             // TODO: this is too late now, fix it
             self.used.clear();
         }
 
-        let other = self.other.get_or_insert_with(|| {
+        let draw_tiles = self.draw_tiles.get_or_insert_with(|| {
             let vertex_buffer = device.device.create_buffer(&BufferDescriptor {
                 label: None,
                 size: std::mem::size_of::<Vertex>() as u64 * MAX_VERTS,
@@ -356,7 +356,7 @@ impl Gpu {
                 multisample: MultisampleState::default(),
             });
 
-            Other {
+            DrawTiles {
                 pipeline,
                 vertex_buffer,
 
@@ -373,7 +373,7 @@ impl Gpu {
         for (ix, img) in self.upload_list.drain(..) {
             device.queue.write_texture(
                 ImageCopyTexture {
-                    texture: &other.texture,
+                    texture: &draw_tiles.texture,
                     mip_level: 0,
                     origin: Origin3d {
                         x: 0,
@@ -398,7 +398,7 @@ impl Gpu {
         let vertex_list = &self.vertex_list[0..self.vertex_list.len().min(MAX_VERTS as usize)];
 
         device.queue.write_buffer(
-            &other.uniform,
+            &draw_tiles.uniform,
             0,
             bytemuck::bytes_of(&UniformData {
                 resolution: V2::new(
@@ -407,13 +407,13 @@ impl Gpu {
                 ),
             }),
         );
-        device.queue.write_buffer(&other.vertex_buffer, 0, bytemuck::cast_slice(&vertex_list));
+        device.queue.write_buffer(&draw_tiles.vertex_buffer, 0, bytemuck::cast_slice(&vertex_list));
 
         // We finally have a frame, now it is time to create the render commands
         let mut encoder = device.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
 
-        // Render pass
         // TODO: what do we do with compute commands? do they block? do we do them async?
+        // Draw tiles
         {
             let mut rpass = encoder.begin_render_pass(&RenderPassDescriptor {
                 label: None,
@@ -427,10 +427,14 @@ impl Gpu {
                 }],
                 depth_stencil_attachment: None,
             });
-            rpass.set_pipeline(&other.pipeline);
-            rpass.set_vertex_buffer(0, other.vertex_buffer.slice(..));
-            rpass.set_bind_group(0, &other.bind_group, &[]);
+            rpass.set_pipeline(&draw_tiles.pipeline);
+            rpass.set_vertex_buffer(0, draw_tiles.vertex_buffer.slice(..));
+            rpass.set_bind_group(0, &draw_tiles.bind_group, &[]);
             rpass.draw(0..vertex_list.len() as u32, 0..1);
+        }
+
+        // Draw ui with texture atlas
+        {
         }
 
         device.queue.submit(Some(encoder.finish()));
