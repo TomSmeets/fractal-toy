@@ -156,6 +156,9 @@ impl Gpu {
         let hx = rect.corner_max().x as f32;
         let hy = rect.corner_max().y as f32;
 
+        let uv_x = img.size().x as f32 / 256.0;
+        let uv_y = img.size().y as f32 / 256.0;
+
         // This is ofcourse very bad, but still bettern than nothing
         // TODO: improve, some kind of slotmap?
         if self.used[ix as usize] != img.id() {
@@ -165,12 +168,12 @@ impl Gpu {
 
         let ix = ix as i32;
         self.vertex_list.extend_from_slice(&[
-            Vertex { pos: V2::new(lx, ly), uv: V2::new(0.0, 0.0), ix, },
-            Vertex { pos: V2::new(hx, ly), uv: V2::new(1.0, 0.0), ix, },
-            Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0, 1.0), ix, },
-            Vertex { pos: V2::new(hx, ly), uv: V2::new(1.0, 0.0), ix, },
-            Vertex { pos: V2::new(hx, hy), uv: V2::new(1.0, 1.0), ix, },
-            Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0, 1.0), ix, },
+            Vertex { pos: V2::new(lx, ly), uv: V2::new(0.0,  0.0),  ix, },
+            Vertex { pos: V2::new(hx, ly), uv: V2::new(uv_x, 0.0),  ix, },
+            Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0,  uv_y), ix, },
+            Vertex { pos: V2::new(hx, ly), uv: V2::new(uv_x, 0.0),  ix, },
+            Vertex { pos: V2::new(hx, hy), uv: V2::new(uv_x, uv_y), ix, },
+            Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0,  uv_y), ix, },
         ]);
     }
 
