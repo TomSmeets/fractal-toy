@@ -158,9 +158,9 @@ impl Gpu {
 
         // This is ofcourse very bad, but still bettern than nothing
         // TODO: improve, some kind of slotmap?
-        if self.used[ix as usize] != img.id {
+        if self.used[ix as usize] != img.id() {
             self.upload_list.push((ix, img.clone()));
-            self.used[ix as usize] = img.id;
+            self.used[ix as usize] = img.id();
         }
 
         let ix = ix as i32;
@@ -382,15 +382,15 @@ impl Gpu {
                         z: ix as u32,
                     },
                 },
-                &img.data,
+                img.data(),
                 ImageDataLayout {
                     offset: 0,
-                    bytes_per_row: Some(std::num::NonZeroU32::new(4 * img.size.x).unwrap()),
-                    rows_per_image: Some(std::num::NonZeroU32::new(img.size.y).unwrap()),
+                    bytes_per_row: Some(std::num::NonZeroU32::new(4 * img.size().x).unwrap()),
+                    rows_per_image: Some(std::num::NonZeroU32::new(img.size().y).unwrap()),
                 },
                 Extent3d {
-                    width: img.size.x,
-                    height: img.size.y,
+                    width: img.size().x,
+                    height: img.size().y,
                     depth_or_array_layers: 1,
                 },
             );

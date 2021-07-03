@@ -138,11 +138,7 @@ impl TileBuilder {
             }
         }
 
-        Image {
-            id: Image::mk_id(),
-            size: V2::new(size, size),
-            data,
-        }
+        Image::new(V2::new(size, size), data)
     }
 
     /// Either return a cached tile, or add it to the build queue

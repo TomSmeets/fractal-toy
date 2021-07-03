@@ -8,7 +8,9 @@ mod pack;
 mod tilemap;
 mod util;
 mod viewport;
+mod image;
 
+use self::image::Image;
 use self::builder::TileBuilder;
 use self::gpu::Gpu;
 use self::tilemap::TilePos;
@@ -47,25 +49,6 @@ pub struct State {
 
     // actual state that is relevant
     viewport: Viewport,
-}
-
-#[derive(Clone)]
-pub struct Image {
-    id: u32,
-    size: V2<u32>,
-    data: Vec<u8>,
-}
-
-use std::sync::atomic::AtomicU32;
-// reserve the id 0 to represent nothing
-static IMAGE_COUNTER: AtomicU32 = AtomicU32::new(1);
-
-impl Image {
-    pub fn mk_id() -> u32 {
-        // this will wrap eventually (after running for around 50 days or so)
-        // but that should not be a problem. If it is, then just use u64
-        IMAGE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
-    }
 }
 
 impl State {
@@ -134,20 +117,16 @@ impl State {
 
         self.viewport.update(dt as f64);
 
-        // which tiles to draw
-        for p in self.viewport.get_pos_all(0) {
-            if let Some(img) = self.builder.tile(&p) {
-                self.gpu.tile(&self.viewport, &p, img);
-            }
-        }
-
         // which tiles to build
         for p in self.viewport.get_pos_all(1) {
             self.builder.tile(&p);
         }
 
-        if let Some(t) = self.builder.tile(&TilePos::root()) {
-            self.gpu.blit(&Rect::center_size(input.mouse.map(|x| x as _), V2::new(500.0, 500.0)), t);
+        // which tiles to draw
+        for p in self.viewport.get_pos_all(0) {
+            if let Some(img) = self.builder.tile(&p) {
+                self.gpu.tile(&self.viewport, &p, img);
+            }
         }
 
         // submit
