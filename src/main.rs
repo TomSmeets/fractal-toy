@@ -4,28 +4,59 @@
 
 mod builder;
 mod gpu;
+mod image;
 mod pack;
 mod tilemap;
 mod util;
 mod viewport;
-mod image;
 
-use self::image::Image;
 use self::builder::TileBuilder;
 use self::gpu::Gpu;
+use self::image::Image;
 use self::tilemap::TilePos;
 use self::util::*;
 use self::viewport::Viewport;
 
+use std::collections::BTreeMap;
 use std::process::Command;
 use std::time::Duration;
 use std::time::Instant;
+use std::time::SystemTime;
 use structopt::StructOpt;
 use winit::event::WindowEvent;
 use winit::event::{ElementState, Event, MouseButton, MouseScrollDelta};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::Window;
 use winit::window::WindowBuilder;
+
+struct AssetLoader {
+    cache: BTreeMap<String, (SystemTime, Image)>,
+}
+
+impl AssetLoader {
+    pub fn new() -> Self {
+        AssetLoader {
+            cache: BTreeMap::new(),
+        }
+    }
+
+    pub fn image(&mut self, path: &str) -> Image {
+        let time = std::fs::metadata(path).unwrap().modified().unwrap();
+
+        if let Some((t, i)) = self.cache.get(path) {
+            if t == &time {
+                return i.clone();
+            }
+        }
+
+        let buf = ::image::open(path).unwrap().into_rgba8();
+        let (w, h) = buf.dimensions();
+        let data = buf.into_raw();
+        let i = Image::new(V2::new(w, h), data);
+        self.cache.insert(path.to_string(), (time, i.clone()));
+        i
+    }
+}
 
 #[derive(Debug, StructOpt)]
 struct Config {
@@ -46,6 +77,7 @@ pub struct Input {
 pub struct State {
     gpu: Gpu,
     builder: TileBuilder,
+    asset: AssetLoader,
 
     // actual state that is relevant
     viewport: Viewport,
@@ -57,6 +89,7 @@ impl State {
             gpu: Gpu::init(window),
             builder: TileBuilder::new(),
             viewport: Viewport::new(),
+            asset: AssetLoader::new(),
         }
     }
 
@@ -128,6 +161,11 @@ impl State {
                 self.gpu.tile(&self.viewport, &p, img);
             }
         }
+
+        self.gpu.blit(
+            &Rect::center_size(input.mouse.map(|x| x as _), V2::new(500.0, 500.0)),
+            &self.asset.image("res/button_front_down.png"),
+        );
 
         // submit
         self.gpu.render(window, &self.viewport);

@@ -1,6 +1,6 @@
+use crate::util::*;
 use std::sync::atomic::AtomicU32;
 use std::sync::Arc;
-use crate::util::*;
 
 #[derive(Clone)]
 pub struct Image {
