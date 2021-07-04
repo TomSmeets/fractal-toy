@@ -64,5 +64,8 @@ fn vs_main(
 [[stage(fragment)]]
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     let col = textureSample(texture, sampler, in.uv, in.ix);
-    return vec4<f32>(col.rgb, 1.0);
+    if (col.a < 0.5) {
+        discard;
+    }
+    return col;
 }
