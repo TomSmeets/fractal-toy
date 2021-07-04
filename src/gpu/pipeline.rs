@@ -32,7 +32,7 @@ impl ShaderLoader {
             // NOTE: https://github.com/gfx-rs/wgpu-rs/blob/3634abb0d560a2906d20c74efee9c2f16afb2503/src/backend/direct.rs#L818
             // NOTE: https://github.com/niklaskorz/linon/commit/63477a34110eca93bc7b70c97be91c262fca811b
             let (tx, rx) = crossbeam_channel::bounded(1);
-            device.on_uncaptured_error(move |e: wgpu::Error| {
+            device.on_uncaptured_error(move |e: Error| {
                 tx.send(e).unwrap();
             });
 
@@ -42,11 +42,23 @@ impl ShaderLoader {
                 flags: ShaderFlags::all(),
             });
 
-            device.on_uncaptured_error(move |e: wgpu::Error| panic!("{:#?}", e));
+            device.on_uncaptured_error(move |e: Error| {
+                panic!("{:#?}", e);
+            });
 
             match rx.try_recv() {
-                Ok(e) => {
-                    dbg!(e);
+                Ok(e) => match e {
+                    Error::ValidationError {
+                        description,
+                        source,
+                    } => {
+                        eprintln!("Shader Validation Error");
+                        dbg!(source);
+                        eprintln!("{}", description);
+                    },
+                    e => {
+                        dbg!(e);
+                    },
                 },
                 Err(_) => {
                     self.module = Some(shader);
