@@ -68,48 +68,61 @@ impl TileBuilder {
 
         for y in 0..size {
             for x in 0..size {
+                use ::f128::*;
+
                 let border = (y == 0 || y == size - 1) || (x == 0 || x == size - 1);
 
                 let px = (x as f64 + 0.5) / (size) as f64;
                 let py = (y as f64 + 0.5) / (size) as f64;
 
-                let x = min.x as f64 * (1.0 - px) + max.x as f64 * px;
-                let y = min.y as f64 * (1.0 - py) + max.y as f64 * py;
+                let min_x = f128::from(min.x);
+                let min_y = f128::from(min.y);
+                let max_x = f128::from(max.x);
+                let max_y = f128::from(max.y);
+                let px = f128::from(px);
+                let py = f128::from(py);
 
-                let pi3 = std::f64::consts::FRAC_PI_3;
+                let x = min_x * (f128::from(1.0) - px) + max_x * px;
+                let y = min_y * (f128::from(1.0) - py) + max_y * py;
+
 
                 let c = V2::new(x, y);
 
-                let mut z: V2<f64> = V2::zero();
+                let mut z: V2<f128> = V2::zero();
                 let mut t = 0.0;
 
                 let c2 = c.x * c.x + c.y * c.y;
 
                 // skip computation inside M1 - http://iquilezles.org/www/articles/mset_1bulb/mset1bulb.htm
-                let in_m1 = 256.0 * c2 * c2 - 96.0 * c2 + 32.0 * c.x - 3.0 < 0.0;
+                // let in_m1 = 256.0 * c2 * c2 - 96.0 * c2 + 32.0 * c.x - 3.0 < 0.0;
 
                 // skip computation inside M2 - http://iquilezles.org/www/articles/mset_2bulb/mset2bulb.htm
-                let in_m2 = 16.0 * (c2 + 2.0 * c.x + 1.0) - 1.0 < 0.0;
+                // let in_m2 = 16.0 * (c2 + 2.0 * c.x + 1.0) - 1.0 < 0.0;
 
                 // if in_m1 || in_m2 {
                 //     t = ITER_COUNT as f64 - 1.0;
                 // } else {
                 for i in 0..ITER_COUNT {
                     z = V2 {
-                        x: z.x * z.x * z.x - 3.0 * z.x * z.y * z.y + c.x,
-                        y: 3.0 * z.x * z.x * z.y - z.y * z.y * z.y + c.y,
+                        x: z.x * z.x * z.x - f128!(3.0) * z.x * z.y * z.y + c.x,
+                        y: f128!(3.0) * z.x * z.x * z.y - z.y * z.y * z.y + c.y,
                     };
 
-                    z.y = z.y.abs();
-                    z.x = z.x.abs();
+                    if z.y < f128!(0) {
+                        z.y = -z.y;
+                    }
+                    if z.x < f128!(0) {
+                        z.x = -z.x;
+                    }
 
                     z = V2 {
                         x: z.x * z.x - z.y * z.y + c.x,
-                        y: 2.0 * z.x * z.y + c.y,
+                        y: f128!(2.0) * z.x * z.y + c.y,
                     };
 
                     let d = z.x * z.x + z.y * z.y;
-                    if d > 256.0 {
+                    if d > f128!(256.0) {
+                        let d: f64 = d.into();
                         t += -d.log2().log2() + 4.0;
                         break;
                     }
@@ -121,6 +134,7 @@ impl TileBuilder {
                 //     t = 1.0
                 // }
 
+                let pi3 = std::f64::consts::FRAC_PI_3;
                 let a = (1.0 - (t / (1024.0)).powi(2)).min(1.0).max(0.0);
                 let t = t * 0.005;
                 let r = a * ((0.5 - t) * 3.0 * pi3 + pi3 * 0.0).sin();
