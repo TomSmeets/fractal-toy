@@ -9,8 +9,6 @@ pub struct Viewport {
     pub size_in_pixels: V2,
     pub size_in_pixels_i: V2<u32>,
     pub move_vel: V2,
-    pub zoom_vel: f64,
-
     pub drag_anchor: Option<V2<f64>>,
     pub did_drag: bool,
 }
@@ -24,7 +22,6 @@ impl Viewport {
             size_in_pixels_i: V2::zero(),
             offset: V2::zero(),
             move_vel: V2::zero(),
-            zoom_vel: 0.0,
 
             drag_anchor: None,
             did_drag: false,
@@ -49,12 +46,18 @@ impl Viewport {
 
     pub fn zoom_center(&mut self, amount: f64) {
         let amount = amount * 0.1;
-        self.zoom_vel += amount;
         self.zoom += amount;
         self.update_scale();
     }
 
     fn update_scale(&mut self) {
+        // zooming in too far will result in overflows, we might go to 128 bit numbers?
+        if self.zoom > 53.0 {
+            self.zoom = 53.0;
+        }
+        if self.zoom < -4.0 {
+            self.zoom = -4.0;
+        }
         self.scale = 0.5_f64.powf(self.zoom);
     }
 
@@ -84,6 +87,10 @@ impl Viewport {
         if !self.did_drag {
             self.offset += self.move_vel;
             self.move_vel *= 1.0 - dt * 5.0;
+
+            if self.move_vel.magnitude2() < 1e-12 {
+                self.move_vel = V2::zero();
+            }
         }
 
         self.update_scale();
