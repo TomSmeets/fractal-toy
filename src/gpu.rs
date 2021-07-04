@@ -156,6 +156,7 @@ impl Gpu {
         let hx = rect.corner_max().x as f32;
         let hy = rect.corner_max().y as f32;
 
+        // TODO: this is not good ofcourse
         let uv_x = img.size().x as f32 / 256.0;
         let uv_y = img.size().y as f32 / 256.0;
 
@@ -353,7 +354,14 @@ impl Gpu {
                 fragment: Some(FragmentState {
                     module: &shader,
                     entry_point: "fs_main",
-                    targets: &[device.swap_chain_format.into()],
+                    targets: &[ColorTargetState {
+                        format: device.swap_chain_format,
+                        blend: Some(BlendState {
+                            color: BlendComponent::OVER,
+                            alpha: BlendComponent::OVER,
+                        }),
+                        write_mask: ColorWrite::ALL,
+                    }],
                 }),
                 primitive: PrimitiveState::default(),
                 depth_stencil: None,
