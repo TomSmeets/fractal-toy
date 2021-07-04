@@ -20,7 +20,7 @@ impl TileBuilder {
         let (req_send, req_recv) = bounded(16);
         let (tile_send, tile_recv) = bounded(16);
 
-        for _ in 0..6 {
+        for _ in 0..11 {
             let tile_send = tile_send.clone();
             let req_recv = req_recv.clone();
             std::thread::spawn(move || {
