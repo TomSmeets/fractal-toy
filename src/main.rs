@@ -146,7 +146,7 @@ impl State {
         self.asset.text(
             &mut self.gpu,
             &format!(
-                "{}\n{:#.4?}\n{:#.2?}",
+                "{}\n{:#?}\n{:#?}",
                 Self::distance(self.viewport.scale),
                 self.viewport,
                 input
