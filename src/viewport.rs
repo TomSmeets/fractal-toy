@@ -80,6 +80,8 @@ impl Viewport {
     }
 
     pub fn update(&mut self, dt: f64) {
+        self.update_scale();
+
         if self.drag_anchor.is_some() && !self.did_drag {
             self.drag_anchor = None;
         }
@@ -88,12 +90,11 @@ impl Viewport {
             self.offset += self.move_vel;
             self.move_vel *= 1.0 - dt * 5.0;
 
-            if self.move_vel.magnitude2() < 1e-12 {
+            if self.move_vel.magnitude2() < (self.scale * dt) * (self.scale * dt) * 1e-6 {
                 self.move_vel = V2::zero();
             }
         }
 
-        self.update_scale();
         self.offset.x = self.offset.x.min(3.0).max(-3.0);
         self.offset.y = self.offset.y.min(3.0).max(-3.0);
         self.did_drag = false;
