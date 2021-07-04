@@ -107,7 +107,6 @@ impl TileBuilder {
                     z.y = -z.y.abs();
                     z.x = z.x.abs();
 
-
                     let d = z.x * z.x + z.y * z.y;
                     if d > 256.0 {
                         t += -d.log2().log2() + 4.0;
