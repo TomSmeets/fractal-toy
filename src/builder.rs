@@ -95,25 +95,25 @@ impl TileBuilder {
                 //     t = ITER_COUNT as f64 - 1.0;
                 // } else {
                 for i in 0..ITER_COUNT {
-                    z = V2 {
-                        x: z.x * z.x * z.x - 3.0 * z.x * z.y * z.y + c.x,
-                        y: 3.0 * z.x * z.x * z.y - z.y * z.y * z.y + c.y,
-                    };
-
-                    z.y = z.y.abs();
-                    z.x = z.x.abs();
-
+                    // z = V2 {
+                    //     x: z.x * z.x * z.x - 3.0 * z.x * z.y * z.y + c.x,
+                    //     y: 3.0 * z.x * z.x * z.y - z.y * z.y * z.y + c.y,
+                    // };
                     z = V2 {
                         x: z.x * z.x - z.y * z.y + c.x,
                         y: 2.0 * z.x * z.y + c.y,
                     };
+
+                    z.y = -z.y.abs();
+                    z.x = z.x.abs();
+
 
                     let d = z.x * z.x + z.y * z.y;
                     if d > 256.0 {
                         t += -d.log2().log2() + 4.0;
                         break;
                     }
-                    t += 2.5;
+                    t += 1.0;
                 }
                 // }
 
