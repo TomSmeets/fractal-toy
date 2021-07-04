@@ -51,6 +51,10 @@ impl Viewport {
         let amount = amount * 0.1;
         self.zoom_vel += amount;
         self.zoom += amount;
+        self.update_scale();
+    }
+
+    fn update_scale(&mut self) {
         self.scale = 0.5_f64.powf(self.zoom);
     }
 
@@ -82,7 +86,7 @@ impl Viewport {
             self.move_vel *= 1.0 - dt * 5.0;
         }
 
-        self.scale = 0.5_f64.powf(self.zoom);
+        self.update_scale();
         self.offset.x = self.offset.x.min(3.0).max(-3.0);
         self.offset.y = self.offset.y.min(3.0).max(-3.0);
         self.did_drag = false;
