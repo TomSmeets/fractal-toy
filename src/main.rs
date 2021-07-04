@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+mod asset_loader;
 mod builder;
 mod gpu;
 mod image;
@@ -9,7 +10,6 @@ mod pack;
 mod tilemap;
 mod util;
 mod viewport;
-mod asset_loader;
 
 use self::asset_loader::AssetLoader;
 use self::builder::TileBuilder;
@@ -115,7 +115,8 @@ impl State {
     pub fn update(&mut self, window: &Window, input: &Input, dt: f32) {
         // viewport stuff
         self.viewport.size(input.resolution);
-        self.viewport.zoom_at(input.mouse_scroll as f64, input.mouse);
+        self.viewport
+            .zoom_at(input.mouse_scroll as f64, input.mouse);
 
         if input.mouse_down {
             self.viewport.drag(input.mouse);
@@ -141,6 +142,14 @@ impl State {
         );
 
         // submit
+        self.asset.text(
+            &mut self.gpu,
+            &format!(
+                "{}\n{:#?}",
+                Self::distance(self.viewport.scale),
+                self.viewport
+            ),
+        );
         self.gpu.render(window, &self.viewport);
         self.builder.update();
     }

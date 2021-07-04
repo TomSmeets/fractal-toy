@@ -13,7 +13,7 @@ use self::pipeline::ShaderLoader;
 use self::swap_chain::SwapChain;
 
 // GPU mem = MAX_TILES * (vtx(5*4)*3*4 + 256*256)
-const MAX_TILES: u32 = 512;
+const MAX_TILES: u32 = 512 * 2;
 const MAX_VERTS: u64 = MAX_TILES as u64 * 3 * 4;
 
 pub struct Gpu {

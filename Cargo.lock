@@ -564,6 +564,7 @@ dependencies = [
  "crossbeam-channel",
  "image",
  "pollster",
+ "rusttype",
  "serde",
  "structopt",
  "wgpu",
