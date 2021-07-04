@@ -51,6 +51,7 @@ impl Viewport {
         let amount = amount * 0.1;
         self.zoom_vel += amount;
         self.zoom += amount;
+        self.scale = 0.5_f64.powf(self.zoom);
     }
 
     pub fn drag(&mut self, mouse: V2<i32>) {
