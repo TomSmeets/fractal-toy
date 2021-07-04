@@ -40,6 +40,7 @@ struct Config {
     debug: bool,
 }
 
+#[derive(Debug)]
 pub struct Input {
     resolution: V2<u32>,
     mouse: V2<i32>,
@@ -96,7 +97,7 @@ impl State {
 
         for (n, s) in scales.iter() {
             if size_meters > *s {
-                result += &format!("{:6.2} {}", size_meters / s, n);
+                result += &format!("{:6.2} {}\n", size_meters / s, n);
                 break;
             }
         }
@@ -145,9 +146,10 @@ impl State {
         self.asset.text(
             &mut self.gpu,
             &format!(
-                "{}\n{:#?}",
+                "{}\n{:#.4?}\n{:#.2?}",
                 Self::distance(self.viewport.scale),
-                self.viewport
+                self.viewport,
+                input
             ),
         );
         self.gpu.render(window, &self.viewport);
