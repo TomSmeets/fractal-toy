@@ -9,19 +9,18 @@ use crate::Image;
 mod pipeline;
 mod swap_chain;
 mod draw_tiles;
+mod ui;
 
 use self::pipeline::ShaderLoader;
 use self::swap_chain::SwapChain;
 use self::draw_tiles::DrawTiles;
-
-// GPU mem = MAX_TILES * (vtx(5*4)*3*4 + 256*256)
-const MAX_TILES: u32 = 512 * 2;
-const MAX_VERTS: u64 = MAX_TILES as u64 * 3 * 4;
+use self::ui::DrawUI;
 
 pub struct Gpu {
     device: GpuDevice,
     swap_chain: Option<SwapChain>,
     draw_tiles: Option<DrawTiles>,
+    draw_ui: DrawUI,
 
     // move to draw_tiles
     shader: ShaderLoader,
@@ -79,28 +78,35 @@ impl Gpu {
 
         let swap_chain_format = adapter.get_swap_chain_preferred_format(&surface).unwrap();
 
-        Gpu {
-            device: GpuDevice {
-                surface,
-                device,
-                queue,
-                swap_chain_format,
-            },
 
+        let mut device = GpuDevice {
+            surface,
+            device,
+            queue,
+            swap_chain_format,
+        };
+
+        let draw_ui = DrawUI::load(&mut device);
+
+        Gpu {
+            device,
             swap_chain: None,
             draw_tiles: None,
+                draw_ui,
             shader: ShaderLoader::new(),
         }
     }
 
-    #[rustfmt::skip]
     pub fn blit(&mut self, rect: &Rect, img: &Image) {
-        if let Some(d) = &mut self.draw_tiles { d.blit(&mut self.device, rect, img); }
+
+        self.draw_ui.blit(&mut self.device, rect, img)
     }
 
     pub fn tile(&mut self, vp: &Viewport, p: &TilePos, img: &Image) {
         let rect = vp.world_to_screen_rect(&p.square());
-        self.blit(&rect, img);
+        if let Some(d) = &mut self.draw_tiles {
+            d.blit(&mut self.device, &rect, img);
+        }
     }
 
     #[rustfmt::skip]
@@ -156,6 +162,9 @@ impl Gpu {
         let vtx_count = draw_tiles.vertex_list.len();
         draw_tiles.render(device, viewport);
 
+        let ui_vtx_count = self.draw_ui.vertex_list.len();
+        self.draw_ui.render(device, viewport);
+
         // We finally have a frame, now it is time to create the render commands
         let mut encoder = device.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
 
@@ -183,6 +192,10 @@ impl Gpu {
             rpass.draw(0..vtx_count as u32, 0..1);
 
             // Draw ui with texture atlas
+            rpass.set_pipeline(&self.draw_ui.pipeline);
+            rpass.set_vertex_buffer(0, self.draw_ui.vertex_buffer.slice(..));
+            rpass.set_bind_group(0, &self.draw_ui.bind_group, &[]);
+            rpass.draw(0..ui_vtx_count as u32, 0..1);
         }
 
         device.queue.submit(Some(encoder.finish()));

@@ -1,15 +1,16 @@
+use std::collections::BTreeMap;
+
 use wgpu::*;
 use crate::util::*;
 use crate::viewport::Viewport;
 use crate::Image;
 use crate::gpu::*;
+use crate::pack::{Pack, Block};
 
-// GPU mem = MAX_TILES * (vtx(5*4)*3*4 + 256*256)
-const MAX_TILES: u32 = 512 * 2;
-const MAX_VERTS: u64 = MAX_TILES as u64 * 3 * 4;
-const TILE_SIZE: u32 = 256;
+const MAX_VERTS:  u64 = 1024*4;
+const ATLAS_SIZE: u32 = 1024;
 
-pub struct DrawTiles {
+pub struct DrawUI {
     pub pipeline: RenderPipeline,
     pub vertex_buffer: Buffer,
 
@@ -20,12 +21,17 @@ pub struct DrawTiles {
     bind_group_layout: BindGroupLayout,
     pub bind_group: BindGroup,
 
-    used: Vec<TileSlot>,
     pub vertex_list: Vec<Vertex>,
+
+    blocks: BTreeMap<u32, Block>,
+    pack: Pack,
 }
 
-impl DrawTiles {
-    pub fn load(device: &mut GpuDevice, shader: &ShaderModule) -> DrawTiles {
+impl DrawUI {
+    pub fn load(device: &mut GpuDevice) -> Self {
+        let mut loader = ShaderLoader::new();
+        let (shader, _) = loader.load(&device.device, "src/gpu/draw_ui.wgsl");
+
         let vertex_buffer = device.device.create_buffer(&BufferDescriptor {
             label: None,
             size: std::mem::size_of::<Vertex>() as u64 * MAX_VERTS,
@@ -50,9 +56,9 @@ impl DrawTiles {
             usage: TextureUsage::COPY_DST | TextureUsage::SAMPLED,
             sample_count: 1,
             size: Extent3d {
-                width: TILE_SIZE,
-                height: TILE_SIZE,
-                depth_or_array_layers: MAX_TILES,
+                width: ATLAS_SIZE,
+                height: ATLAS_SIZE,
+                depth_or_array_layers: 1,
             },
         });
 
@@ -80,7 +86,7 @@ impl DrawTiles {
                     ty: BindingType::Texture {
                         multisampled: false,
                         sample_type: TextureSampleType::Float { filterable: true },
-                        view_dimension: TextureViewDimension::D2Array,
+                        view_dimension: TextureViewDimension::D2,
                     },
                     count: None,
                 },
@@ -160,7 +166,7 @@ impl DrawTiles {
             multisample: MultisampleState::default(),
         });
 
-        DrawTiles {
+        DrawUI {
             pipeline,
             vertex_buffer,
 
@@ -171,9 +177,10 @@ impl DrawTiles {
 
             bind_group_layout,
             bind_group,
-
-            used: vec![TileSlot { id: 0, mode: SlotMode::Free }; MAX_TILES as _],
             vertex_list: Vec::new(),
+
+            blocks: BTreeMap::new(),
+            pack: Pack::new(ATLAS_SIZE as _, 1)
         }
     }
 
@@ -183,76 +190,56 @@ impl DrawTiles {
         let hx = rect.corner_max().x as f32;
         let hy = rect.corner_max().y as f32;
 
-        assert_eq!(img.size().x, TILE_SIZE);
-        assert_eq!(img.size().y, TILE_SIZE);
+        // We don't free blocks yet, but we might in the future, just add a 'used' flag
+        let blocks = &mut self.blocks;
+        let pack   = &mut self.pack;
+        let texture = &self.texture;
+        let block = blocks.entry(img.id()).or_insert_with(|| {
+            let block = pack.alloc(img.size().map(|x| x as _)).unwrap();
 
-        let has_slot = self
-            .used
-            .iter_mut()
-            .enumerate()
-            .find(|(_, s)| s.id == img.id());
-
-        let ix = match has_slot {
-            Some((ix, slot)) => {
-                // mark slot as still used
-                slot.mode = SlotMode::Used;
-                ix
-            },
-
-            None => {
-                // find free slot
-                let (ix, slot) = self
-                    .used
-                    .iter_mut()
-                    .enumerate()
-                    .find(|(_, s)| s.mode == SlotMode::Free)
-                    .unwrap();
-
-                // mark slot as used
-                slot.id = img.id();
-                slot.mode = SlotMode::Used;
-
-                // upload image
-                eprintln!("upload: [{}] = {}", ix, img.id());
-                device.queue.write_texture(
-                    ImageCopyTexture {
-                        texture: &self.texture,
-                        mip_level: 0,
-                        origin: Origin3d {
-                            x: 0,
-                            y: 0,
-                            z: ix as u32,
-                        },
+            eprintln!("ui upload: {} = {:?}", img.id(), block);
+            device.queue.write_texture(
+                ImageCopyTexture {
+                    texture: &texture,
+                    mip_level: 0,
+                    origin: Origin3d {
+                        x: block.pos.x as u32,
+                        y: block.pos.y as u32,
+                        z: 0 as u32,
                     },
-                    img.data(),
-                    ImageDataLayout {
-                        offset: 0,
-                        bytes_per_row: Some(std::num::NonZeroU32::new(4 * img.size().x).unwrap()),
-                        rows_per_image: Some(std::num::NonZeroU32::new(img.size().y).unwrap()),
-                    },
-                    Extent3d {
-                        width: img.size().x,
-                        height: img.size().y,
-                        depth_or_array_layers: 1,
-                    },
-                );
+                },
+                img.data(),
+                ImageDataLayout {
+                    offset: 0,
+                    bytes_per_row: Some(std::num::NonZeroU32::new(4 * img.size().x).unwrap()),
+                    rows_per_image: Some(std::num::NonZeroU32::new(img.size().y).unwrap()),
+                },
+                Extent3d {
+                    width: img.size().x,
+                    height: img.size().y,
+                    depth_or_array_layers: 1,
+                },
+            );
+            
+            block
+        });
 
-                // return index for the vertex uv's
-                ix
-            },
-        };
+        // TODO: this is not good ofcourse
+        let uv_lx = block.pos.x as f32 / ATLAS_SIZE as f32 ;
+        let uv_ly = block.pos.y as f32 / ATLAS_SIZE as f32 ;
 
-        let ix = ix as i32;
+        let uv_hx = (block.pos.x + img.size().x as i32) as f32 / ATLAS_SIZE as f32;
+        let uv_hy = (block.pos.y + img.size().y as i32) as f32 / ATLAS_SIZE as f32;
 
         if self.vertex_list.len() + 6 < MAX_VERTS as _ {
             self.vertex_list.extend_from_slice(&[
-                Vertex { pos: V2::new(lx, ly), uv: V2::new(0.0, 0.0), ix, },
-                Vertex { pos: V2::new(hx, ly), uv: V2::new(1.0, 0.0), ix, },
-                Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0, 1.0), ix, },
+                Vertex { pos: V2::new(lx, ly), uv: V2::new(uv_lx, uv_ly),  },
+                Vertex { pos: V2::new(hx, ly), uv: V2::new(uv_hx, uv_ly),  },
+                Vertex { pos: V2::new(lx, hy), uv: V2::new(uv_lx, uv_hy), },
 
-                Vertex { pos: V2::new(hx, ly), uv: V2::new(1.0, 0.0), ix, },
-                Vertex { pos: V2::new(hx, hy), uv: V2::new(1.0, 1.0), ix, },
-                Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0, 1.0), ix, },
+                Vertex { pos: V2::new(hx, ly), uv: V2::new(uv_hx, uv_ly),  },
+                Vertex { pos: V2::new(hx, hy), uv: V2::new(uv_hx, uv_hy), },
+                Vertex { pos: V2::new(lx, hy), uv: V2::new(uv_lx, uv_hy), },
             ]);
         }
     }
@@ -277,32 +264,9 @@ impl DrawTiles {
             bytemuck::cast_slice(&self.vertex_list),
         );
 
-        // update slot age
-        for s in self.used.iter_mut() {
-            s.mode = match s.mode {
-                SlotMode::Used => SlotMode::Old,
-                SlotMode::Old => SlotMode::Free,
-                SlotMode::Free => SlotMode::Free,
-            };
-        }
-
         // clear last frame vertex list
         self.vertex_list.clear();
     }
-}
-
-#[derive(Clone)]
-struct TileSlot {
-    id: u32,
-    mode: SlotMode,
-}
-
-#[derive(Eq, PartialEq, Clone, Copy)]
-enum SlotMode {
-    // Free -> Used -> Old -> Free
-    Free = 0,
-    Used = 1,
-    Old = 2,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -310,8 +274,17 @@ enum SlotMode {
 pub struct Vertex {
     pos: V2<f32>,
     uv: V2<f32>,
-    ix: i32,
 }
+
+impl Vertex {
+    pub fn attrs() -> [VertexAttribute; 2] {
+        vertex_attr_array![
+            0 => Float32x2,
+            1 => Float32x2,
+        ]
+    }
+}
+
 
 unsafe impl bytemuck::Pod for Vertex {}
 unsafe impl bytemuck::Zeroable for Vertex {}
@@ -325,12 +298,3 @@ struct UniformData {
 unsafe impl bytemuck::Pod for UniformData {}
 unsafe impl bytemuck::Zeroable for UniformData {}
 
-impl Vertex {
-    pub fn attrs() -> [VertexAttribute; 3] {
-        vertex_attr_array![
-            0 => Float32x2,
-            1 => Float32x2,
-            2 => Sint32,
-        ]
-    }
-}

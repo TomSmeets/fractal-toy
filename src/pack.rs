@@ -1,11 +1,11 @@
 /// Like buddy allocation but in 2d
 use crate::*;
 
-#[derive(Clone, Eq, PartialEq)]
-struct Block {
-    pos: V2<i32>,
-    depth: i32,
-    size: i32,
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct Block {
+    pub pos: V2<i32>,
+    pub depth: i32,
+    pub size: i32,
 }
 
 impl Block {
@@ -33,7 +33,7 @@ impl Block {
     }
 }
 
-struct Pack {
+pub struct Pack {
     size: i32,
     depth: i32,
     free: Vec<Block>,
