@@ -1,13 +1,13 @@
 use std::collections::BTreeMap;
 
-use wgpu::*;
+use crate::gpu::*;
+use crate::pack::{Block, Pack};
 use crate::util::*;
 use crate::viewport::Viewport;
 use crate::Image;
-use crate::gpu::*;
-use crate::pack::{Pack, Block};
+use wgpu::*;
 
-const MAX_VERTS:  u64 = 1024*4;
+const MAX_VERTS: u64 = 1024 * 4;
 const ATLAS_SIZE: u32 = 1024;
 
 pub struct DrawUI {
@@ -180,7 +180,7 @@ impl DrawUI {
             vertex_list: Vec::new(),
 
             blocks: BTreeMap::new(),
-            pack: Pack::new(ATLAS_SIZE as _, 1)
+            pack: Pack::new(ATLAS_SIZE as _, 1),
         }
     }
 
@@ -192,7 +192,7 @@ impl DrawUI {
 
         // We don't free blocks yet, but we might in the future, just add a 'used' flag
         let blocks = &mut self.blocks;
-        let pack   = &mut self.pack;
+        let pack = &mut self.pack;
         let texture = &self.texture;
         let block = blocks.entry(img.id()).or_insert_with(|| {
             let block = pack.alloc(img.size().map(|x| x as _)).unwrap();
@@ -220,13 +220,13 @@ impl DrawUI {
                     depth_or_array_layers: 1,
                 },
             );
-            
+
             block
         });
 
         // TODO: this is not good ofcourse
-        let uv_lx = block.pos.x as f32 / ATLAS_SIZE as f32 ;
-        let uv_ly = block.pos.y as f32 / ATLAS_SIZE as f32 ;
+        let uv_lx = block.pos.x as f32 / ATLAS_SIZE as f32;
+        let uv_ly = block.pos.y as f32 / ATLAS_SIZE as f32;
 
         let uv_hx = (block.pos.x + img.size().x as i32) as f32 / ATLAS_SIZE as f32;
         let uv_hy = (block.pos.y + img.size().y as i32) as f32 / ATLAS_SIZE as f32;
@@ -285,7 +285,6 @@ impl Vertex {
     }
 }
 
-
 unsafe impl bytemuck::Pod for Vertex {}
 unsafe impl bytemuck::Zeroable for Vertex {}
 
@@ -297,4 +296,3 @@ struct UniformData {
 
 unsafe impl bytemuck::Pod for UniformData {}
 unsafe impl bytemuck::Zeroable for UniformData {}
-

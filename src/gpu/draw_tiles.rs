@@ -1,8 +1,8 @@
-use wgpu::*;
+use crate::gpu::*;
 use crate::util::*;
 use crate::viewport::Viewport;
 use crate::Image;
-use crate::gpu::*;
+use wgpu::*;
 
 // GPU mem = MAX_TILES * (vtx(5*4)*3*4 + 256*256)
 const MAX_TILES: u32 = 512 * 2;

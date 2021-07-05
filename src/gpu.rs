@@ -6,14 +6,14 @@ use crate::util::*;
 use crate::viewport::Viewport;
 use crate::Image;
 
+mod draw_tiles;
 mod pipeline;
 mod swap_chain;
-mod draw_tiles;
 mod ui;
 
+use self::draw_tiles::DrawTiles;
 use self::pipeline::ShaderLoader;
 use self::swap_chain::SwapChain;
-use self::draw_tiles::DrawTiles;
 use self::ui::DrawUI;
 
 pub struct Gpu {
@@ -25,7 +25,6 @@ pub struct Gpu {
     // move to draw_tiles
     shader: ShaderLoader,
 }
-
 
 /// This struct should contain whatever the gpu should show
 /// I don't like statefull apis, so this is the entire api
@@ -78,7 +77,6 @@ impl Gpu {
 
         let swap_chain_format = adapter.get_swap_chain_preferred_format(&surface).unwrap();
 
-
         let mut device = GpuDevice {
             surface,
             device,
@@ -92,13 +90,12 @@ impl Gpu {
             device,
             swap_chain: None,
             draw_tiles: None,
-                draw_ui,
+            draw_ui,
             shader: ShaderLoader::new(),
         }
     }
 
     pub fn blit(&mut self, rect: &Rect, img: &Image) {
-
         self.draw_ui.blit(&mut self.device, rect, img)
     }
 
