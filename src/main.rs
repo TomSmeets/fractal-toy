@@ -10,6 +10,7 @@ mod pack;
 mod tilemap;
 mod util;
 mod viewport;
+mod debug;
 
 use self::asset_loader::AssetLoader;
 use self::builder::TileBuilder;
@@ -24,6 +25,7 @@ use std::process::Command;
 use std::time::Duration;
 use std::time::Instant;
 use std::time::SystemTime;
+use debug::Debug;
 use structopt::StructOpt;
 use winit::event::WindowEvent;
 use winit::event::{ElementState, Event, MouseButton, MouseScrollDelta};
@@ -52,6 +54,7 @@ pub struct State {
     gpu: Gpu,
     builder: TileBuilder,
     asset: AssetLoader,
+    debug: Debug,
 
     // actual state that is relevant
     viewport: Viewport,
@@ -60,6 +63,7 @@ pub struct State {
 impl State {
     pub fn init(window: &Window) -> Self {
         State {
+            debug: Debug::new(),
             gpu: Gpu::init(window),
             builder: TileBuilder::new(),
             viewport: Viewport::new(),
@@ -114,6 +118,7 @@ impl State {
 
     /// always called at regular intervals
     pub fn update(&mut self, window: &Window, input: &Input, dt: f32) {
+
         // viewport stuff
         self.viewport.size(input.resolution);
         self.viewport
@@ -143,15 +148,10 @@ impl State {
         );
 
         // submit
-        self.asset.text(
-            &mut self.gpu,
-            &format!(
-                "{}\n{:#?}\n{:#?}",
-                Self::distance(self.viewport.scale),
-                self.viewport,
-                input
-            ),
-        );
+        self.debug.print(&Self::distance(self.viewport.scale));
+        self.asset.text(&mut self.gpu, self.debug.draw());
+        self.debug.begin();
+
         self.gpu.render(window, &self.viewport);
         self.builder.update();
     }
@@ -267,19 +267,20 @@ pub fn main() {
 
                     // check how accurate we actually are
                     // TODO: extract to timing struct
-                    if config.debug {
+                    // if config.debug {
                         let dt_frame = current_time - last_frame_time;
                         let dt_behind = current_time - next_frame_time;
                         let dt_update = Instant::now() - current_time;
-                        println!(
-                            "{:.1} Hz, frame {:6?} µs, update {:6} µs, behind {:2?} µs",
+                        let rate = format!(
+                            "{:.1} Hz\nframe {:6?} µs, update {:6} µs, behind {:2?} µs",
                             1.0 / dt_frame.as_secs_f32(),
                             dt_frame.as_micros(),
                             dt_update.as_micros(),
                             dt_behind.as_micros()
                         );
+                        state.debug.print(&rate);
                         last_frame_time = current_time;
-                    }
+                    // }
 
                     while next_frame_time < current_time {
                         next_frame_time += Duration::from_secs_f32(target_dt);

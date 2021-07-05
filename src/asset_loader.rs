@@ -9,7 +9,7 @@ pub struct AssetLoader {
 
 impl AssetLoader {
     pub fn new() -> Self {
-        let font = std::fs::read("result/share/fonts/truetype/DejaVuSans.ttf").unwrap();
+        let font = std::fs::read("result/share/fonts/truetype/DejaVuSansMono-Bold.ttf").unwrap();
         let font = Font::try_from_vec(font).unwrap();
 
         AssetLoader {
