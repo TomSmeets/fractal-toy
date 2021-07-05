@@ -38,11 +38,6 @@ pub struct Gpu {
 
     // move to draw_tiles
     shader: ShaderLoader,
-    tile_count: u32,
-    used: Vec<TileSlot>,
-    vertex_list: Vec<Vertex>,
-    // remove, upload directly
-    upload_list: Vec<(u32, Image)>,
 }
 
 pub struct DrawTiles {
@@ -56,6 +51,10 @@ pub struct DrawTiles {
 
     bind_group_layout: BindGroupLayout,
     bind_group: BindGroup,
+
+    // remove, upload directly
+    used: Vec<TileSlot>,
+    vertex_list: Vec<Vertex>,
 }
 
 impl DrawTiles {
@@ -205,32 +204,111 @@ impl DrawTiles {
 
             bind_group_layout,
             bind_group,
+
+            used: vec![TileSlot { id: 0, mode: SlotMode::Free }; MAX_TILES as _],
+            vertex_list: Vec::new(),
+        }
+    }
+    
+    pub fn blit(&mut self, device: &mut Device, rect: &Rect, img: &Image) {
+        let lx = rect.corner_min().x as f32;
+        let ly = rect.corner_min().y as f32;
+        let hx = rect.corner_max().x as f32;
+        let hy = rect.corner_max().y as f32;
+
+        // TODO: this is not good ofcourse
+        let uv_x = img.size().x as f32 / 256.0;
+        let uv_y = img.size().y as f32 / 256.0;
+
+        let has_slot = self.used.iter_mut().enumerate().find(|(_, s)| s.id == img.id());
+
+        let ix = match has_slot {
+            Some((ix, slot)) => {
+                // mark slot as still used
+                slot.mode = SlotMode::Used;
+                ix
+            },
+
+            None => {
+                // find free slot
+                let (ix, slot) = self.used.iter_mut().enumerate().find(|(_, s)| s.mode == SlotMode::Free).unwrap();
+
+                // mark slot as used
+                slot.id = img.id();
+                slot.mode = SlotMode::Used;
+
+                // upload image
+                eprintln!("upload: [{}] = {}", ix, img.id());
+                device.queue.write_texture(
+                    ImageCopyTexture {
+                        texture: &self.texture,
+                        mip_level: 0,
+                        origin: Origin3d {
+                            x: 0,
+                            y: 0,
+                            z: ix as u32,
+                        },
+                    },
+                    img.data(),
+                    ImageDataLayout {
+                        offset: 0,
+                        bytes_per_row: Some(std::num::NonZeroU32::new(4 * img.size().x).unwrap()),
+                        rows_per_image: Some(std::num::NonZeroU32::new(img.size().y).unwrap()),
+                    },
+                    Extent3d {
+                        width: img.size().x,
+                        height: img.size().y,
+                        depth_or_array_layers: 1,
+                    },
+                );
+                
+                // return index for the vertex uv's
+                ix
+            },
+        };
+
+        let ix = ix as i32;
+
+        if self.vertex_list.len() + 6 < MAX_VERTS as _ {
+            self.vertex_list.extend_from_slice(&[
+                Vertex { pos: V2::new(lx, ly), uv: V2::new(0.0,  0.0),  ix, },
+                Vertex { pos: V2::new(hx, ly), uv: V2::new(uv_x, 0.0),  ix, },
+                Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0,  uv_y), ix, },
+
+                Vertex { pos: V2::new(hx, ly), uv: V2::new(uv_x, 0.0),  ix, },
+                Vertex { pos: V2::new(hx, hy), uv: V2::new(uv_x, uv_y), ix, },
+                Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0,  uv_y), ix, },
+            ]);
         }
     }
 
-    pub fn upload(&mut self, device: &mut Device, img: &Image, ix: u32) {
-        device.queue.write_texture(
-            ImageCopyTexture {
-                texture: &self.texture,
-                mip_level: 0,
-                origin: Origin3d {
-                    x: 0,
-                    y: 0,
-                    z: ix,
-                },
-            },
-            img.data(),
-            ImageDataLayout {
-                offset: 0,
-                bytes_per_row: Some(std::num::NonZeroU32::new(4 * img.size().x).unwrap()),
-                rows_per_image: Some(std::num::NonZeroU32::new(img.size().y).unwrap()),
-            },
-            Extent3d {
-                width: img.size().x,
-                height: img.size().y,
-                depth_or_array_layers: 1,
-            },
+    pub fn render(&mut self, device: &mut Device, viewport: &Viewport) {
+        // update uniform data
+        device.queue.write_buffer(
+            &self.uniform,
+            0,
+            bytemuck::bytes_of(&UniformData {
+                resolution: V2::new(
+                    viewport.size_in_pixels.x as _,
+                    viewport.size_in_pixels.y as _,
+                ),
+            }),
         );
+
+        // write out vertex buffer
+        device.queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&self.vertex_list));
+
+        // update slot age
+        for s in self.used.iter_mut() {
+            s.mode = match s.mode {
+                SlotMode::Used => SlotMode::Old,
+                SlotMode::Old  => SlotMode::Free,
+                SlotMode::Free => SlotMode::Free,
+            };
+        }
+
+        // clear last frame vertex list
+        self.vertex_list.clear();
     }
 }
 
@@ -326,54 +404,12 @@ impl Gpu {
             swap_chain: None,
             draw_tiles: None,
             shader: ShaderLoader::new(),
-
-            used: vec![TileSlot { id: 0, mode: SlotMode::Free }; MAX_TILES as _],
-
-            tile_count: 0,
-            vertex_list: Vec::new(),
-            upload_list: Vec::new(),
         }
     }
 
     #[rustfmt::skip]
     pub fn blit(&mut self, rect: &Rect, img: &Image) {
-        let lx = rect.corner_min().x as f32;
-        let ly = rect.corner_min().y as f32;
-        let hx = rect.corner_max().x as f32;
-        let hy = rect.corner_max().y as f32;
-
-        // TODO: this is not good ofcourse
-        let uv_x = img.size().x as f32 / 256.0;
-        let uv_y = img.size().y as f32 / 256.0;
-
-        let has_slot = self.used.iter_mut().enumerate().find(|(_, s)| s.id == img.id());
-
-        let ix = match has_slot {
-            Some((ix, slot)) => {
-                // mark slot as still used
-                slot.mode = SlotMode::Used;
-                ix
-            },
-
-            None => {
-                // find free slot
-                let (ix, slot) = self.used.iter_mut().enumerate().find(|(_, s)| s.mode == SlotMode::Free).unwrap();
-                self.upload_list.push((ix as u32, img.clone()));
-                slot.id = img.id();
-                slot.mode = SlotMode::Used;
-                ix
-            },
-        };
-
-        let ix = ix as i32;
-        self.vertex_list.extend_from_slice(&[
-            Vertex { pos: V2::new(lx, ly), uv: V2::new(0.0,  0.0),  ix, },
-            Vertex { pos: V2::new(hx, ly), uv: V2::new(uv_x, 0.0),  ix, },
-            Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0,  uv_y), ix, },
-            Vertex { pos: V2::new(hx, ly), uv: V2::new(uv_x, 0.0),  ix, },
-            Vertex { pos: V2::new(hx, hy), uv: V2::new(uv_x, uv_y), ix, },
-            Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0,  uv_y), ix, },
-        ]);
+        if let Some(d) = &mut self.draw_tiles { d.blit(&mut self.device, rect, img); }
     }
 
     pub fn tile(&mut self, vp: &Viewport, p: &TilePos, img: &Image) {
@@ -426,46 +462,13 @@ impl Gpu {
         let (shader, shader_changed) = self.shader.load(&device.device, "src/gpu/shader.wgsl");
 
         if shader_changed {
-            self.draw_tiles = None;
             // TODO: this is too late now, fix it
-            for s in self.used.iter_mut() {
-                s.mode = SlotMode::Free;
-            }
+            self.draw_tiles = None;
         }
 
         let draw_tiles = self.draw_tiles.get_or_insert_with(|| DrawTiles::load(device, shader));
-
-        // update slot age
-        for s in self.used.iter_mut() {
-            s.mode = match s.mode {
-                SlotMode::Used => SlotMode::Old,
-                SlotMode::Old  => SlotMode::Free,
-                SlotMode::Free => SlotMode::Free,
-            };
-        }
-
-        // upload new tile textures
-        for (ix, img) in self.upload_list.drain(..) {
-            eprintln!("upload: [{}] = {}", ix, img.id());
-            draw_tiles.upload(device, &img, ix);
-        }
-
-        let vertex_list = &self.vertex_list[0..self.vertex_list.len().min(MAX_VERTS as usize)];
-
-        // update uniform data
-        device.queue.write_buffer(
-            &draw_tiles.uniform,
-            0,
-            bytemuck::bytes_of(&UniformData {
-                resolution: V2::new(
-                    viewport.size_in_pixels.x as _,
-                    viewport.size_in_pixels.y as _,
-                ),
-            }),
-        );
-
-        // write out vertex buffer
-        device.queue.write_buffer(&draw_tiles.vertex_buffer, 0, bytemuck::cast_slice(&vertex_list));
+        let vtx_count = draw_tiles.vertex_list.len();
+        draw_tiles.render(device, viewport);
 
         // We finally have a frame, now it is time to create the render commands
         let mut encoder = device.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
@@ -488,7 +491,7 @@ impl Gpu {
             rpass.set_pipeline(&draw_tiles.pipeline);
             rpass.set_vertex_buffer(0, draw_tiles.vertex_buffer.slice(..));
             rpass.set_bind_group(0, &draw_tiles.bind_group, &[]);
-            rpass.draw(0..vertex_list.len() as u32, 0..1);
+            rpass.draw(0..vtx_count as u32, 0..1);
         }
 
         // Draw ui with texture atlas
@@ -497,7 +500,5 @@ impl Gpu {
 
         device.queue.submit(Some(encoder.finish()));
 
-        self.vertex_list.clear();
-        self.tile_count = 0;
     }
 }
