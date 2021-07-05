@@ -27,14 +27,13 @@ pub enum SlotMode {
     // Free -> Used -> Old -> Free
     Free = 0,
     Used = 1,
-    Old  = 2,
+    Old = 2,
 }
 
 pub struct Gpu {
     device: Device,
     swap_chain: Option<SwapChain>,
     draw_tiles: Option<DrawTiles>,
-
 
     // move to draw_tiles
     shader: ShaderLoader,
@@ -209,7 +208,7 @@ impl DrawTiles {
             vertex_list: Vec::new(),
         }
     }
-    
+
     pub fn blit(&mut self, device: &mut Device, rect: &Rect, img: &Image) {
         let lx = rect.corner_min().x as f32;
         let ly = rect.corner_min().y as f32;
@@ -220,7 +219,11 @@ impl DrawTiles {
         let uv_x = img.size().x as f32 / 256.0;
         let uv_y = img.size().y as f32 / 256.0;
 
-        let has_slot = self.used.iter_mut().enumerate().find(|(_, s)| s.id == img.id());
+        let has_slot = self
+            .used
+            .iter_mut()
+            .enumerate()
+            .find(|(_, s)| s.id == img.id());
 
         let ix = match has_slot {
             Some((ix, slot)) => {
@@ -231,7 +234,12 @@ impl DrawTiles {
 
             None => {
                 // find free slot
-                let (ix, slot) = self.used.iter_mut().enumerate().find(|(_, s)| s.mode == SlotMode::Free).unwrap();
+                let (ix, slot) = self
+                    .used
+                    .iter_mut()
+                    .enumerate()
+                    .find(|(_, s)| s.mode == SlotMode::Free)
+                    .unwrap();
 
                 // mark slot as used
                 slot.id = img.id();
@@ -261,7 +269,7 @@ impl DrawTiles {
                         depth_or_array_layers: 1,
                     },
                 );
-                
+
                 // return index for the vertex uv's
                 ix
             },
@@ -296,13 +304,17 @@ impl DrawTiles {
         );
 
         // write out vertex buffer
-        device.queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&self.vertex_list));
+        device.queue.write_buffer(
+            &self.vertex_buffer,
+            0,
+            bytemuck::cast_slice(&self.vertex_list),
+        );
 
         // update slot age
         for s in self.used.iter_mut() {
             s.mode = match s.mode {
                 SlotMode::Used => SlotMode::Old,
-                SlotMode::Old  => SlotMode::Free,
+                SlotMode::Old => SlotMode::Free,
                 SlotMode::Free => SlotMode::Free,
             };
         }
@@ -476,7 +488,7 @@ impl Gpu {
         // TODO: what do we do with compute commands? do they block? do we do them async?
         // How about instead of compute we just render to a texture view?
         // Draw tiles
-        { 
+        {
             let mut rpass = encoder.begin_render_pass(&RenderPassDescriptor {
                 label: None,
                 color_attachments: &[RenderPassColorAttachment {
