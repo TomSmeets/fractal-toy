@@ -1,4 +1,4 @@
-use crate::gpu::*;
+use crate::gpu::GpuDevice;
 use crate::util::*;
 use crate::viewport::Viewport;
 use crate::Image;

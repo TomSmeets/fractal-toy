@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
-use crate::gpu::*;
+use crate::gpu::GpuDevice;
+use crate::gpu::ShaderLoader;
 use crate::pack::{Block, Pack};
 use crate::util::*;
 use crate::viewport::Viewport;
