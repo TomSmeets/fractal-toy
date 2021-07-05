@@ -18,6 +18,36 @@ enum SlotMode {
     Old = 2,
 }
 
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+pub struct Vertex {
+    pos: V2<f32>,
+    uv: V2<f32>,
+    ix: i32,
+}
+
+unsafe impl bytemuck::Pod for Vertex {}
+unsafe impl bytemuck::Zeroable for Vertex {}
+
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+struct UniformData {
+    resolution: V2<f32>,
+}
+
+unsafe impl bytemuck::Pod for UniformData {}
+unsafe impl bytemuck::Zeroable for UniformData {}
+
+impl Vertex {
+    pub fn attrs() -> [VertexAttribute; 3] {
+        vertex_attr_array![
+            0 => Float32x2,
+            1 => Float32x2,
+            2 => Sint32,
+        ]
+    }
+}
+
 pub struct DrawTiles {
     pub pipeline: RenderPipeline,
     pub vertex_buffer: Buffer,
