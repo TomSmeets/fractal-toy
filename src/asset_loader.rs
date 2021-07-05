@@ -1,5 +1,5 @@
 use crate::*;
-use rusttype::{Font, Glyph, GlyphId, Scale};
+use rusttype::{Font, GlyphId, Scale};
 
 pub struct AssetLoader {
     cache: BTreeMap<String, (SystemTime, Image)>,
@@ -72,7 +72,7 @@ impl AssetLoader {
             let buf = match buf {
                 Err(e) => {
                     dbg!(e);
-                    std::thread::sleep_ms(100);
+                    std::thread::sleep(std::time::Duration::from_millis(100));
                     continue;
                 },
                 Ok(buf) => buf,
