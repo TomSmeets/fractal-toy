@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-
 use crate::gpu::GpuDevice;
 use crate::gpu::ShaderLoader;
 use crate::pack::{Block, Pack};
@@ -242,6 +241,8 @@ impl DrawUI {
                 Vertex { pos: V2::new(hx, hy), uv: V2::new(uv_hx, uv_hy), },
                 Vertex { pos: V2::new(lx, hy), uv: V2::new(uv_lx, uv_hy), },
             ]);
+        } else {
+            eprintln!("TOO MANY VERTS IN UI!");
         }
     }
 

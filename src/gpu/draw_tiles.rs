@@ -148,10 +148,7 @@ impl DrawTiles {
                 entry_point: "fs_main",
                 targets: &[ColorTargetState {
                     format: device.swap_chain_format,
-                    blend: Some(BlendState {
-                        color: BlendComponent::OVER,
-                        alpha: BlendComponent::OVER,
-                    }),
+                    blend: None,
                     write_mask: ColorWrite::ALL,
                 }],
             }),
@@ -254,6 +251,8 @@ impl DrawTiles {
                 Vertex { pos: V2::new(hx, hy), uv: V2::new(1.0, 1.0), ix, },
                 Vertex { pos: V2::new(lx, hy), uv: V2::new(0.0, 1.0), ix, },
             ]);
+        } else {
+            eprintln!("TOO MANY VERTS IN TILEMAP!");
         }
     }
 
