@@ -1,10 +1,10 @@
-use std::collections::BTreeMap;
 use crate::gpu::GpuDevice;
 use crate::gpu::ShaderLoader;
 use crate::pack::{Block, Pack};
 use crate::util::*;
 use crate::viewport::Viewport;
 use crate::Image;
+use std::collections::BTreeMap;
 use wgpu::*;
 
 const MAX_VERTS: u64 = 1024 * 4;

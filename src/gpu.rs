@@ -7,14 +7,14 @@ use crate::viewport::Viewport;
 use crate::Image;
 
 mod draw_tiles;
+mod draw_ui;
 mod pipeline;
 mod swap_chain;
-mod ui;
 
 use self::draw_tiles::DrawTiles;
+use self::draw_ui::DrawUI;
 use self::pipeline::ShaderLoader;
 use self::swap_chain::SwapChain;
-use self::ui::DrawUI;
 
 pub struct Gpu {
     device: GpuDevice,
