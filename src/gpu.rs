@@ -474,8 +474,9 @@ impl Gpu {
         let mut encoder = device.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
 
         // TODO: what do we do with compute commands? do they block? do we do them async?
+        // How about instead of compute we just render to a texture view?
         // Draw tiles
-        {
+        { 
             let mut rpass = encoder.begin_render_pass(&RenderPassDescriptor {
                 label: None,
                 color_attachments: &[RenderPassColorAttachment {
@@ -488,14 +489,14 @@ impl Gpu {
                 }],
                 depth_stencil_attachment: None,
             });
+
+            // rpass can be reused, but to what extend? multiple pipelines?
             rpass.set_pipeline(&draw_tiles.pipeline);
             rpass.set_vertex_buffer(0, draw_tiles.vertex_buffer.slice(..));
             rpass.set_bind_group(0, &draw_tiles.bind_group, &[]);
             rpass.draw(0..vtx_count as u32, 0..1);
-        }
 
-        // Draw ui with texture atlas
-        {
+            // Draw ui with texture atlas
         }
 
         device.queue.submit(Some(encoder.finish()));
