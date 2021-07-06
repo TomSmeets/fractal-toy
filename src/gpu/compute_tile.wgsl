@@ -45,7 +45,7 @@ fn vs_main(
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     let t0 = mandel(in.uv);
 
-    let pi = 3.1415926531;
+    let pi = 3.14159265359;
     let a = (1.0 - ((t0*t0) / (1024.0*1024.0)));
     let a = max(min(a, 1.0), 0.0);
     let t = t0 * 0.005;
