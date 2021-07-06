@@ -16,6 +16,8 @@ const ITER_COUNT: usize = 1024;
 pub struct TileBuilder {
     cache: BTreeMap<TilePos, Option<(Image, u32)>>,
 
+    gpu_sender: Sender<TilePos>,
+
     sender: Sender<(TilePos, V2)>,
     receiver: Receiver<(TilePos, Image)>,
 }
@@ -29,21 +31,27 @@ impl TileBuilder {
         let (req_send, req_recv) = bounded::<(TilePos, V2)>(16);
         let (tile_send, tile_recv) = bounded::<(TilePos, Image)>(16);
 
+        let (req_send_gpu, req_recv_gpu)  = bounded::<TilePos>(16);
+        {
+            let gpu_builder = ComputeTile::load(alg, &gpu, asset_loader);
+            let gpu_device = Arc::clone(&gpu);
+            let tile_send = tile_send.clone();
+            std::thread::spawn(move || {
+                while let Ok(pos) = req_recv_gpu.recv() {
+                    let img = gpu_builder.build(&gpu_device, &pos);
+                    tile_send.send((pos, img)).unwrap();
+                }
+            });
+        }
+
         for _ in 0..6 {
             let tile_send = tile_send.clone();
             let req_recv = req_recv.clone();
 
-            let gpu_builder = ComputeTile::load(alg, &gpu, asset_loader);
-            let gpu_device = Arc::clone(&gpu);
             let alg = alg.to_vec();
             std::thread::spawn(move || {
                 while let Ok((pos, a)) = req_recv.recv() {
-                    let img = if pos.z < 16 {
-                        gpu_builder.build(&gpu_device, &pos)
-                    } else {
-                        Self::gen_tile(&alg, &pos, a)
-                    };
-
+                    let img = Self::gen_tile(&alg, &pos, a);
                     tile_send.send((pos, img)).unwrap();
                 }
             });
@@ -51,6 +59,7 @@ impl TileBuilder {
 
         TileBuilder {
             cache: BTreeMap::new(),
+            gpu_sender: req_send_gpu,
             sender: req_send,
             receiver: tile_recv,
         }
@@ -185,8 +194,14 @@ impl TileBuilder {
         let in_cache = self.cache.contains_key(p);
 
         if !in_cache {
+            let result = if p.z < 16 {
+                self.gpu_sender.try_send(*p).map_err(|x| ())
+            } else {
+                self.sender.try_send((*p, V2::zero())).map_err(|x| ())
+            };
+
             // tell a builder to build this tile
-            if let Ok(_) = self.sender.try_send((*p, V2::zero())) {
+            if let Ok(_) = result {
                 // Tile is queued, don't request it again
                 self.cache.insert(*p, None);
             }
