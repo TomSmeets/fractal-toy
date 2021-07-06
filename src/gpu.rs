@@ -10,7 +10,9 @@ mod draw_tiles;
 mod draw_ui;
 mod pipeline;
 mod swap_chain;
+mod compute_tile;
 
+use self::compute_tile::ComputeTile;
 use self::draw_tiles::DrawTiles;
 use self::draw_ui::DrawUI;
 use self::pipeline::ShaderLoader;
@@ -21,6 +23,7 @@ pub struct Gpu {
     swap_chain: Option<SwapChain>,
     draw_tiles: Option<DrawTiles>,
     draw_ui: DrawUI,
+    compute_tile: ComputeTile,
 
     // move to draw_tiles
     shader: ShaderLoader,
@@ -86,13 +89,20 @@ impl Gpu {
 
         let draw_ui = DrawUI::load(&mut device);
 
+        let compute_tile = ComputeTile::load(&mut device);
+
         Gpu {
             device,
             swap_chain: None,
             draw_tiles: None,
             draw_ui,
+            compute_tile,
             shader: ShaderLoader::new(),
         }
+    }
+
+    pub fn build(&mut self, pos: &TilePos) -> Image {
+        self.compute_tile.build(&mut self.device, pos)
     }
 
     pub fn blit(&mut self, rect: &Rect, img: &Image) {
