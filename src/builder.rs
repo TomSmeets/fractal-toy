@@ -1,3 +1,4 @@
+use crate::gpu::Gpu;
 use crate::tilemap::TilePos;
 use crate::util::*;
 use crate::Image;
@@ -104,8 +105,8 @@ impl TileBuilder {
                         y: 2.0 * z.x * z.y + c.y,
                     };
 
-                    z.y = -z.y.abs();
-                    z.x = z.x.abs();
+                    // z.y = -z.y.abs();
+                    // z.x = z.x.abs();
 
                     let d = z.x * z.x + z.y * z.y;
                     if d > 256.0 {
@@ -141,10 +142,15 @@ impl TileBuilder {
     }
 
     /// Either return a cached tile, or add it to the build queue
-    pub fn tile(&mut self, p: &TilePos) -> Option<&Image> {
+    pub fn tile(&mut self, gpu: &mut Gpu, p: &TilePos) -> Option<&Image> {
         let in_cache = self.cache.contains_key(p);
 
         if !in_cache {
+            if p.z < 18 {
+                self.cache.insert(*p, Some((gpu.build(p), 0)));
+                return self.tile(gpu, p);
+            }
+
             // tell a builder to build this tile
             if let Ok(_) = self.sender.try_send((*p, V2::zero())) {
                 // Tile is queued, don't request it again

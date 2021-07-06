@@ -132,18 +132,15 @@ impl State {
 
         // which tiles to build
         for p in self.viewport.get_pos_all(1) {
-            self.builder.tile(&p);
+            self.builder.tile(&mut self.gpu, &p);
             break;
         }
 
         // which tiles to draw
         for p in self.viewport.get_pos_all(0) {
-            let img = self.gpu.build(&p);
-            dbg!(img.size());
-            self.gpu.tile(&self.viewport, &p, &img);
-            // if let Some(img) = self.builder.tile(&p) {
-            //     self.gpu.tile(&self.viewport, &p, img);
-            // }
+            if let Some(img) = self.builder.tile(&mut self.gpu, &p) {
+                self.gpu.tile(&self.viewport, &p, img);
+            }
         }
 
         self.gpu.blit(
