@@ -10,7 +10,7 @@ mod draw_tiles;
 mod draw_ui;
 mod pipeline;
 mod swap_chain;
-mod compute_tile;
+pub mod compute_tile;
 
 use self::compute_tile::ComputeTile;
 use self::draw_tiles::DrawTiles;

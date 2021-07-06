@@ -62,10 +62,12 @@ pub struct State {
 
 impl State {
     pub fn init(window: &Window) -> Self {
+        let gpu = Gpu::init(window);
+        let builder = TileBuilder::new(gpu.device());
         State {
             debug: Debug::new(),
-            gpu: Gpu::init(window),
-            builder: TileBuilder::new(),
+            gpu,
+            builder,
             viewport: Viewport::new(),
             asset: AssetLoader::new(),
         }
@@ -132,13 +134,12 @@ impl State {
 
         // which tiles to build
         for p in self.viewport.get_pos_all(1) {
-            self.builder.tile(&mut self.gpu, &p);
-            break;
+            self.builder.tile(&p);
         }
 
         // which tiles to draw
         for p in self.viewport.get_pos_all(0) {
-            if let Some(img) = self.builder.tile(&mut self.gpu, &p) {
+            if let Some(img) = self.builder.tile(&p) {
                 self.gpu.tile(&self.viewport, &p, img);
             }
         }

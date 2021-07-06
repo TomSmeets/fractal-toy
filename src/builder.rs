@@ -1,4 +1,5 @@
-use crate::gpu::Gpu;
+use crate::gpu::GpuDevice;
+use crate::gpu::compute_tile::ComputeTile;
 use crate::tilemap::TilePos;
 use crate::util::*;
 use crate::Image;
@@ -6,6 +7,7 @@ use crate::Image;
 use crossbeam_channel::Receiver;
 use crossbeam_channel::{bounded, Sender};
 use std::collections::BTreeMap;
+use std::sync::Arc;
 
 const ITER_COUNT: usize = 1024;
 
@@ -17,16 +19,25 @@ pub struct TileBuilder {
 }
 
 impl TileBuilder {
-    pub fn new() -> TileBuilder {
-        let (req_send, req_recv) = bounded(16);
-        let (tile_send, tile_recv) = bounded(16);
+    pub fn new(gpu: Arc<GpuDevice>) -> TileBuilder {
+        let (req_send, req_recv)  = bounded::<(TilePos, V2)>(16);
+        let (tile_send, tile_recv) = bounded::<(TilePos, Image)>(16);
 
         for _ in 0..6 {
             let tile_send = tile_send.clone();
             let req_recv = req_recv.clone();
+
+            let gpu_builder = ComputeTile::load(&gpu);
+            let gpu_device  = Arc::clone(&gpu);
             std::thread::spawn(move || {
                 while let Ok((pos, a)) = req_recv.recv() {
-                    tile_send.send((pos, Self::gen_tile(&pos, a))).unwrap();
+                    let img = if pos.z < 18 {
+                        gpu_builder.build(&gpu_device, &pos)
+                    } else {
+                        Self::gen_tile(&pos, a)
+                    };
+
+                    tile_send.send((pos, img)).unwrap();
                 }
             });
         }
@@ -142,15 +153,10 @@ impl TileBuilder {
     }
 
     /// Either return a cached tile, or add it to the build queue
-    pub fn tile(&mut self, gpu: &mut Gpu, p: &TilePos) -> Option<&Image> {
+    pub fn tile(&mut self, p: &TilePos) -> Option<&Image> {
         let in_cache = self.cache.contains_key(p);
 
         if !in_cache {
-            if p.z < 18 {
-                self.cache.insert(*p, Some((gpu.build(p), 0)));
-                return self.tile(gpu, p);
-            }
-
             // tell a builder to build this tile
             if let Ok(_) = self.sender.try_send((*p, V2::zero())) {
                 // Tile is queued, don't request it again
