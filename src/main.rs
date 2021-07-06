@@ -143,11 +143,6 @@ impl State {
             }
         }
 
-        self.gpu.blit(
-            &Rect::center_size(input.mouse.map(|x| x as _), V2::new(200.0, 200.0)),
-            &self.asset.image("res/button_front_down.png"),
-        );
-
         // submit
         self.debug.print(&Self::distance(self.viewport.scale));
         self.asset.text(&mut self.gpu, self.debug.draw());
