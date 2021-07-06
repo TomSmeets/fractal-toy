@@ -17,9 +17,10 @@ use self::draw_tiles::DrawTiles;
 use self::draw_ui::DrawUI;
 use self::pipeline::ShaderLoader;
 use self::swap_chain::SwapChain;
+use std::sync::Arc;
 
 pub struct Gpu {
-    device: GpuDevice,
+    device: Arc<GpuDevice>,
     swap_chain: Option<SwapChain>,
     draw_tiles: Option<DrawTiles>,
     draw_ui: DrawUI,
@@ -92,7 +93,7 @@ impl Gpu {
         let compute_tile = ComputeTile::load(&mut device);
 
         Gpu {
-            device,
+            device: Arc::new(device),
             swap_chain: None,
             draw_tiles: None,
             draw_ui,
@@ -101,24 +102,28 @@ impl Gpu {
         }
     }
 
+    pub fn device(&self) -> Arc<GpuDevice> {
+        Arc::clone(&self.device)
+    }
+
     pub fn build(&mut self, pos: &TilePos) -> Image {
-        self.compute_tile.build(&mut self.device, pos)
+        self.compute_tile.build(&self.device, pos)
     }
 
     pub fn blit(&mut self, rect: &Rect, img: &Image) {
-        self.draw_ui.blit(&mut self.device, rect, img)
+        self.draw_ui.blit(&self.device, rect, img)
     }
 
     pub fn tile(&mut self, vp: &Viewport, p: &TilePos, img: &Image) {
         let rect = vp.world_to_screen_rect(&p.square());
         if let Some(d) = &mut self.draw_tiles {
-            d.blit(&mut self.device, &rect, img);
+            d.blit(&self.device, &rect, img);
         }
     }
 
     #[rustfmt::skip]
     pub fn render(&mut self, window: &Window, viewport: &Viewport) {
-        let device = &mut self.device;
+        let device = &self.device;
 
         let (swap_chain, frame) = loop {
             let swap_chain = self.swap_chain.get_or_insert_with(|| {

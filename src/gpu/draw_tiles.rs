@@ -25,7 +25,7 @@ pub struct DrawTiles {
 }
 
 impl DrawTiles {
-    pub fn load(device: &mut GpuDevice, shader: &ShaderModule) -> DrawTiles {
+    pub fn load(device: &GpuDevice, shader: &ShaderModule) -> DrawTiles {
         let vertex_buffer = device.device.create_buffer(&BufferDescriptor {
             label: None,
             size: std::mem::size_of::<Vertex>() as u64 * MAX_VERTS,
@@ -174,7 +174,7 @@ impl DrawTiles {
         }
     }
 
-    pub fn blit(&mut self, device: &mut GpuDevice, rect: &Rect, img: &Image) {
+    pub fn blit(&mut self, device: &GpuDevice, rect: &Rect, img: &Image) {
         let lx = rect.corner_min().x as f32;
         let ly = rect.corner_min().y as f32;
         let hx = rect.corner_max().x as f32;
@@ -256,7 +256,7 @@ impl DrawTiles {
         }
     }
 
-    pub fn render(&mut self, device: &mut GpuDevice, viewport: &Viewport) {
+    pub fn render(&mut self, device: &GpuDevice, viewport: &Viewport) {
         // update uniform data
         device.queue.write_buffer(
             &self.uniform,

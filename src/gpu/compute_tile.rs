@@ -21,7 +21,7 @@ pub struct ComputeTile {
 }
 
 impl ComputeTile {
-    pub fn load(device: &mut GpuDevice) -> Self {
+    pub fn load(device: &GpuDevice) -> Self {
         let mut loader = ShaderLoader::new();
         let (shader, _) = loader.load(&device.device, "src/gpu/compute_tile.wgsl");
 
@@ -110,7 +110,7 @@ impl ComputeTile {
         }
     }
 
-    pub fn build(&mut self, device: &mut GpuDevice, p: &TilePos) -> Image {
+    pub fn build(&self, device: &GpuDevice, p: &TilePos) -> Image {
         let rect = p.square();
 
         let min = rect.corner_min();
