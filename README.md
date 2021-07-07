@@ -4,18 +4,20 @@ Fractal Toy
 This is a fractal explorer made with simplicity in mind.
 
 
-# Building
+# Running
 
-For now only the `sdl` target works correctly.
-This is also only tested on linux.
 
 ```
-cargo run --bin sdl
+cargo run
 ```
 
 # Controls
 
+## Mouse
+You can navigate with the mouse.
+
 ## Keyboard
+Note, this is not implemented yet
 
 * `W` `A` `S` and `D` for movement
 * `I` and `K` for zooming
