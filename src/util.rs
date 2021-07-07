@@ -44,4 +44,9 @@ impl Rect {
     pub fn size(&self) -> V2 {
         self.max - self.min
     }
+
+    pub fn contains(&self, v: V2) -> bool {
+        v.x >= self.min.x && v.x < self.max.x &&
+        v.y >= self.min.y && v.y < self.max.y
+    }
 }
