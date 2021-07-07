@@ -33,6 +33,42 @@ use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::Window;
 use winit::window::WindowBuilder;
 
+static MANDELBROT: &[FractalStep] = &[FractalStep::Square, FractalStep::AddC];
+
+static BURNINGSHIP: &[FractalStep] = &[
+    FractalStep::AbsR,
+    FractalStep::AbsI,
+    FractalStep::Square,
+    FractalStep::AddC,
+];
+
+static COOL: &[FractalStep] = &[
+    FractalStep::Cube,
+    FractalStep::AddC,
+    FractalStep::AbsI,
+    FractalStep::AbsR,
+    FractalStep::Square,
+    FractalStep::AddC,
+];
+
+#[derive(Eq, PartialEq)]
+pub enum FractalStep {
+    /// z = z^2
+    Square,
+
+    /// z = z^3
+    Cube,
+
+    /// z = |real(z)| + imag(z) * i
+    AbsR,
+
+    /// z = real(z) + |imag(z)| * i
+    AbsI,
+
+    ///  z = z + c
+    AddC,
+}
+
 #[derive(Debug, StructOpt)]
 struct Config {
     #[structopt(short, long)]

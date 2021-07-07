@@ -25,7 +25,7 @@ fn cpx_abs(z: vec2<REAL>) -> vec2<REAL> {
 }
 
 fn mandel(c: vec2<REAL>) -> REAL {
-    var z: vec2<REAL> = c;
+    var z: vec2<REAL> = vec2<REAL>(0.0, 0.0);
 
     var i: REAL = REAL(0.0);
 
@@ -34,8 +34,7 @@ fn mandel(c: vec2<REAL>) -> REAL {
             break;
         }
 
-        z = cpx_sqr(z);
-        z = z + c;
+        @IMPL@
 
         let d = z.x*z.x + z.y*z.y;
         if (d > REAL(256.0)) {

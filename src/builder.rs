@@ -5,6 +5,7 @@ use crate::tilemap::TilePos;
 use crate::util::*;
 use crate::Image;
 
+use crate::FractalStep;
 use crossbeam_channel::Receiver;
 use crossbeam_channel::{bounded, Sender};
 use std::collections::BTreeMap;
@@ -129,8 +130,15 @@ impl TileBuilder {
                 //     t = ITER_COUNT as f64 - 1.0;
                 // } else {
                 for i in 0..ITER_COUNT {
-                    z = cpx_sqr(z);
-                    z = z + c;
+                    for s in crate::COOL {
+                        match s {
+                            FractalStep::AbsR => z.x = z.x.abs(),
+                            FractalStep::AbsI => z.y = z.y.abs(),
+                            FractalStep::Square => z = cpx_sqr(z),
+                            FractalStep::Cube => z = cpx_cube(z),
+                            FractalStep::AddC => z = z + c,
+                        }
+                    }
 
                     let d = z.x * z.x + z.y * z.y;
                     if d > 256.0 {

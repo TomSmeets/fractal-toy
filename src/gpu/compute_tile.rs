@@ -2,6 +2,7 @@ use crate::asset_loader::AssetLoader;
 use crate::gpu::GpuDevice;
 use crate::gpu::ShaderLoader;
 use crate::util::*;
+use crate::FractalStep;
 use crate::Image;
 use crate::TilePos;
 use std::num::NonZeroU32;
@@ -24,8 +25,21 @@ pub struct ComputeTile {
 impl ComputeTile {
     #[rustfmt::skip]
     pub fn load(device: &GpuDevice, asset_loader: &mut AssetLoader) -> Self {
+        let alg = crate::COOL;
+
         let source = asset_loader.text_file("src/gpu/compute_tile.wgsl");
         let source = source.replace("REAL", "f32");
+
+        let implementation = alg.iter().map(|x| match x {
+            FractalStep::AbsR   => "z.x = abs(z.x);\n",
+            FractalStep::AbsI   => "z.y = abs(z.y);\n",
+            FractalStep::Square => "z = cpx_sqr(z);\n",
+            FractalStep::Cube   => "z = cpx_cube(z);\n",
+            FractalStep::AddC   => "z = z + c;\n",
+        }).collect::<String>();
+
+        let source = source.replace("@IMPL@", &implementation);
+
         let shader = ShaderLoader::compile(&device.device, &source).unwrap();
 
         let vertex_buffer = device.device.create_buffer(&BufferDescriptor {
