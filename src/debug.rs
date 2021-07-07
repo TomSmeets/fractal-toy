@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::time::{Instant, SystemTime};
+use std::time::Instant;
 
 struct TimeEntry {
     dt_avrg: f32,

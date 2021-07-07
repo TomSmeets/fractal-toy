@@ -78,7 +78,7 @@ impl Gpu {
 
         let swap_chain_format = adapter.get_swap_chain_preferred_format(&surface).unwrap();
 
-        let mut device = GpuDevice {
+        let device = GpuDevice {
             surface,
             device,
             queue,
