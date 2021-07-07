@@ -7,11 +7,11 @@ use crate::util::*;
 use crate::viewport::Viewport;
 use crate::Image;
 
+pub mod compute_tile;
 mod draw_tiles;
 mod draw_ui;
 mod pipeline;
 mod swap_chain;
-pub mod compute_tile;
 
 use self::draw_tiles::DrawTiles;
 use self::draw_ui::DrawUI;
@@ -69,7 +69,7 @@ impl Gpu {
         let (device, queue) = pollster::block_on(adapter.request_device(
             &DeviceDescriptor {
                 label: None,
-                features: Features::empty(), // TODO: add appropiate features here?
+                features: Features::empty(), // TODO: add appropiate features here? SHADER_FLOAT64 does not work yet correctly
                 limits: Limits::default(),   // TODO: also set to whaterver we are using?
             },
             None,

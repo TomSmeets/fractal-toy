@@ -1,6 +1,6 @@
 use crate::asset_loader::AssetLoader;
-use crate::gpu::GpuDevice;
 use crate::gpu::compute_tile::ComputeTile;
+use crate::gpu::GpuDevice;
 use crate::tilemap::TilePos;
 use crate::util::*;
 use crate::Image;
@@ -21,7 +21,7 @@ pub struct TileBuilder {
 
 impl TileBuilder {
     pub fn new(gpu: Arc<GpuDevice>, asset_loader: &mut AssetLoader) -> TileBuilder {
-        let (req_send, req_recv)  = bounded::<(TilePos, V2)>(16);
+        let (req_send, req_recv) = bounded::<(TilePos, V2)>(16);
         let (tile_send, tile_recv) = bounded::<(TilePos, Image)>(16);
 
         for _ in 0..6 {
@@ -29,7 +29,7 @@ impl TileBuilder {
             let req_recv = req_recv.clone();
 
             let gpu_builder = ComputeTile::load(&gpu, asset_loader);
-            let gpu_device  = Arc::clone(&gpu);
+            let gpu_device = Arc::clone(&gpu);
             std::thread::spawn(move || {
                 while let Ok((pos, a)) = req_recv.recv() {
                     let img = if pos.z < 18 {
@@ -68,6 +68,27 @@ impl TileBuilder {
     }
 
     fn gen_tile(p: &TilePos, a: V2) -> Image {
+        fn cpx_sqr(z: V2) -> V2 {
+            V2 {
+                x: z.x * z.x - z.y * z.y,
+                y: 2.0 * z.x * z.y,
+            }
+        }
+
+        fn cpx_cube(z: V2) -> V2 {
+            V2 {
+                x: z.x * z.x * z.x - 3.0 * z.x * z.y * z.y,
+                y: 3.0 * z.x * z.x * z.y - z.y * z.y * z.y,
+            }
+        }
+
+        fn cpx_abs(z: V2) -> V2 {
+            V2 {
+                x: z.x.abs(),
+                y: z.y.abs(),
+            }
+        }
+
         // the sin() and log2() can be optimized
         let size = 256;
         let mut data = Vec::with_capacity(size as usize * size as usize * 4);
@@ -108,17 +129,8 @@ impl TileBuilder {
                 //     t = ITER_COUNT as f64 - 1.0;
                 // } else {
                 for i in 0..ITER_COUNT {
-                    // z = V2 {
-                    //     x: z.x * z.x * z.x - 3.0 * z.x * z.y * z.y + c.x,
-                    //     y: 3.0 * z.x * z.x * z.y - z.y * z.y * z.y + c.y,
-                    // };
-                    z = V2 {
-                        x: z.x * z.x - z.y * z.y + c.x,
-                        y: 2.0 * z.x * z.y + c.y,
-                    };
-
-                    // z.y = -z.y.abs();
-                    // z.x = z.x.abs();
+                    z = cpx_sqr(z);
+                    z = z + c;
 
                     let d = z.x * z.x + z.y * z.y;
                     if d > 256.0 {

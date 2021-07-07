@@ -1,6 +1,6 @@
 use crate::asset_loader::AssetLoader;
-use crate::gpu::GpuDevice;
 use crate::gpu::pipeline::ShaderLoader;
+use crate::gpu::GpuDevice;
 use crate::util::*;
 use crate::viewport::Viewport;
 use crate::Image;

@@ -4,13 +4,13 @@
 
 mod asset_loader;
 mod builder;
+mod debug;
 mod gpu;
 mod image;
 mod pack;
 mod tilemap;
 mod util;
 mod viewport;
-mod debug;
 
 use self::asset_loader::AssetLoader;
 use self::builder::TileBuilder;
@@ -20,12 +20,12 @@ use self::tilemap::TilePos;
 use self::util::*;
 use self::viewport::Viewport;
 
+use debug::Debug;
 use std::collections::BTreeMap;
 use std::process::Command;
 use std::time::Duration;
 use std::time::Instant;
 use std::time::SystemTime;
-use debug::Debug;
 use structopt::StructOpt;
 use winit::event::WindowEvent;
 use winit::event::{ElementState, Event, MouseButton, MouseScrollDelta};

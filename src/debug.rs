@@ -1,9 +1,9 @@
-use std::time::{Instant, SystemTime};
 use std::collections::BTreeMap;
+use std::time::{Instant, SystemTime};
 
 struct TimeEntry {
     dt_avrg: f32,
-    dt_max:  f32,
+    dt_max: f32,
 }
 
 pub struct Debug {
@@ -46,8 +46,10 @@ impl Debug {
 
         // TODO: this can be improved
         // fter 10 seconds reset
-        if self.reset_time > 180*10 {
-            for e in self.time_data.values_mut() { e.dt_max = 0.0; }
+        if self.reset_time > 180 * 10 {
+            for e in self.time_data.values_mut() {
+                e.dt_max = 0.0;
+            }
             self.reset_time = 0;
         }
     }
@@ -63,18 +65,25 @@ impl Debug {
         self.info.push_str("\n");
     }
 
-
     pub fn time(&mut self, name: &'static str) {
         let time = Instant::now();
         let dt = time - self.time;
         let dt = dt.as_micros() as u32;
         let dt = dt as f32;
 
-        let mut e = self.time_data.entry(self.time_name).or_insert(TimeEntry { dt_avrg: 0.0, dt_max: 0.0, });
+        let mut e = self.time_data.entry(self.time_name).or_insert(TimeEntry {
+            dt_avrg: 0.0,
+            dt_max: 0.0,
+        });
         e.dt_avrg = e.dt_avrg * 0.999 + dt as f32 * 0.001;
-        e.dt_max  = (e.dt_max).max(dt);
+        e.dt_max = (e.dt_max).max(dt);
 
-        self.time_str_next.push_str(&format!("{:6} max, {:6} avg, {}\n", e.dt_max.round(), e.dt_avrg.round(), self.time_name));
+        self.time_str_next.push_str(&format!(
+            "{:6} max, {:6} avg, {}\n",
+            e.dt_max.round(),
+            e.dt_avrg.round(),
+            self.time_name
+        ));
 
         self.time = time;
         self.time_name = name;

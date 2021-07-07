@@ -2,10 +2,10 @@ use crate::asset_loader::AssetLoader;
 use crate::gpu::GpuDevice;
 use crate::gpu::ShaderLoader;
 use crate::util::*;
-use wgpu::*;
-use crate::TilePos;
 use crate::Image;
+use crate::TilePos;
 use std::num::NonZeroU32;
+use wgpu::*;
 
 const TILE_SIZE: u32 = 256;
 
