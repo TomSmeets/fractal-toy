@@ -59,7 +59,6 @@ static COOL: &[FractalStep] = &[
     FractalStep::Square,
     FractalStep::AddC,
 
-    FractalStep::AbsR,
     FractalStep::Square,
     FractalStep::AddC,
 ];

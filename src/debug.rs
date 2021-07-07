@@ -36,7 +36,6 @@ impl Debug {
     }
 
     pub fn begin(&mut self) {
-        self.time("end");
         std::mem::swap(&mut self.out, &mut self.info);
         std::mem::swap(&mut self.time_str, &mut self.time_str_next);
         self.info.clear();
