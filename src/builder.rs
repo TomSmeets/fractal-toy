@@ -32,7 +32,7 @@ impl TileBuilder {
             let gpu_device = Arc::clone(&gpu);
             std::thread::spawn(move || {
                 while let Ok((pos, a)) = req_recv.recv() {
-                    let img = if pos.z < 18 {
+                    let img = if pos.z < 16 {
                         gpu_builder.build(&gpu_device, &pos)
                     } else {
                         Self::gen_tile(&pos, a)
