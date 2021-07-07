@@ -92,7 +92,7 @@ impl TileBuilder {
 
         // the sin() and log2() can be optimized
         let size = 256;
-        let mut data = Vec::with_capacity(size as usize * size as usize * 4);
+        let mut data = vec![0_u8; size as usize * size as usize * 4];
 
         let pos = p.square();
 
@@ -101,12 +101,14 @@ impl TileBuilder {
 
         let center = min * 0.5 + max * 0.5;
 
+        let mut values     = Vec::with_capacity(size as usize * size as usize);
+
         // img -> iter -> type
         // or
         // iter -> type -> img?
         for y in 0..size {
             for x in 0..size {
-                let border = (y == 0 || y == size - 1) || (x == 0 || x == size - 1);
+                let i = (y*size + x) as u32;
 
                 let px = (x as f64 + 0.5) / (size) as f64;
                 let py = (y as f64 + 0.5) / (size) as f64;
@@ -114,57 +116,58 @@ impl TileBuilder {
                 let x = min.x as f64 * (1.0 - px) + max.x as f64 * px;
                 let y = min.y as f64 * (1.0 - py) + max.y as f64 * py;
 
-                let pi3 = std::f64::consts::FRAC_PI_3;
+                let c: V2<f64> = V2::new(x, y);
+                let z: V2<f64> = V2::zero();
+                values.push((i, c, z));
+            }
+        }
 
-                let c = V2::new(x, y);
-
-                let mut z: V2<f64> = V2::zero();
-                let mut t = 0.0;
-
-                for i in 0..ITER_COUNT {
-                    for s in crate::COOL {
-                        // NOTE: THIS IS VERY SLOW, how do we make it better?
-                        // on the gpu we can compile the pogram, but on the cpu it is harder
-                        // we could do each step for all pixels every time, but i don't  think that will be a lot
-                        // quicker
-                        match s {
-                            FractalStep::AbsR => z.x = z.x.abs(),
-                            FractalStep::AbsI => z.y = -z.y.abs(),
-                            FractalStep::Square => z = cpx_sqr(z),
-                            FractalStep::Cube => z = cpx_cube(z),
-                            FractalStep::AddC => {
-                                z = z + c;
-                                t += 1.0;
-                            },
+        let mut t = 0.0;
+        for _ in 0..ITER_COUNT {
+            for s in crate::COOL {
+                let it = values.iter_mut();
+                match s {
+                    FractalStep::AbsR   => for (_, _, z) in it { z.x = z.x.abs()  },
+                    FractalStep::AbsI   => for (_, _, z) in it { z.y = -z.y.abs() },
+                    FractalStep::Square => for (_, _, z) in it { *z = cpx_sqr(*z)   },
+                    FractalStep::Cube   => for (_, _, z) in it { *z = cpx_cube(*z)  },
+                    FractalStep::AddC   => {
+                        for (_, c, z) in values.iter_mut() {
+                            *z = *z + *c;
                         }
-                    }
 
-                    let d = z.x * z.x + z.y * z.y;
-                    if d > 256.0 {
-                        t += -d.log2().log2() + 4.0;
-                        break;
-                    }
+                        t += 1.0;
+                    },
                 }
-                // }
+            }
 
-                // if border {
-                //     t = 1.0
-                // }
+            for ii in (0..values.len()).rev() {
+                let (i, c, z) = unsafe { values.get_unchecked(ii) };
+                let i = *i;
+                let d = z.x * z.x + z.y * z.y;
 
-                let a = (1.0 - (t / (1024.0)).powi(2)).min(1.0).max(0.0);
-                let t = t * 0.005;
-                let r = a * ((0.5 - t) * 3.0 * pi3 + pi3 * 0.0).sin();
-                let g = a * ((0.5 - t) * 3.0 * pi3 + pi3 * 1.0).sin();
-                let b = a * ((0.5 - t) * 3.0 * pi3 + pi3 * 2.0).sin();
+                if d > 256.0 {
+                    let t = t - d.log2().log2() + 4.0;
 
-                let r = r * r;
-                let g = g * g;
-                let b = b * b;
+                    let pi3 = std::f64::consts::FRAC_PI_3;
+                    let a = (1.0 - (t / (1024.0)).powi(2)).min(1.0).max(0.0);
+                    let t = t * 0.005;
+                    let r = a * ((0.5 - t) * 3.0 * pi3 + pi3 * 0.0).sin();
+                    let g = a * ((0.5 - t) * 3.0 * pi3 + pi3 * 1.0).sin();
+                    let b = a * ((0.5 - t) * 3.0 * pi3 + pi3 * 2.0).sin();
 
-                data.push((r * 255.0) as _);
-                data.push((g * 255.0) as _);
-                data.push((b * 255.0) as _);
-                data.push(255);
+                    let r = r * r;
+                    let g = g * g;
+                    let b = b * b;
+
+                    unsafe {
+                        *data.get_unchecked_mut(i as usize * 4 + 0) = (r * 255.0) as _;
+                        *data.get_unchecked_mut(i as usize * 4 + 1) = (g * 255.0) as _;
+                        *data.get_unchecked_mut(i as usize * 4 + 2) = (b * 255.0) as _;
+                        *data.get_unchecked_mut(i as usize * 4 + 3) = 255;
+                    }
+                    values.swap_remove(ii);
+                }
             }
         }
 
