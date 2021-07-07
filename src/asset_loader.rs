@@ -58,6 +58,10 @@ impl AssetLoader {
         }
     }
 
+    pub fn text_file(&mut self, path: &str) -> String {
+        std::fs::read_to_string(path).unwrap()
+    }
+
     pub fn image(&mut self, path: &str) -> Image {
         let time = std::fs::metadata(path).unwrap().modified().unwrap();
 

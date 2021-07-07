@@ -62,14 +62,15 @@ pub struct State {
 
 impl State {
     pub fn init(window: &Window) -> Self {
-        let gpu = Gpu::init(window);
-        let builder = TileBuilder::new(gpu.device());
+        let mut asset = AssetLoader::new();
+        let gpu = Gpu::init(window, &mut asset);
+        let builder = TileBuilder::new(gpu.device(), &mut asset);
         State {
             debug: Debug::new(),
             gpu,
             builder,
             viewport: Viewport::new(),
-            asset: AssetLoader::new(),
+            asset,
         }
     }
 

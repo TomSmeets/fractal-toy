@@ -1,3 +1,4 @@
+use crate::asset_loader::AssetLoader;
 use crate::gpu::GpuDevice;
 use crate::gpu::compute_tile::ComputeTile;
 use crate::tilemap::TilePos;
@@ -19,7 +20,7 @@ pub struct TileBuilder {
 }
 
 impl TileBuilder {
-    pub fn new(gpu: Arc<GpuDevice>) -> TileBuilder {
+    pub fn new(gpu: Arc<GpuDevice>, asset_loader: &mut AssetLoader) -> TileBuilder {
         let (req_send, req_recv)  = bounded::<(TilePos, V2)>(16);
         let (tile_send, tile_recv) = bounded::<(TilePos, Image)>(16);
 
@@ -27,7 +28,7 @@ impl TileBuilder {
             let tile_send = tile_send.clone();
             let req_recv = req_recv.clone();
 
-            let gpu_builder = ComputeTile::load(&gpu);
+            let gpu_builder = ComputeTile::load(&gpu, asset_loader);
             let gpu_device  = Arc::clone(&gpu);
             std::thread::spawn(move || {
                 while let Ok((pos, a)) = req_recv.recv() {

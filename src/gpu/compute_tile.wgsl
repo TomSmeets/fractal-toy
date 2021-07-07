@@ -1,30 +1,50 @@
 struct VertexOutput {
     [[builtin(position)]] pos: vec4<f32>;
-    [[location(0)]] uv: vec2<f32>;
+    [[location(0)]] uv: vec2<REAL>;
 };
 
-fn mandel(p: vec2<f32>) -> f32 {
-    var z: vec2<f32> = p;
+fn cpx_sqr(z: vec2<REAL>) -> vec2<REAL> {
+    return vec2<REAL>(
+        z.x*z.x - z.y*z.y,
+        z.x*z.y*REAL(2.0)
+    );
+}
 
-    var i: f32 = 0.0;
+fn cpx_cube(z: vec2<REAL>) -> vec2<REAL> {
+    return vec2<REAL>(
+        z.x*z.x*z.x - REAL(3.0)*z.x*z.y*z.y,
+        REAL(3.0)*z.x*z.x*z.y - z.y*z.y*z.y
+    );
+}
+
+fn cpx_abs(z: vec2<REAL>) -> vec2<REAL> {
+    return vec2<REAL>(
+        abs(z.x),
+        abs(z.y),
+    );
+}
+
+fn mandel(p: vec2<REAL>) -> REAL {
+    var z: vec2<REAL> = p;
+
+    var i: REAL = REAL(0.0);
 
     loop {
-        if (i > 1024.0) {
+        if (i > REAL(1024.0)) {
             break;
         }
 
-        z = vec2<f32>(
-            z.x*z.x - z.y*z.y + p.x,
-            z.x*z.y*2.0       + p.y
-        );
+        z = cpx_cube(z);
+        z = cpx_abs(z);
+        z = z + p;
 
         let d = z.x*z.x + z.y*z.y;
-        if (d > 256.0) {
-            i = i - log2(log2(d)) + 4.0;
+        if (d > REAL(256.0)) {
+            i = i - log2(log2(d)) + REAL(4.0);
             break;
         }
 
-        i = i + 1.0;
+        i = i + REAL(1.0);
     }
 
     return i;
@@ -37,13 +57,14 @@ fn vs_main(
 ) -> VertexOutput {
     var out: VertexOutput;
     out.pos = vec4<f32>(pos, 0.0, 1.0);
-    out.uv  = uv;
+    out.uv.x  = REAL(uv.x);
+    out.uv.y  = REAL(uv.y);
     return out;
 }
 
 [[stage(fragment)]]
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
-    let t0 = mandel(in.uv);
+    let t0 = f32(mandel(in.uv));
 
     let pi = 3.14159265359;
     let a = (1.0 - ((t0*t0) / (1024.0*1024.0)));

@@ -1,3 +1,4 @@
+use crate::asset_loader::AssetLoader;
 use crate::gpu::GpuDevice;
 use crate::gpu::ShaderLoader;
 use crate::util::*;
@@ -21,9 +22,10 @@ pub struct ComputeTile {
 }
 
 impl ComputeTile {
-    pub fn load(device: &GpuDevice) -> Self {
-        let mut loader = ShaderLoader::new();
-        let (shader, _) = loader.load(&device.device, "src/gpu/compute_tile.wgsl");
+    pub fn load(device: &GpuDevice, asset_loader: &mut AssetLoader) -> Self {
+        let source = asset_loader.text_file("src/gpu/compute_tile.wgsl");
+        let source = source.replace("REAL", "f32");
+        let shader = ShaderLoader::compile(&device.device, &source).unwrap();
 
         let vertex_buffer = device.device.create_buffer(&BufferDescriptor {
             label: None,

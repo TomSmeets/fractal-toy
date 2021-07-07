@@ -13,22 +13,18 @@ mod pipeline;
 mod swap_chain;
 pub mod compute_tile;
 
-use self::compute_tile::ComputeTile;
 use self::draw_tiles::DrawTiles;
 use self::draw_ui::DrawUI;
 use self::pipeline::ShaderLoader;
 use self::swap_chain::SwapChain;
+use crate::asset_loader::AssetLoader;
 use std::sync::Arc;
 
 pub struct Gpu {
     device: Arc<GpuDevice>,
     swap_chain: Option<SwapChain>,
-    draw_tiles: Option<DrawTiles>,
+    draw_tiles: DrawTiles,
     draw_ui: DrawUI,
-    compute_tile: ComputeTile,
-
-    // move to draw_tiles
-    shader: ShaderLoader,
 }
 
 /// This struct should contain whatever the gpu should show
@@ -52,7 +48,7 @@ pub struct GpuDevice {
 }
 
 impl Gpu {
-    pub fn init(window: &Window) -> Gpu {
+    pub fn init(window: &Window, asset_loader: &mut AssetLoader) -> Gpu {
         // NOTE: does not have to be kept alive
         let instance = Instance::new(BackendBit::all());
 
@@ -89,26 +85,19 @@ impl Gpu {
             swap_chain_format,
         };
 
-        let draw_ui = DrawUI::load(&mut device);
-
-        let compute_tile = ComputeTile::load(&mut device);
+        let draw_ui = DrawUI::load(&device);
+        let draw_tiles = DrawTiles::load(&device, asset_loader);
 
         Gpu {
             device: Arc::new(device),
             swap_chain: None,
-            draw_tiles: None,
+            draw_tiles,
             draw_ui,
-            compute_tile,
-            shader: ShaderLoader::new(),
         }
     }
 
     pub fn device(&self) -> Arc<GpuDevice> {
         Arc::clone(&self.device)
-    }
-
-    pub fn build(&mut self, pos: &TilePos) -> Image {
-        self.compute_tile.build(&self.device, pos)
     }
 
     pub fn blit(&mut self, rect: &Rect, img: &Image) {
@@ -117,9 +106,7 @@ impl Gpu {
 
     pub fn tile(&mut self, vp: &Viewport, p: &TilePos, img: &Image) {
         let rect = vp.world_to_screen_rect(&p.square());
-        if let Some(d) = &mut self.draw_tiles {
-            d.blit(&self.device, &rect, img);
-        }
+        self.draw_tiles.blit(&self.device, &rect, img);
     }
 
     #[rustfmt::skip]
@@ -164,17 +151,9 @@ impl Gpu {
             break (swap_chain, frame);
         };
 
-        let (shader, shader_changed) = self.shader.load(&device.device, "src/gpu/shader.wgsl");
-
-        if shader_changed {
-            // TODO: this is too late now, fix it
-            self.draw_tiles = None;
-        }
-
         debug.time("draw_tiles");
-        let draw_tiles = self.draw_tiles.get_or_insert_with(|| DrawTiles::load(device, shader));
-        let vtx_count = draw_tiles.vertex_list.len();
-        draw_tiles.render(device, viewport);
+        let vtx_count = self.draw_tiles.vertex_list.len();
+        self.draw_tiles.render(device, viewport);
 
         debug.time("draw_ui");
         let ui_vtx_count = self.draw_ui.vertex_list.len();
@@ -201,9 +180,9 @@ impl Gpu {
             });
 
             // rpass can be reused, but to what extend? multiple pipelines?
-            rpass.set_pipeline(&draw_tiles.pipeline);
-            rpass.set_vertex_buffer(0, draw_tiles.vertex_buffer.slice(..));
-            rpass.set_bind_group(0, &draw_tiles.bind_group, &[]);
+            rpass.set_pipeline(&self.draw_tiles.pipeline);
+            rpass.set_vertex_buffer(0, self.draw_tiles.vertex_buffer.slice(..));
+            rpass.set_bind_group(0, &self.draw_tiles.bind_group, &[]);
             rpass.draw(0..vtx_count as u32, 0..1);
 
             // Draw ui with texture atlas

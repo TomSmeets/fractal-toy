@@ -1,4 +1,6 @@
+use crate::asset_loader::AssetLoader;
 use crate::gpu::GpuDevice;
+use crate::gpu::pipeline::ShaderLoader;
 use crate::util::*;
 use crate::viewport::Viewport;
 use crate::Image;
@@ -25,7 +27,10 @@ pub struct DrawTiles {
 }
 
 impl DrawTiles {
-    pub fn load(device: &GpuDevice, shader: &ShaderModule) -> DrawTiles {
+    pub fn load(device: &GpuDevice, fs: &mut AssetLoader) -> DrawTiles {
+        let source = fs.text_file("src/gpu/shader.wgsl");
+        let shader = ShaderLoader::compile(&device.device, &source).unwrap();
+
         let vertex_buffer = device.device.create_buffer(&BufferDescriptor {
             label: None,
             size: std::mem::size_of::<Vertex>() as u64 * MAX_VERTS,

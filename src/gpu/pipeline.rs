@@ -18,15 +18,7 @@ impl ShaderLoader {
         }
     }
 
-    pub fn load(&mut self, device: &Device, path: &str) -> (&ShaderModule, bool) {
-        let path = PathBuf::from(path);
-        let mtime = path.metadata().unwrap().modified().unwrap();
-
-        if self.module.is_none() || mtime != self.mtime || self.path != path {
-            let source = std::fs::read_to_string(&path).unwrap();
-            self.mtime = mtime;
-            self.path = path;
-
+    pub fn compile(device: &Device, source: &str) -> Option<ShaderModule> {
             // NOTE: a bit sad, wgpu-rs does not directly expose shader errors here :(
             // We have to do this until error scopes are implemented in wgpu-rs,
             // NOTE: https://github.com/gfx-rs/wgpu-rs/blob/3634abb0d560a2906d20c74efee9c2f16afb2503/src/backend/direct.rs#L818
@@ -38,7 +30,7 @@ impl ShaderLoader {
 
             let shader = device.create_shader_module(&ShaderModuleDescriptor {
                 label: None,
-                source: ShaderSource::Wgsl(Cow::Owned(source)),
+                source: ShaderSource::Wgsl(Cow::Borrowed(source)),
                 flags: ShaderFlags::all(),
             });
 
@@ -46,7 +38,13 @@ impl ShaderLoader {
                 panic!("{:#?}", e);
             });
 
+            // try to revcieve an error
             match rx.try_recv() {
+                // we failed to recieve the error,
+                // so this is good actually
+                Err(_) => Some(shader),
+
+                // a compilation error occured :/
                 Ok(e) => match e {
                     Error::ValidationError {
                         description,
@@ -55,14 +53,28 @@ impl ShaderLoader {
                         eprintln!("Shader Validation Error");
                         dbg!(source);
                         eprintln!("{}", description);
+                        None
                     },
                     e => {
                         dbg!(e);
+                        None
                     },
                 },
-                Err(_) => {
-                    self.module = Some(shader);
-                },
+            }
+    }
+
+    pub fn load(&mut self, device: &Device, path: &str) -> (&ShaderModule, bool) {
+        let path = PathBuf::from(path);
+        let mtime = path.metadata().unwrap().modified().unwrap();
+
+        if self.module.is_none() || mtime != self.mtime || self.path != path {
+            let source = std::fs::read_to_string(&path).unwrap();
+            self.mtime = mtime;
+            self.path = path;
+
+            match Self::compile(device, &source) {
+                Some(module) => self.module = Some(module),
+                None => (),
             };
 
             (self.module.as_ref().unwrap(), true)
