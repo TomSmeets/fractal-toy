@@ -31,7 +31,7 @@ fn mandel(c: vec2<REAL>) -> REAL {
     var t: REAL = REAL(0.0);
 
     loop {
-        if (i > 1024u) {
+        if (i >= 1024u) {
             break;
         }
 
@@ -77,9 +77,11 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     let g = g * g;
     let b = b * b;
 
+    // FIXME: Gamma correction, are we in srgb or linear space now?
     let r = r * r;
     let g = g * g;
     let b = b * b;
 
+    // FIXME: images are RGBA, but our target is BGRA, so we swap A and R here to make it work kind of
     return vec4<f32>(b, g, r, 1.0);
 }

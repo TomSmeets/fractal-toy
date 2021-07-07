@@ -118,17 +118,6 @@ impl TileBuilder {
                 let mut z: V2<f64> = V2::zero();
                 let mut t = 0.0;
 
-                let c2 = c.x * c.x + c.y * c.y;
-
-                // skip computation inside M1 - http://iquilezles.org/www/articles/mset_1bulb/mset1bulb.htm
-                let in_m1 = 256.0 * c2 * c2 - 96.0 * c2 + 32.0 * c.x - 3.0 < 0.0;
-
-                // skip computation inside M2 - http://iquilezles.org/www/articles/mset_2bulb/mset2bulb.htm
-                let in_m2 = 16.0 * (c2 + 2.0 * c.x + 1.0) - 1.0 < 0.0;
-
-                // if in_m1 || in_m2 {
-                //     t = ITER_COUNT as f64 - 1.0;
-                // } else {
                 for i in 0..ITER_COUNT {
                     for s in crate::COOL {
                         match s {
