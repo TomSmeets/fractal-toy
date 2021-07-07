@@ -27,10 +27,11 @@ fn cpx_abs(z: vec2<REAL>) -> vec2<REAL> {
 fn mandel(c: vec2<REAL>) -> REAL {
     var z: vec2<REAL> = vec2<REAL>(0.0, 0.0);
 
-    var i: REAL = REAL(0.0);
+    var i: u32 = 0u;
+    var t: REAL = REAL(0.0);
 
     loop {
-        if (i > REAL(1024.0)) {
+        if (i > 1024u) {
             break;
         }
 
@@ -38,14 +39,14 @@ fn mandel(c: vec2<REAL>) -> REAL {
 
         let d = z.x*z.x + z.y*z.y;
         if (d > REAL(256.0)) {
-            i = i - log2(log2(d)) + REAL(4.0);
+            t = t - log2(log2(d)) + REAL(4.0);
             break;
         }
 
-        i = i + REAL(1.0);
+        i = i + 1u;
     }
 
-    return i;
+    return t;
 }
 
 [[stage(vertex)]]

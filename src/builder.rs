@@ -133,10 +133,13 @@ impl TileBuilder {
                     for s in crate::COOL {
                         match s {
                             FractalStep::AbsR => z.x = z.x.abs(),
-                            FractalStep::AbsI => z.y = z.y.abs(),
+                            FractalStep::AbsI => z.y = -z.y.abs(),
                             FractalStep::Square => z = cpx_sqr(z),
                             FractalStep::Cube => z = cpx_cube(z),
-                            FractalStep::AddC => z = z + c,
+                            FractalStep::AddC => {
+                                z = z + c;
+                                t += 1.0;
+                            },
                         }
                     }
 
@@ -145,7 +148,6 @@ impl TileBuilder {
                         t += -d.log2().log2() + 4.0;
                         break;
                     }
-                    t += 1.0;
                 }
                 // }
 

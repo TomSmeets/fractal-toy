@@ -42,14 +42,18 @@ static BURNINGSHIP: &[FractalStep] = &[
     FractalStep::AddC,
 ];
 
-static COOL: &[FractalStep] = &[
-    FractalStep::Cube,
+static SNAIL: &[FractalStep] = &[
+    // Mandelbrot
+    FractalStep::Square,
     FractalStep::AddC,
+    // ship
     FractalStep::AbsI,
     FractalStep::AbsR,
     FractalStep::Square,
     FractalStep::AddC,
 ];
+
+static COOL: &[FractalStep] = SNAIL;
 
 #[derive(Eq, PartialEq)]
 pub enum FractalStep {
@@ -62,7 +66,7 @@ pub enum FractalStep {
     /// z = |real(z)| + imag(z) * i
     AbsR,
 
-    /// z = real(z) + |imag(z)| * i
+    /// z = real(z) - |imag(z)| * i
     AbsI,
 
     ///  z = z + c

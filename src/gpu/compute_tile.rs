@@ -32,10 +32,10 @@ impl ComputeTile {
 
         let implementation = alg.iter().map(|x| match x {
             FractalStep::AbsR   => "z.x = abs(z.x);\n",
-            FractalStep::AbsI   => "z.y = abs(z.y);\n",
+            FractalStep::AbsI   => "z.y = -abs(z.y);\n",
             FractalStep::Square => "z = cpx_sqr(z);\n",
             FractalStep::Cube   => "z = cpx_cube(z);\n",
-            FractalStep::AddC   => "z = z + c;\n",
+            FractalStep::AddC   => "z = z + c;\nt = t + 1.0;\n",
         }).collect::<String>();
 
         let source = source.replace("@IMPL@", &implementation);
