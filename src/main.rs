@@ -63,7 +63,15 @@ static COOL: &[FractalStep] = &[
     FractalStep::AddC,
 ];
 
-#[derive(Eq, PartialEq)]
+static STEP_VALUES: &[FractalStep] = &[
+    FractalStep::Square,
+    FractalStep::Cube,
+    FractalStep::AddC,
+    FractalStep::AbsR,
+    FractalStep::AbsI,
+];
+
+#[derive(Eq, PartialEq, Clone, Copy)]
 pub enum FractalStep {
     /// z = z^2
     Square,
@@ -200,20 +208,35 @@ impl State {
         self.debug.print(&Self::distance(self.viewport.scale));
         self.asset.text(&mut self.gpu, &self.debug.draw());
 
-        for (i, t) in COOL.iter().enumerate() {
-            let b = 10.0;
-            let w = 100.0;
-            let s = V2::new(b, self.viewport.size_in_pixels.y - w - b);
-            let r = Rect::corner_size(s + V2::new((w + b) * i as f64, 0.0), V2::new(w, w));
-            let img = self.asset.image(match t {
+        fn step_img(s: FractalStep) -> &'static str{
+            match s {
                 FractalStep::Square => "res/mod_2.png",
                 FractalStep::Cube => "res/mod_3.png",
                 FractalStep::AbsR => "res/mod_abs_r.png",
                 FractalStep::AbsI => "res/mod_abs_i.png",
                 FractalStep::AddC => "res/mod_c.png",
-            });
-            self.gpu.blit(&r, &img);
-       }
+            }
+        }
+
+        {
+            let b = 10.0;
+            let w = 100.0;
+            // Pick modules from these
+            for (i, t) in STEP_VALUES.iter().enumerate() {
+                let s = V2::new(b, self.viewport.size_in_pixels.y - (w + b) * 2.0);
+                let r = Rect::corner_size(s + V2::new((w + b) * i as f64, 0.0), V2::new(w, w));
+                let img = self.asset.image(step_img(*t));
+                self.gpu.blit(&r, &img);
+            }
+
+            // and drop them here
+            for (i, t) in COOL.iter().enumerate() {
+                let s = V2::new(b, self.viewport.size_in_pixels.y - w - b);
+                let r = Rect::corner_size(s + V2::new((w + b) * i as f64, 0.0), V2::new(w, w));
+                let img = self.asset.image(step_img(*t));
+                self.gpu.blit(&r, &img);
+            }
+        }
 
         self.debug.time("gpu render");
         self.gpu.render(window, &self.viewport, &mut self.debug);
