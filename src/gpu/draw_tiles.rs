@@ -27,6 +27,7 @@ pub struct DrawTiles {
 }
 
 impl DrawTiles {
+    #[rustfmt::skip]
     pub fn load(device: &GpuDevice, fs: &mut AssetLoader) -> DrawTiles {
         let source = fs.text_file("src/gpu/shader.wgsl");
         let shader = ShaderLoader::compile(&device.device, &source).unwrap();
@@ -179,6 +180,7 @@ impl DrawTiles {
         }
     }
 
+    #[rustfmt::skip]
     pub fn blit(&mut self, device: &GpuDevice, rect: &Rect, img: &Image) {
         let lx = rect.corner_min().x as f32;
         let ly = rect.corner_min().y as f32;

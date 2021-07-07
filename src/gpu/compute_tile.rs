@@ -22,6 +22,7 @@ pub struct ComputeTile {
 }
 
 impl ComputeTile {
+    #[rustfmt::skip]
     pub fn load(device: &GpuDevice, asset_loader: &mut AssetLoader) -> Self {
         let source = asset_loader.text_file("src/gpu/compute_tile.wgsl");
         let source = source.replace("REAL", "f32");
@@ -112,6 +113,7 @@ impl ComputeTile {
         }
     }
 
+    #[rustfmt::skip]
     pub fn build(&self, device: &GpuDevice, p: &TilePos) -> Image {
         let rect = p.square();
 

@@ -28,6 +28,7 @@ pub struct DrawUI {
 }
 
 impl DrawUI {
+    #[rustfmt::skip]
     pub fn load(device: &GpuDevice) -> Self {
         let mut loader = ShaderLoader::new();
         let (shader, _) = loader.load(&device.device, "src/gpu/draw_ui.wgsl");
@@ -184,6 +185,7 @@ impl DrawUI {
         }
     }
 
+    #[rustfmt::skip]
     pub fn blit(&mut self, device: &GpuDevice, rect: &Rect, img: &Image) {
         let lx = rect.corner_min().x as f32;
         let ly = rect.corner_min().y as f32;

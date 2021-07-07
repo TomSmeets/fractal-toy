@@ -274,18 +274,18 @@ pub fn main() {
                     // check how accurate we actually are
                     // TODO: extract to timing struct
                     // if config.debug {
-                        let dt_frame = current_time - last_frame_time;
-                        let dt_behind = current_time - next_frame_time;
-                        let dt_update = Instant::now() - current_time;
-                        let rate = format!(
-                            "{:.1} Hz\nframe {:6?} µs, update {:6} µs, behind {:2?} µs",
-                            1.0 / dt_frame.as_secs_f32(),
-                            dt_frame.as_micros(),
-                            dt_update.as_micros(),
-                            dt_behind.as_micros()
-                        );
-                        state.debug.print(&rate);
-                        last_frame_time = current_time;
+                    let dt_frame = current_time - last_frame_time;
+                    let dt_behind = current_time - next_frame_time;
+                    let dt_update = Instant::now() - current_time;
+                    let rate = format!(
+                        "{:.1} Hz\nframe {:6?} µs, update {:6} µs, behind {:2?} µs",
+                        1.0 / dt_frame.as_secs_f32(),
+                        dt_frame.as_micros(),
+                        dt_update.as_micros(),
+                        dt_behind.as_micros()
+                    );
+                    state.debug.print(&rate);
+                    last_frame_time = current_time;
                     // }
 
                     while next_frame_time < current_time {
