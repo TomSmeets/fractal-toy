@@ -224,10 +224,8 @@ impl DrawUI {
             block
         });
 
-        // TODO: this is not good ofcourse
         let uv_lx = block.pos.x as f32 / ATLAS_SIZE as f32;
         let uv_ly = block.pos.y as f32 / ATLAS_SIZE as f32;
-
         let uv_hx = (block.pos.x + img.size().x as i32) as f32 / ATLAS_SIZE as f32;
         let uv_hy = (block.pos.y + img.size().y as i32) as f32 / ATLAS_SIZE as f32;
 

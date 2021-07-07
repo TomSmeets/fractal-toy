@@ -15,6 +15,7 @@ pub struct Debug {
     time_name: &'static str,
     time: Instant,
 
+    reset_time: u32,
 
     time_data: BTreeMap<&'static str, TimeEntry>,
 }
@@ -30,6 +31,7 @@ impl Debug {
             time_str_next: String::new(),
             time_name: "?",
             time: Instant::now(),
+            reset_time: 0,
         }
     }
 
@@ -39,6 +41,15 @@ impl Debug {
         std::mem::swap(&mut self.time_str, &mut self.time_str_next);
         self.info.clear();
         self.time_str_next.clear();
+
+        self.reset_time += 1;
+
+        // TODO: this can be improved
+        // fter 10 seconds reset
+        if self.reset_time > 180*10 {
+            for e in self.time_data.values_mut() { e.dt_max = 0.0; }
+            self.reset_time = 0;
+        }
     }
 
     pub fn draw(&mut self) -> String {
