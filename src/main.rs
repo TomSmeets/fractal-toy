@@ -147,6 +147,7 @@ impl State {
         }
 
         // submit
+        self.debug.time("debug text");
         self.debug.print(&Self::distance(self.viewport.scale));
         self.asset.text(&mut self.gpu, &self.debug.draw());
 

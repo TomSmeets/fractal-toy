@@ -211,6 +211,10 @@ impl DrawTiles {
 
                 // upload image
                 eprintln!("upload: [{}] = {}", ix, img.id());
+
+                // this is still slow for some reason
+                // Only while building gpu tiles, so either we build the tiles  too quickly
+                // or the queue is overused and blocking here
                 device.queue.write_texture(
                     ImageCopyTexture {
                         texture: &self.texture,
