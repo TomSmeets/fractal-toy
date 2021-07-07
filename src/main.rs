@@ -120,7 +120,7 @@ impl State {
 
     /// always called at regular intervals
     pub fn update(&mut self, window: &Window, input: &Input, dt: f32) {
-
+        self.debug.time("viewport");
         // viewport stuff
         self.viewport.size(input.resolution);
         self.viewport
@@ -132,11 +132,13 @@ impl State {
 
         self.viewport.update(dt as f64);
 
+        self.debug.time("build tiles");
         // which tiles to build
         for p in self.viewport.get_pos_all(1) {
             self.builder.tile(&p);
         }
 
+        self.debug.time("upload gpu tiles");
         // which tiles to draw
         for p in self.viewport.get_pos_all(0) {
             if let Some(img) = self.builder.tile(&p) {
@@ -146,10 +148,12 @@ impl State {
 
         // submit
         self.debug.print(&Self::distance(self.viewport.scale));
-        self.asset.text(&mut self.gpu, self.debug.draw());
-        self.debug.begin();
+        self.asset.text(&mut self.gpu, &self.debug.draw());
 
-        self.gpu.render(window, &self.viewport);
+        self.debug.time("gpu render");
+        self.gpu.render(window, &self.viewport, &mut self.debug);
+
+        self.debug.time("builder update");
         self.builder.update();
     }
 }
@@ -259,7 +263,10 @@ pub fn main() {
                 // NOTE: if it was a while loop it would loop forever if we couldent keep up
                 // now it still requests an instaint update, but gives the os some cpu time
                 if next_frame_time <= current_time {
+                    state.debug.begin();
+                    state.debug.time("state.update (start)");
                     state.update(&window, &input, target_dt);
+                    state.debug.time("state.update (end)");
                     input.mouse_scroll = 0.0;
 
                     // check how accurate we actually are

@@ -1,6 +1,7 @@
 use wgpu::*;
 use winit::window::Window;
 
+use crate::debug::Debug;
 use crate::tilemap::TilePos;
 use crate::util::*;
 use crate::viewport::Viewport;
@@ -122,7 +123,7 @@ impl Gpu {
     }
 
     #[rustfmt::skip]
-    pub fn render(&mut self, window: &Window, viewport: &Viewport) {
+    pub fn render(&mut self, window: &Window, viewport: &Viewport, debug: &mut Debug) {
         let device = &self.device;
 
         let (swap_chain, frame) = loop {
@@ -170,10 +171,12 @@ impl Gpu {
             self.draw_tiles = None;
         }
 
+        debug.time("draw_tiles");
         let draw_tiles = self.draw_tiles.get_or_insert_with(|| DrawTiles::load(device, shader));
         let vtx_count = draw_tiles.vertex_list.len();
         draw_tiles.render(device, viewport);
 
+        debug.time("draw_ui");
         let ui_vtx_count = self.draw_ui.vertex_list.len();
         self.draw_ui.render(device, viewport);
 
@@ -210,6 +213,7 @@ impl Gpu {
             rpass.draw(0..ui_vtx_count as u32, 0..1);
         }
 
+        debug.time("submit");
         device.queue.submit(Some(encoder.finish()));
 
     }
