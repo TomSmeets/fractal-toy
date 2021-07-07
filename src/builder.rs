@@ -101,6 +101,9 @@ impl TileBuilder {
 
         let center = min * 0.5 + max * 0.5;
 
+        // img -> iter -> type
+        // or
+        // iter -> type -> img?
         for y in 0..size {
             for x in 0..size {
                 let border = (y == 0 || y == size - 1) || (x == 0 || x == size - 1);
@@ -120,6 +123,10 @@ impl TileBuilder {
 
                 for i in 0..ITER_COUNT {
                     for s in crate::COOL {
+                        // NOTE: THIS IS VERY SLOW, how do we make it better?
+                        // on the gpu we can compile the pogram, but on the cpu it is harder
+                        // we could do each step for all pixels every time, but i don't  think that will be a lot
+                        // quicker
                         match s {
                             FractalStep::AbsR => z.x = z.x.abs(),
                             FractalStep::AbsI => z.y = -z.y.abs(),

@@ -53,7 +53,16 @@ static SNAIL: &[FractalStep] = &[
     FractalStep::AddC,
 ];
 
-static COOL: &[FractalStep] = SNAIL;
+static COOL: &[FractalStep] = &[
+    FractalStep::AbsI,
+    FractalStep::AbsR,
+    FractalStep::Square,
+    FractalStep::AddC,
+
+    FractalStep::AbsR,
+    FractalStep::Square,
+    FractalStep::AddC,
+];
 
 #[derive(Eq, PartialEq)]
 pub enum FractalStep {
