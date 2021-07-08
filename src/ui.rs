@@ -95,6 +95,6 @@ impl UI {
         self.id += 1;
         self.pos.x += self.w + self.b*2.0;
 
-        true
+        is_active
     }
 }
