@@ -119,6 +119,7 @@ pub struct State {
     builder: TileBuilder,
     asset: AssetLoader,
     debug: Debug,
+    ui: UI,
 
     // actual state that is relevant
     viewport: Viewport,
@@ -135,6 +136,7 @@ impl State {
             builder,
             viewport: Viewport::new(),
             asset,
+            ui: UI::new(),
         }
     }
 
@@ -188,13 +190,21 @@ impl State {
         self.debug.time("viewport");
         // viewport stuff
         self.viewport.size(input.resolution);
-        self.viewport.zoom_at(input.mouse_scroll as f64, input.mouse);
 
-        if input.mouse_down {
-            self.viewport.drag(input.mouse);
+        self.ui.begin(self.viewport.size_in_pixels);
+        self.ui.mouse(input.mouse.map(|x| x as _));
+
+        if !self.ui.has_input() {
+            self.viewport.zoom_at(input.mouse_scroll as f64, input.mouse);
+
+            if input.mouse_down {
+                self.viewport.drag(input.mouse);
+            }
         }
 
         self.viewport.update(dt as f64);
+
+
 
         self.debug.time("build tiles");
         // which tiles to build
@@ -227,22 +237,18 @@ impl State {
                 }
             }
 
-            let mut ui = UI::new();
-            ui.mouse(input.mouse.map(|x| x as _));
-            ui.begin(self.viewport.size_in_pixels);
-
             // Pick modules from these
             for (i, s) in STEP_VALUES.iter().enumerate() {
                 let img = self.asset.image(step_img(*s));
-                ui.button(&mut self.gpu, &mut self.asset, &img);
+                self.ui.button(&mut self.gpu, &mut self.asset, &img);
             }
 
-            ui.next_line();
+            self.ui.next_line();
 
             // and drop them here
             for (i, s) in COOL.iter().enumerate() {
                 let img = self.asset.image(step_img(*s));
-                ui.button(&mut self.gpu, &mut self.asset, &img);
+                self.ui.button(&mut self.gpu, &mut self.asset, &img);
             }
         }
 
