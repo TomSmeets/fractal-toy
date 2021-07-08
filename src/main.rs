@@ -192,7 +192,8 @@ impl State {
         self.viewport.size(input.resolution);
 
         self.ui.begin(self.viewport.size_in_pixels);
-        self.ui.mouse(input.mouse.map(|x| x as _));
+        self.ui.mouse(input.mouse.map(|x| x as _), input.mouse_down);
+        self.debug.print(&format!("{:?}", self.ui.active_element));
 
         if !self.ui.has_input() {
             self.viewport.zoom_at(input.mouse_scroll as f64, input.mouse);
