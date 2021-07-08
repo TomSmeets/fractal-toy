@@ -227,16 +227,9 @@ impl State {
                 }
             }
 
-            let b = 6.0;
-            let w = 80.0;
-
-            let mouse = input.mouse.map(|x| x as _);
-
-            let mut ui = UI {
-                mouse,
-                pos: V2::new(0.0, self.viewport.size_in_pixels.y - (w + b*2.0) * 2.0),
-                b, w,
-            };
+            let mut ui = UI::new();
+            ui.mouse(input.mouse.map(|x| x as _));
+            ui.begin(self.viewport.size_in_pixels);
 
             // Pick modules from these
             for (i, s) in STEP_VALUES.iter().enumerate() {
@@ -244,7 +237,7 @@ impl State {
                 ui.button(&mut self.gpu, &mut self.asset, &img);
             }
 
-            ui.pos = V2::new(0.0, self.viewport.size_in_pixels.y - (w + b*2.0) * 1.0);
+            ui.next_line();
 
             // and drop them here
             for (i, s) in COOL.iter().enumerate() {
