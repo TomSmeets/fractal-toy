@@ -11,6 +11,7 @@ mod pack;
 mod tilemap;
 mod util;
 mod viewport;
+mod ui;
 
 use self::asset_loader::AssetLoader;
 use self::builder::TileBuilder;
@@ -19,6 +20,7 @@ use self::image::Image;
 use self::tilemap::TilePos;
 use self::util::*;
 use self::viewport::Viewport;
+use self::ui::UI;
 
 use debug::Debug;
 use std::collections::BTreeMap;
@@ -186,8 +188,7 @@ impl State {
         self.debug.time("viewport");
         // viewport stuff
         self.viewport.size(input.resolution);
-        self.viewport
-            .zoom_at(input.mouse_scroll as f64, input.mouse);
+        self.viewport.zoom_at(input.mouse_scroll as f64, input.mouse);
 
         if input.mouse_down {
             self.viewport.drag(input.mouse);
@@ -229,34 +230,6 @@ impl State {
             let b = 6.0;
             let w = 80.0;
 
-            struct UI {
-                mouse: V2,
-                pos: V2,
-                b: f64,
-                w: f64,
-            }
-
-            impl UI {
-                fn button(&mut self, gpu: &mut Gpu, asset: &mut AssetLoader, s: FractalStep) -> bool {
-                    let r = Rect::corner_size(self.pos + V2::new(self.b, self.b), V2::new(self.w, self.w));
-                    let ro = Rect::corner_size(self.pos, V2::new(self.w, self.w) + V2::new(self.b, self.b)*2.0);
-                    self.pos.x += self.w + self.b*2.0;
-
-                    let img = asset.image(step_img(s));
-                    gpu.blit(&r, &img);
-
-                    if ro.contains(self.mouse) {
-                        let img = asset.image("res/button_front_hot.png");
-                        gpu.blit(&r, &img);
-                    } else {
-                        let img = asset.image("res/button_front_norm.png");
-                        gpu.blit(&r, &img);
-                    }
-
-                    true
-                }
-            }
-
             let mouse = input.mouse.map(|x| x as _);
 
             let mut ui = UI {
@@ -267,14 +240,16 @@ impl State {
 
             // Pick modules from these
             for (i, s) in STEP_VALUES.iter().enumerate() {
-                ui.button(&mut self.gpu, &mut self.asset, *s);
+                let img = self.asset.image(step_img(*s));
+                ui.button(&mut self.gpu, &mut self.asset, &img);
             }
 
             ui.pos = V2::new(0.0, self.viewport.size_in_pixels.y - (w + b*2.0) * 1.0);
 
             // and drop them here
             for (i, s) in COOL.iter().enumerate() {
-                ui.button(&mut self.gpu, &mut self.asset, *s);
+                let img = self.asset.image(step_img(*s));
+                ui.button(&mut self.gpu, &mut self.asset, &img);
             }
         }
 
@@ -285,6 +260,17 @@ impl State {
         self.builder.update();
     }
 }
+
+/*
+pub fn test() {
+    Window::run(|| {
+        w.title("Fractal Toy");
+
+        w.input
+        
+    })
+}
+*/
 
 pub fn main() {
     let config = Config::from_args();
