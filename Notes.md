@@ -1,5 +1,12 @@
 # Some design decisions
 
+
+* declarative immediate mode is a nice api on the user side.
+* declarative, with full state avaliable is nice on the library side
+
+Apis should be immediate mode, and ensure that the hot pathts are very fast.
+Either they use caching, or just pass ID's so that others can cache and request the data when needed.
+
 ## Simple API
 The api should be very simple.
 Something like this:

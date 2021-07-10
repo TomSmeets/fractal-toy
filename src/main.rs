@@ -238,18 +238,27 @@ impl State {
                 }
             }
 
+
+            /*
+            viewport: [pos]
+            builder:  pos -> Option<ImageID>
+            gpu:      ImageID -> ()
+            */
+            
             // Pick modules from these
             for (i, s) in STEP_VALUES.iter().enumerate() {
-                let img = self.asset.image(step_img(*s));
-                self.ui.button(&mut self.gpu, &mut self.asset, &img);
+                let img = self.asset.data(step_img(*s));
+                let img = self.asset.image(img);
+                self.ui.button(&mut self.gpu, &mut self.asset, img);
             }
 
             self.ui.next_line();
 
             // and drop them here
             for (i, s) in COOL.iter().enumerate() {
-                let img = self.asset.image(step_img(*s));
-                self.ui.button(&mut self.gpu, &mut self.asset, &img);
+                let img = self.asset.data(step_img(*s));
+                let img = self.asset.image(img);
+                self.ui.button(&mut self.gpu, &mut self.asset, img);
             }
         }
 
@@ -258,6 +267,8 @@ impl State {
 
         self.debug.time("builder update");
         self.builder.update();
+
+        self.asset.hot_reload();
     }
 }
 

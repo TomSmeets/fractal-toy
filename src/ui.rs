@@ -2,6 +2,7 @@ use crate::AssetLoader;
 use crate::Gpu;
 use crate::Image;
 use crate::util::*;
+use crate::asset_loader::ImageID;
 
 pub struct UI {
     pub mouse: Option<V2>,
@@ -56,7 +57,7 @@ impl UI {
         self.pos.y += self.b*2.0 + self.w;
     }
 
-    pub fn button(&mut self, gpu: &mut Gpu, asset: &mut AssetLoader, img: &Image) -> bool {
+    pub fn button(&mut self, gpu: &mut Gpu, asset: &mut AssetLoader, img: ImageID) -> bool {
         let si = 5.0;
         let mut ri = Rect::corner_size(self.pos + V2::new(self.b + si, self.b + si), V2::new(self.w - si*2.0, self.w - si*2.0));
         let r  = Rect::corner_size(self.pos + V2::new(self.b, self.b), V2::new(self.w, self.w));
@@ -79,16 +80,22 @@ impl UI {
             ri = Rect::center_size(self.mouse.unwrap(), V2::new(1.0, 1.0)*self.w);
         }
 
-        gpu.blit(&ri, img);
+        gpu.blit(asset, &ri, img);
 
         if is_active {
-            gpu.blit(&r, &asset.image("res/button_front_down.png"));
+            let id = asset.data("res/button_front_down.png");
+            let id = asset.image(id);
+            gpu.blit(asset, &r, id);
             self.active_element = Some(self.id);
         } else if is_hot {
-            gpu.blit(&r, &asset.image("res/button_front_hot.png"));
+            let id = asset.data("res/button_front_hot.png");
+            let id = asset.image(id);
+            gpu.blit(asset, &r, id);
             self.hot_element = Some(self.id);
         } else {
-            gpu.blit(&r, &asset.image("res/button_front_norm.png"));
+            let id = asset.data("res/button_front_norm.png");
+            let id = asset.image(id);
+            gpu.blit(asset, &r, id);
         }
 
 

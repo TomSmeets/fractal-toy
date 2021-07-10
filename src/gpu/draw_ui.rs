@@ -4,6 +4,8 @@ use crate::pack::{Block, Pack};
 use crate::util::*;
 use crate::viewport::Viewport;
 use crate::Image;
+use crate::asset_loader::ImageID;
+use crate::asset_loader::AssetLoader;
 use std::collections::BTreeMap;
 use wgpu::*;
 
@@ -23,7 +25,7 @@ pub struct DrawUI {
 
     pub vertex_list: Vec<Vertex>,
 
-    blocks: BTreeMap<u32, Block>,
+    blocks: BTreeMap<ImageID, (Block, V2<u32>)>,
     pack: Pack,
 }
 
@@ -186,7 +188,7 @@ impl DrawUI {
     }
 
     #[rustfmt::skip]
-    pub fn blit(&mut self, device: &GpuDevice, rect: &Rect, img: &Image) {
+    pub fn blit(&mut self, asset_loader: &mut AssetLoader, device: &GpuDevice, rect: &Rect, img: ImageID) {
         let lx = rect.corner_min().x as f32;
         let ly = rect.corner_min().y as f32;
         let hx = rect.corner_max().x as f32;
@@ -196,8 +198,10 @@ impl DrawUI {
         let blocks = &mut self.blocks;
         let pack = &mut self.pack;
         let texture = &self.texture;
-        let block = blocks.entry(img.id()).or_insert_with(|| {
-            let block = pack.alloc(img.size().map(|x| x as _)).unwrap();
+        let (block, size) = blocks.entry(img).or_insert_with(|| {
+            let img = asset_loader.get_image(img).unwrap();
+            let size = img.size();
+            let block = pack.alloc(size.map(|x| x as _)).unwrap();
 
             eprintln!("ui upload: {} = {:?}", img.id(), block);
             device.queue.write_texture(
@@ -223,13 +227,13 @@ impl DrawUI {
                 },
             );
 
-            block
+            (block, size)
         });
 
         let uv_lx = block.pos.x as f32 / ATLAS_SIZE as f32;
         let uv_ly = block.pos.y as f32 / ATLAS_SIZE as f32;
-        let uv_hx = (block.pos.x + img.size().x as i32) as f32 / ATLAS_SIZE as f32;
-        let uv_hy = (block.pos.y + img.size().y as i32) as f32 / ATLAS_SIZE as f32;
+        let uv_hx = (block.pos.x + size.x as i32) as f32 / ATLAS_SIZE as f32;
+        let uv_hy = (block.pos.y + size.y as i32) as f32 / ATLAS_SIZE as f32;
 
         if self.vertex_list.len() + 6 < MAX_VERTS as _ {
             self.vertex_list.extend_from_slice(&[

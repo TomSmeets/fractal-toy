@@ -1,4 +1,4 @@
-use crate::asset_loader::AssetLoader;
+use crate::asset_loader::{AssetLoader, DataID};
 use crate::gpu::pipeline::ShaderLoader;
 use crate::gpu::GpuDevice;
 use crate::util::*;
@@ -24,6 +24,8 @@ pub struct DrawTiles {
 
     used: Vec<TileSlot>,
     pub vertex_list: Vec<Vertex>,
+
+    // pub shader_id: DataID,
 }
 
 impl DrawTiles {

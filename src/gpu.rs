@@ -6,6 +6,7 @@ use crate::tilemap::TilePos;
 use crate::util::*;
 use crate::viewport::Viewport;
 use crate::Image;
+use crate::asset_loader::ImageID;
 
 pub mod compute_tile;
 mod draw_tiles;
@@ -100,8 +101,8 @@ impl Gpu {
         Arc::clone(&self.device)
     }
 
-    pub fn blit(&mut self, rect: &Rect, img: &Image) {
-        self.draw_ui.blit(&self.device, rect, img)
+    pub fn blit(&mut self, asset_loader: &mut AssetLoader, rect: &Rect, img: ImageID) {
+        self.draw_ui.blit(asset_loader, &self.device, rect, img)
     }
 
     pub fn tile(&mut self, vp: &Viewport, p: &TilePos, img: &Image) {
