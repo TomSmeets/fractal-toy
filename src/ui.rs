@@ -85,6 +85,12 @@ impl UI {
             None => self.mouse_down && is_hot,
         };
 
+        {
+            let id = asset.data("res/button_back.png");
+            let id = asset.image(id);
+            gpu.blit(asset, &r, id);
+        }
+
         gpu.blit(asset, &ri, img);
 
         if is_active {
