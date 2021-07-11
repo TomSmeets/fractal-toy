@@ -176,6 +176,8 @@ impl State {
 
     /// always called at regular intervals
     pub fn update(&mut self, window: &Window, input: &Input) {
+        self.debug.begin();
+        self.debug.time("state.update (start)");
         self.debug.time("viewport");
         // viewport stuff
         self.viewport.size(input.resolution);
@@ -255,19 +257,9 @@ impl State {
         self.builder.update();
 
         self.asset.hot_reload();
+        self.debug.time("state.update (end)");
     }
 }
-
-/*
-pub fn test() {
-    Window::run(|| {
-        w.title("Fractal Toy");
-
-        w.input
-
-    })
-}
-*/
 
 pub fn main() {
     let config = Config::from_args();
@@ -295,10 +287,7 @@ pub fn main() {
     let mut state = State::init(&update_loop.window);
 
     update_loop.run(move |window, input| {
-        state.debug.begin();
-        state.debug.time("state.update (start)");
         state.update(&window, &input);
-        state.debug.time("state.update (end)");
 
         /*
         // check how accurate we actually are
