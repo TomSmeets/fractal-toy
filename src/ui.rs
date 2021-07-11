@@ -62,7 +62,7 @@ impl UI {
 
     pub fn button(&mut self, gpu: &mut Gpu, asset: &mut AssetLoader, img: ImageID) -> bool {
         let si = 5.0;
-        let mut ri = Rect::corner_size(
+        let ri = Rect::corner_size(
             self.pos + V2::new(self.b + si, self.b + si),
             V2::new(self.w - si * 2.0, self.w - si * 2.0),
         );
