@@ -12,6 +12,7 @@ mod tilemap;
 mod util;
 mod viewport;
 mod ui;
+mod update_loop;
 
 use self::asset_loader::AssetLoader;
 use self::builder::TileBuilder;
@@ -21,19 +22,15 @@ use self::tilemap::TilePos;
 use self::util::*;
 use self::viewport::Viewport;
 use self::ui::UI;
+use self::update_loop::Loop;
+use self::update_loop::Input;
 
 use debug::Debug;
 use std::collections::BTreeMap;
 use std::process::Command;
-use std::time::Duration;
-use std::time::Instant;
 use std::time::SystemTime;
 use structopt::StructOpt;
-use winit::event::WindowEvent;
-use winit::event::{ElementState, Event, MouseButton, MouseScrollDelta};
-use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::Window;
-use winit::window::WindowBuilder;
 
 static MANDELBROT: &[FractalStep] = &[FractalStep::Square, FractalStep::AddC];
 
@@ -104,14 +101,6 @@ struct Config {
 
     #[structopt(short, long)]
     debug: bool,
-}
-
-#[derive(Debug)]
-pub struct Input {
-    resolution: V2<u32>,
-    mouse: V2<i32>,
-    mouse_down: bool,
-    mouse_scroll: f32,
 }
 
 pub struct State {
@@ -186,7 +175,7 @@ impl State {
     }
 
     /// always called at regular intervals
-    pub fn update(&mut self, window: &Window, input: &Input, dt: f32) {
+    pub fn update(&mut self, window: &Window, input: &Input) {
         self.debug.time("viewport");
         // viewport stuff
         self.viewport.size(input.resolution);
@@ -203,7 +192,7 @@ impl State {
             }
         }
 
-        self.viewport.update(dt as f64);
+        self.viewport.update(input.dt as f64);
 
 
 
@@ -283,13 +272,11 @@ pub fn test() {
 }
 */
 
+
+
 pub fn main() {
     let config = Config::from_args();
-    let event_loop = EventLoop::new();
-    let window = WindowBuilder::new()
-        .with_title("Fractal Toy!")
-        .build(&event_loop)
-        .unwrap();
+    let update_loop = Loop::new();
 
     if let Some(ws) = config.move_window {
         let ws = ws.unwrap_or(9);
@@ -299,7 +286,7 @@ pub fn main() {
         // when using 'cargo watch -x run'
         // was to lazy to modify my wm or so.
         // This actually works very well :)
-        if let Some(id) = window.xlib_window() {
+        if let Some(id) = update_loop.window.xlib_window() {
             let _ = Command::new("wmctrl")
                 .arg("-i")
                 .arg("-r")
@@ -310,115 +297,29 @@ pub fn main() {
         }
     }
 
-    let resolution = window.inner_size();
-    let mut input = Input {
-        resolution: V2::new(resolution.width, resolution.height),
-        mouse: V2::new(0, 0),
-        mouse_down: false,
-        mouse_scroll: 0.0,
-    };
+    let mut state = State::init(&update_loop.window);
 
-    let mut state = State::init(&window);
+    update_loop.run(move |window, input| {
+        state.debug.begin();
+        state.debug.time("state.update (start)");
+        state.update(&window, &input);
+        state.debug.time("state.update (end)");
 
-    // Decide what framerate we want to run
-    let target_dt = 1.0 / 180.0;
-
-    // At what time do we want a new update
-    let mut next_frame_time = Instant::now();
-    let mut last_frame_time = Instant::now();
-
-    // NOTE: we are ignoring redraw requests for now,
-    // and are both updating and rendering in MainEventsCleared.
-    // This might result into issues in the web platform,
-    // but lets keep it as simple as possible.
-    event_loop.run(move |event, _, control_flow| {
-        // TODO: Poll vs Wait, what is usefull?
-        // NOTE: using just Wait, will not work. why?
-        *control_flow = ControlFlow::WaitUntil(next_frame_time);
-
-        match event {
-            // Respect window close button
-            Event::WindowEvent {
-                window_id: _,
-                event: WindowEvent::CloseRequested,
-            } => *control_flow = ControlFlow::Exit,
-
-            Event::WindowEvent {
-                window_id: _,
-                event: WindowEvent::Resized(size),
-            } => {
-                input.resolution.x = size.width;
-                input.resolution.y = size.height;
-            },
-
-            Event::WindowEvent {
-                window_id: _,
-                event: WindowEvent::MouseInput { button, state, .. },
-            } => {
-                if button == MouseButton::Left {
-                    input.mouse_down = state == ElementState::Pressed;
-                }
-            },
-
-            Event::WindowEvent {
-                window_id: _,
-                event:
-                    WindowEvent::MouseWheel {
-                        delta: MouseScrollDelta::LineDelta(dx, dy),
-                        ..
-                    },
-            } => {
-                input.mouse_scroll += dy;
-            },
-
-            Event::WindowEvent {
-                window_id: _,
-                event: WindowEvent::CursorMoved { position: pos, .. },
-            } => {
-                input.mouse.x = pos.x as _;
-                input.mouse.y = pos.y as _;
-            },
-
-            // After all events are handled, time to update.
-            // or not, if this is called on any event that might have happened
-            Event::MainEventsCleared => {
-                // check if we shoud update
-                let current_time = Instant::now();
-
-                // NOTE: if it was a while loop it would loop forever if we couldent keep up
-                // now it still requests an instaint update, but gives the os some cpu time
-                if next_frame_time <= current_time {
-                    state.debug.begin();
-                    state.debug.time("state.update (start)");
-                    state.update(&window, &input, target_dt);
-                    state.debug.time("state.update (end)");
-                    input.mouse_scroll = 0.0;
-
-                    // check how accurate we actually are
-                    // TODO: extract to timing struct
-                    // if config.debug {
-                    let dt_frame = current_time - last_frame_time;
-                    let dt_behind = current_time - next_frame_time;
-                    let dt_update = Instant::now() - current_time;
-                    let rate = format!(
-                        "{:.1} Hz\nframe {:6?} µs, update {:6} µs, behind {:2?} µs",
-                        1.0 / dt_frame.as_secs_f32(),
-                        dt_frame.as_micros(),
-                        dt_update.as_micros(),
-                        dt_behind.as_micros()
-                    );
-                    state.debug.print(&rate);
-                    last_frame_time = current_time;
-                    // }
-
-                    while next_frame_time < current_time {
-                        next_frame_time += Duration::from_secs_f32(target_dt);
-                    }
-                }
-
-                *control_flow = ControlFlow::WaitUntil(next_frame_time);
-            },
-            _ => (),
-        }
+        /*
+        // check how accurate we actually are
+        // TODO: extract to timing struct
+        // if config.debug {
+        let dt_frame = current_time - last_frame_time;
+        let dt_behind = current_time - next_frame_time;
+        let dt_update = Instant::now() - current_time;
+        let rate = format!(
+            "{:.1} Hz\nframe {:6?} µs, update {:6} µs, behind {:2?} µs",
+            1.0 / dt_frame.as_secs_f32(),
+            dt_frame.as_micros(),
+            dt_update.as_micros(),
+            dt_behind.as_micros()
+            );
+        state.debug.print(&rate);
+        */
     });
 }
