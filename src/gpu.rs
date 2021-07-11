@@ -173,7 +173,7 @@ impl Gpu {
                     view: &frame.output.view,
                     resolve_target: None,
                     ops: Operations {
-                        load: LoadOp::Clear(Color::BLACK),
+                        load: LoadOp::Clear(Color::RED),
                         store: true,
                     },
                 }],

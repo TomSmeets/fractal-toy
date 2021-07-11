@@ -101,13 +101,18 @@ pub struct State {
 
     // actual state that is relevant
     viewport: Viewport,
+
+    steps: Vec<FractalStep>,
+    steps_old: Vec<FractalStep>,
+    dragging_tile: Option<FractalStep>,
 }
 
 impl State {
     pub fn init(window: &Window) -> Self {
         let mut asset = AssetLoader::new();
         let gpu = Gpu::init(window, &mut asset);
-        let builder = TileBuilder::new(gpu.device(), &mut asset);
+        let steps = MANDELBROT.to_vec();
+        let builder = TileBuilder::new(gpu.device(), &mut asset, &steps);
         State {
             debug: Debug::new(),
             gpu,
@@ -115,6 +120,9 @@ impl State {
             viewport: Viewport::new(),
             asset,
             ui: UI::new(),
+            dragging_tile: None,
+            steps_old: steps.to_vec(),
+            steps,
         }
     }
 
@@ -165,6 +173,11 @@ impl State {
 
     /// always called at regular intervals
     pub fn update(&mut self, window: &Window, input: &Input) {
+        if self.steps != self.steps_old {
+            self.steps_old = self.steps.to_vec();
+            self.builder = TileBuilder::new(self.gpu.device(), &mut self.asset, &self.steps);
+        }
+
         self.debug.begin();
         self.debug.time("start");
 
@@ -225,16 +238,24 @@ impl State {
             for (i, s) in STEP_VALUES.iter().enumerate() {
                 let img = self.asset.data(step_img(*s));
                 let img = self.asset.image(img);
-                self.ui.button(&mut self.gpu, &mut self.asset, img);
+                if self.ui.button(&mut self.gpu, &mut self.asset, img) {
+                    self.steps.push(*s);
+                }
             }
 
             self.ui.next_line();
 
             // and drop them here
-            for (i, s) in COOL.iter().enumerate() {
+            let mut remove = Vec::new();
+            for (i, s) in self.steps.iter().enumerate() {
                 let img = self.asset.data(step_img(*s));
                 let img = self.asset.image(img);
-                self.ui.button(&mut self.gpu, &mut self.asset, img);
+                if self.ui.button(&mut self.gpu, &mut self.asset, img) {
+                    remove.push(i);
+                }
+            }
+            for i in remove {
+                self.steps.remove(i);
             }
         }
 

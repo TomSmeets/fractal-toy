@@ -79,14 +79,11 @@ impl UI {
 
         let is_hot = is_hover && self.hot_element.is_none();
 
+        let is_click = self.mouse_down && is_hot && self.active_element.is_none();
         let is_active = match self.active_element {
             Some(id) => self.id == id,
             None => self.mouse_down && is_hot,
         };
-
-        if is_active {
-            ri = Rect::center_size(self.mouse.unwrap(), V2::new(1.0, 1.0) * self.w);
-        }
 
         gpu.blit(asset, &ri, img);
 
@@ -109,6 +106,6 @@ impl UI {
         self.id += 1;
         self.pos.x += self.w + self.b * 2.0;
 
-        is_active
+        is_click
     }
 }
