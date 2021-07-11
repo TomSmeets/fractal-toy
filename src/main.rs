@@ -9,21 +9,21 @@ mod gpu;
 mod image;
 mod pack;
 mod tilemap;
-mod util;
-mod viewport;
 mod ui;
 mod update_loop;
+mod util;
+mod viewport;
 
 use self::asset_loader::AssetLoader;
 use self::builder::TileBuilder;
 use self::gpu::Gpu;
 use self::image::Image;
 use self::tilemap::TilePos;
+use self::ui::UI;
+use self::update_loop::Input;
+use self::update_loop::Loop;
 use self::util::*;
 use self::viewport::Viewport;
-use self::ui::UI;
-use self::update_loop::Loop;
-use self::update_loop::Input;
 
 use debug::Debug;
 use std::collections::BTreeMap;
@@ -185,7 +185,8 @@ impl State {
         self.debug.print(&format!("{:?}", self.ui.active_element));
 
         if !self.ui.has_input() {
-            self.viewport.zoom_at(input.mouse_scroll as f64, input.mouse);
+            self.viewport
+                .zoom_at(input.mouse_scroll as f64, input.mouse);
 
             if input.mouse_down {
                 self.viewport.drag(input.mouse);
@@ -193,8 +194,6 @@ impl State {
         }
 
         self.viewport.update(input.dt as f64);
-
-
 
         self.debug.time("build tiles");
         // which tiles to build
@@ -215,9 +214,8 @@ impl State {
         self.debug.print(&Self::distance(self.viewport.scale));
         self.asset.text(&mut self.gpu, &self.debug.draw());
 
-
         {
-            fn step_img(s: FractalStep) -> &'static str{
+            fn step_img(s: FractalStep) -> &'static str {
                 match s {
                     FractalStep::Square => "res/mod_2.png",
                     FractalStep::Cube => "res/mod_3.png",
@@ -227,13 +225,12 @@ impl State {
                 }
             }
 
-
             /*
             viewport: [pos]
             builder:  pos -> Option<ImageID>
             gpu:      ImageID -> ()
             */
-            
+
             // Pick modules from these
             for (i, s) in STEP_VALUES.iter().enumerate() {
                 let img = self.asset.data(step_img(*s));
@@ -267,12 +264,10 @@ pub fn test() {
         w.title("Fractal Toy");
 
         w.input
-        
+
     })
 }
 */
-
-
 
 pub fn main() {
     let config = Config::from_args();

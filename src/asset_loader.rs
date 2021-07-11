@@ -98,7 +98,7 @@ impl AssetLoader {
 
     pub fn hot_reload(&mut self) {
         let mut next_mtime = self.last_mtime;
-        for (path,id) in self.data_cache.iter_mut() {
+        for (path, id) in self.data_cache.iter_mut() {
             let meta = std::fs::metadata(path).unwrap();
             let mtime = meta.modified().unwrap();
             if mtime > self.last_mtime {
@@ -133,27 +133,23 @@ impl AssetLoader {
         eprintln!("get_image({:?})", id);
 
         match id {
-            ImageID::Glyph(id) => {
-                self.glyph_cache.get(&id).cloned()
-            },
-            ImageID::Raw(id) => {
-                loop {
-                    let buf = ::image::open(self.get_path(id));
-                    let buf = match buf {
-                        Ok(buf) => buf,
-                        Err(_) => {
-                            std::thread::sleep(std::time::Duration::from_millis(100));
-                            continue;
-                        }
-                    };
-                    let buf = buf.into_rgba8();
+            ImageID::Glyph(id) => self.glyph_cache.get(&id).cloned(),
+            ImageID::Raw(id) => loop {
+                let buf = ::image::open(self.get_path(id));
+                let buf = match buf {
+                    Ok(buf) => buf,
+                    Err(_) => {
+                        std::thread::sleep(std::time::Duration::from_millis(100));
+                        continue;
+                    },
+                };
+                let buf = buf.into_rgba8();
 
-                    let (w, h) = buf.dimensions();
-                    let data = buf.into_raw();
-                    let i = Image::new(V2::new(w, h), data);
-                    break Some(i);
-                }
-            }
+                let (w, h) = buf.dimensions();
+                let data = buf.into_raw();
+                let i = Image::new(V2::new(w, h), data);
+                break Some(i);
+            },
         }
     }
 

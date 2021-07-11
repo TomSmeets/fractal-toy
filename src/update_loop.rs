@@ -1,3 +1,4 @@
+use crate::util::*;
 use std::time::Duration;
 use std::time::Instant;
 use winit::event::WindowEvent;
@@ -5,7 +6,6 @@ use winit::event::{ElementState, Event, MouseButton, MouseScrollDelta};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::Window;
 use winit::window::WindowBuilder;
-use crate::util::*;
 
 #[derive(Debug)]
 pub struct Input {
@@ -30,10 +30,7 @@ impl Loop {
             .unwrap();
 
         let time = Instant::now();
-        Loop {
-            event_loop,
-            window,
-        }
+        Loop { event_loop, window }
     }
 
     pub fn run<F: FnMut(&Window, &Input) + 'static>(self, mut update: F) -> ! {
@@ -53,13 +50,12 @@ impl Loop {
         let mut next_frame_time = Instant::now();
         let mut last_frame_time = Instant::now();
 
-
         // NOTE: we are ignoring redraw requests for now,
         // and are both updating and rendering in MainEventsCleared.
         // This might result into issues in the web platform,
         // but lets keep it as simple as possible.
         let event_loop = self.event_loop;
-        let window     = self.window;
+        let window = self.window;
         event_loop.run(move |event, _, control_flow| {
             // TODO: Poll vs Wait, what is usefull?
             // NOTE: using just Wait, will not work. why?

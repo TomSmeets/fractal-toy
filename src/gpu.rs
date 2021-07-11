@@ -1,12 +1,12 @@
 use wgpu::*;
 use winit::window::Window;
 
+use crate::asset_loader::ImageID;
 use crate::debug::Debug;
 use crate::tilemap::TilePos;
 use crate::util::*;
 use crate::viewport::Viewport;
 use crate::Image;
-use crate::asset_loader::ImageID;
 
 pub mod compute_tile;
 mod draw_tiles;

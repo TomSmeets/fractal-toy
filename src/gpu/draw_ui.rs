@@ -1,11 +1,10 @@
+use crate::asset_loader::AssetLoader;
+use crate::asset_loader::ImageID;
 use crate::gpu::GpuDevice;
 use crate::gpu::ShaderLoader;
 use crate::pack::{Block, Pack};
 use crate::util::*;
 use crate::viewport::Viewport;
-use crate::Image;
-use crate::asset_loader::ImageID;
-use crate::asset_loader::AssetLoader;
 use std::collections::BTreeMap;
 use wgpu::*;
 

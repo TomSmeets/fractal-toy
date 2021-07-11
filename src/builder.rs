@@ -101,14 +101,14 @@ impl TileBuilder {
 
         let center = min * 0.5 + max * 0.5;
 
-        let mut values     = Vec::with_capacity(size as usize * size as usize);
+        let mut values = Vec::with_capacity(size as usize * size as usize);
 
         // img -> iter -> type
         // or
         // iter -> type -> img?
         for y in 0..size {
             for x in 0..size {
-                let i = (y*size + x) as u32;
+                let i = (y * size + x) as u32;
 
                 let px = (x as f64 + 0.5) / (size) as f64;
                 let py = (y as f64 + 0.5) / (size) as f64;
