@@ -22,7 +22,14 @@ pub struct AssetLoader {
 
 impl AssetLoader {
     pub fn new() -> Self {
-        let font = std::fs::read("result/share/fonts/truetype/DejaVuSansMono-Bold.ttf").unwrap();
+        let paths = [
+            "/usr/share/fonts/truetype/DejaVuSansMono-Bold.ttf",
+            "/usr/local/share/fonts/truetype/DejaVuSansMono-Bold.ttf",
+            // built by nix
+            "result/share/fonts/truetype/DejaVuSansMono-Bold.ttf",
+        ];
+
+        let font = paths.iter().find_map(|path| std::fs::read(path).ok()).expect("Could not find a font file :(, please install a DejaVu font or change the paths in this file");
         let font = Font::try_from_vec(font).unwrap();
 
         AssetLoader {

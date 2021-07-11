@@ -65,13 +65,13 @@ fn vs_main(
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     let t0 = f32(mandel(in.uv));
 
-    let pi = 3.14159265359;
+    let pi_3 = 1.04719755119659774615421446109316763;
     let a = (1.0 - ((t0*t0) / (1024.0*1024.0)));
     let a = max(min(a, 1.0), 0.0);
     let t = t0 * 0.005;
-    let r = a * sin((0.5 - t) * pi + pi * 0.0 / 3.0);
-    let g = a * sin((0.5 - t) * pi + pi * 1.0 / 3.0);
-    let b = a * sin((0.5 - t) * pi + pi * 2.0 / 3.0);
+    let r = a * sin((0.5 - t) * pi_3 * 3.0 + pi_3 * 0.0);
+    let g = a * sin((0.5 - t) * pi_3 * 3.0 + pi_3 * 1.0);
+    let b = a * sin((0.5 - t) * pi_3 * 3.0 + pi_3 * 2.0);
 
     let r = r * r;
     let g = g * g;

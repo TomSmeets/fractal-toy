@@ -72,6 +72,7 @@ static STEP_VALUES: &[FractalStep] = &[
     FractalStep::AddC,
     FractalStep::AbsR,
     FractalStep::AbsI,
+    FractalStep::Conj,
 ];
 
 #[derive(Eq, PartialEq, Clone, Copy)]
@@ -90,6 +91,9 @@ pub enum FractalStep {
 
     ///  z = z + c
     AddC,
+
+    /// complex conjugate
+    Conj,
 }
 
 pub struct State {
@@ -231,6 +235,7 @@ impl State {
                     FractalStep::AbsR => "res/mod_abs_r.png",
                     FractalStep::AbsI => "res/mod_abs_i.png",
                     FractalStep::AddC => "res/mod_c.png",
+                    FractalStep::Conj => "res/fractal_missing.png",
                 }
             }
 

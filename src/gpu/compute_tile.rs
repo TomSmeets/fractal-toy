@@ -29,6 +29,7 @@ impl ComputeTile {
         let source = source.replace("REAL", "f32");
 
         let implementation = alg.iter().map(|x| match x {
+            FractalStep::Conj   => "z.y = -z.y;\n",
             FractalStep::AbsR   => "z.x = abs(z.x);\n",
             FractalStep::AbsI   => "z.y = -abs(z.y);\n",
             FractalStep::Square => "z = cpx_sqr(z);\n",
