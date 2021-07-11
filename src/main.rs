@@ -94,15 +94,6 @@ pub enum FractalStep {
     AddC,
 }
 
-#[derive(Debug, StructOpt)]
-struct Config {
-    #[structopt(short, long)]
-    move_window: Option<Option<u32>>,
-
-    #[structopt(short, long)]
-    debug: bool,
-}
-
 pub struct State {
     gpu: Gpu,
     builder: TileBuilder,
@@ -177,45 +168,51 @@ impl State {
     /// always called at regular intervals
     pub fn update(&mut self, window: &Window, input: &Input) {
         self.debug.begin();
-        self.debug.time("state.update (start)");
-        self.debug.time("viewport");
-        // viewport stuff
+        self.debug.time("start");
+
+        // resize viewport
         self.viewport.size(input.resolution);
 
+        // update the ui with current input
         self.ui.begin(self.viewport.size_in_pixels);
         self.ui.mouse(input.mouse.map(|x| x as _), input.mouse_down);
-        self.debug.print(&format!("{:?}", self.ui.active_element));
 
+        // handle input for the viewport, if the user didn't click the ui
         if !self.ui.has_input() {
-            self.viewport
-                .zoom_at(input.mouse_scroll as f64, input.mouse);
+            self.viewport.zoom_at(input.mouse_scroll as f64, input.mouse);
 
             if input.mouse_down {
                 self.viewport.drag(input.mouse);
             }
         }
 
+        // animate the viewport
         self.viewport.update(input.dt as f64);
 
+        // check for asset changes
+        self.asset.hot_reload();
+
+
+        // queue which tiles should be built, we include a 1 tile border here
         self.debug.time("build tiles");
-        // which tiles to build
         for p in self.viewport.get_pos_all(1) {
             self.builder.tile(&p);
         }
 
-        self.debug.time("upload gpu tiles");
-        // which tiles to draw
+        self.debug.time("show tiles");
+        // draw tiles, without a border, so just those visible
         for p in self.viewport.get_pos_all(0) {
+            // if we don't have a tile don't draw it yet
             if let Some(img) = self.builder.tile(&p) {
                 self.gpu.tile(&self.viewport, &p, img);
             }
         }
 
-        // submit
-        self.debug.time("debug text");
+        // random information text
+        self.debug.time("info text");
         self.debug.print(&Self::distance(self.viewport.scale));
-        self.asset.text(&mut self.gpu, &self.debug.draw());
 
+        // The user interface buttons on the bottom
         {
             fn step_img(s: FractalStep) -> &'static str {
                 match s {
@@ -226,12 +223,6 @@ impl State {
                     FractalStep::AddC => "res/mod_c.png",
                 }
             }
-
-            /*
-            viewport: [pos]
-            builder:  pos -> Option<ImageID>
-            gpu:      ImageID -> ()
-            */
 
             // Pick modules from these
             for (i, s) in STEP_VALUES.iter().enumerate() {
@@ -250,42 +241,23 @@ impl State {
             }
         }
 
+        // send the render commands to the gpu
         self.debug.time("gpu render");
+        self.asset.text(&mut self.gpu, &self.debug.draw());
         self.gpu.render(window, &self.viewport, &mut self.debug);
 
+        // update tile builder cache
         self.debug.time("builder update");
         self.builder.update();
 
-        self.asset.hot_reload();
         self.debug.time("state.update (end)");
     }
 }
 
 pub fn main() {
-    let config = Config::from_args();
     let update_loop = Loop::new();
 
-    if let Some(ws) = config.move_window {
-        let ws = ws.unwrap_or(9);
-
-        use winit::platform::unix::WindowExtUnix;
-        // very hacky way to move the window out of my way
-        // when using 'cargo watch -x run'
-        // was to lazy to modify my wm or so.
-        // This actually works very well :)
-        if let Some(id) = update_loop.window.xlib_window() {
-            let _ = Command::new("wmctrl")
-                .arg("-i")
-                .arg("-r")
-                .arg(id.to_string())
-                .arg("-t")
-                .arg(ws.to_string())
-                .status();
-        }
-    }
-
     let mut state = State::init(&update_loop.window);
-
     update_loop.run(move |window, input| {
         state.update(&window, &input);
 
