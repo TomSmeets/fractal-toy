@@ -27,9 +27,7 @@ use self::viewport::Viewport;
 
 use debug::Debug;
 use std::collections::BTreeMap;
-use std::process::Command;
 use std::time::SystemTime;
-use structopt::StructOpt;
 use winit::window::Window;
 
 static MANDELBROT: &[FractalStep] = &[FractalStep::Square, FractalStep::AddC];
@@ -192,7 +190,6 @@ impl State {
         // check for asset changes
         self.asset.hot_reload();
 
-
         // queue which tiles should be built, we include a 1 tile border here
         self.debug.time("build tiles");
         for p in self.viewport.get_pos_all(1) {
@@ -261,21 +258,18 @@ pub fn main() {
     update_loop.run(move |window, input| {
         state.update(&window, &input);
 
-        /*
         // check how accurate we actually are
         // TODO: extract to timing struct
         // if config.debug {
-        let dt_frame = current_time - last_frame_time;
-        let dt_behind = current_time - next_frame_time;
-        let dt_update = Instant::now() - current_time;
+        let dt_frame = input.real_dt_full;
+        let dt_update = input.real_dt_update;
         let rate = format!(
-            "{:.1} Hz\nframe {:6?} µs, update {:6} µs, behind {:2?} µs",
+            "real {:6.1} Hz ({:6} µs)\nbest {:6.1} Hz ({:6} µs)",
             1.0 / dt_frame.as_secs_f32(),
             dt_frame.as_micros(),
+            1.0 / dt_update.as_secs_f32(),
             dt_update.as_micros(),
-            dt_behind.as_micros()
-            );
+        );
         state.debug.print(&rate);
-        */
     });
 }

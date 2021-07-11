@@ -10,6 +10,8 @@ use winit::window::WindowBuilder;
 #[derive(Debug)]
 pub struct Input {
     pub dt: f32,
+    pub real_dt_full: Duration,
+    pub real_dt_update: Duration,
     pub resolution: V2<u32>,
     pub mouse: V2<i32>,
     pub mouse_down: bool,
@@ -40,6 +42,8 @@ impl Loop {
         let resolution = self.window.inner_size();
         let mut input = Input {
             dt: target_dt,
+            real_dt_full: Duration::ZERO,
+            real_dt_update: Duration::ZERO,
             resolution: V2::new(resolution.width, resolution.height),
             mouse: V2::new(0, 0),
             mouse_down: false,
@@ -114,9 +118,10 @@ impl Loop {
                     // now it still requests an instaint update, but gives the os some cpu time
                     if next_frame_time <= current_time {
                         update(&window, &input);
+                        input.real_dt_full = current_time - last_frame_time;
+                        input.real_dt_update = Instant::now() - current_time;
                         last_frame_time = current_time;
                         input.mouse_scroll = 0.0;
-                        // }
 
                         while next_frame_time < current_time {
                             next_frame_time += Duration::from_secs_f32(target_dt);
