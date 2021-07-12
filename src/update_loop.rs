@@ -24,10 +24,10 @@ pub struct Loop {
 }
 
 impl Loop {
-    pub fn new() -> Self {
+    pub fn new(title: &'static str) -> Self {
         let event_loop = EventLoop::new();
         let window = WindowBuilder::new()
-            .with_title("Fractal Toy!")
+            .with_title(title)
             .build(&event_loop)
             .unwrap();
 

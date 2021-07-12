@@ -273,20 +273,7 @@ impl State {
         self.debug.time("builder update");
         self.builder.update();
 
-        self.debug.time("state.update (end)");
-    }
-}
 
-pub fn main() {
-    let update_loop = Loop::new();
-
-    let mut state = State::init(&update_loop.window);
-    update_loop.run(move |window, input| {
-        state.update(&window, &input);
-
-        // check how accurate we actually are
-        // TODO: extract to timing struct
-        // if config.debug {
         let dt_frame = input.real_dt_full;
         let dt_update = input.real_dt_update;
         let rate = format!(
@@ -296,6 +283,15 @@ pub fn main() {
             1.0 / dt_update.as_secs_f32(),
             dt_update.as_micros(),
         );
-        state.debug.print(&rate);
-    });
+        self.debug.print(&rate);
+
+        self.debug.time("state.update (end)");
+    }
+}
+
+pub fn main() {
+    let update_loop = Loop::new("Fractal Toy!");
+
+    let mut state = State::init(&update_loop.window);
+    update_loop.run(move |window, input| state.update(window, input));
 }
