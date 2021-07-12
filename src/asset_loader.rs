@@ -65,7 +65,8 @@ impl AssetLoader {
                     V2::new(bb.max.x as f64 * s, bb.max.y as f64 * s),
                 );
 
-                let img = self.glyph_cache.entry(g.id()).or_insert_with(|| {
+                // insert glyph
+                let _ = self.glyph_cache.entry(g.id()).or_insert_with(|| {
                     let mut data = vec![0; bb.width() as usize * bb.height() as usize * 4];
                     g.draw(|x, y, v| {
                         let ix = (y as usize * bb.width() as usize + x as usize) * 4;
@@ -78,6 +79,7 @@ impl AssetLoader {
                     Image::new(V2::new(bb.width() as _, bb.height() as _), data)
                 });
 
+                // return id
                 blit.push((rect, ImageID::Glyph(g.id())));
             }
 

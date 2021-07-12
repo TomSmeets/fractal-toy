@@ -182,7 +182,7 @@ impl DrawUI {
             vertex_list: Vec::new(),
 
             blocks: BTreeMap::new(),
-            pack: Pack::new(ATLAS_SIZE as _, 1),
+            pack: Pack::new(ATLAS_SIZE as _),
         }
     }
 

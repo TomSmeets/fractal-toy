@@ -4,7 +4,6 @@ use crate::*;
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Block {
     pub pos: V2<i32>,
-    pub depth: i32,
     pub size: i32,
 }
 
@@ -12,45 +11,34 @@ impl Block {
     #[rustfmt::skip]
     pub fn split(self) -> [Block; 4] {
         let size = self.size / 2;
-        let depth = self.depth;
-
         [
-            Block { depth, pos: self.pos + V2::new(0,    0),    size, },
-            Block { depth, pos: self.pos + V2::new(size, 0),    size, },
-            Block { depth, pos: self.pos + V2::new(0,    size), size, },
-            Block { depth, pos: self.pos + V2::new(size, size), size, },
+            Block { pos: self.pos + V2::new(0,    0),    size, },
+            Block { pos: self.pos + V2::new(size, 0),    size, },
+            Block { pos: self.pos + V2::new(0,    size), size, },
+            Block { pos: self.pos + V2::new(size, size), size, },
         ]
     }
 
     pub fn parent(&self) -> Block {
         let size = self.size * 2;
         let pos = (self.pos / size) * size;
-        Block {
-            pos,
-            size,
-            depth: self.depth,
-        }
+        Block { pos, size }
     }
 }
 
 pub struct Pack {
     size: i32,
-    depth: i32,
     free: Vec<Block>,
 }
 
 impl Pack {
-    pub fn new(size: i32, depth: i32) -> Self {
+    pub fn new(size: i32) -> Self {
         Pack {
             size,
-            depth,
-            free: (0..depth)
-                .map(|i| Block {
-                    pos: V2::new(0, 0),
-                    depth: i,
-                    size,
-                })
-                .collect(),
+            free: vec![Block {
+                pos: V2::new(0, 0),
+                size,
+            }],
         }
     }
 
@@ -126,7 +114,7 @@ impl Pack {
 
 #[test]
 pub fn test_it() {
-    let mut p = Pack::new(16, 4);
+    let mut p = Pack::new(16);
     p.dbg();
 
     let a = p.alloc(V2::new(4, 4)).unwrap();

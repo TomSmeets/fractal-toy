@@ -108,7 +108,6 @@ pub struct State {
 
     steps: Vec<FractalStep>,
     steps_old: Vec<FractalStep>,
-    dragging_tile: Option<FractalStep>,
 }
 
 impl State {
@@ -124,7 +123,6 @@ impl State {
             viewport: Viewport::new(),
             asset,
             ui: UI::new(),
-            dragging_tile: None,
             steps_old: steps.to_vec(),
             steps,
         }
@@ -240,7 +238,7 @@ impl State {
             }
 
             // Pick modules from these
-            for (i, s) in STEP_VALUES.iter().enumerate() {
+            for s in STEP_VALUES.iter() {
                 let img = self.asset.data(step_img(*s));
                 let img = self.asset.image(img);
                 if self.ui.button(&mut self.gpu, &mut self.asset, img) {
@@ -272,7 +270,6 @@ impl State {
         // update tile builder cache
         self.debug.time("builder update");
         self.builder.update();
-
 
         let dt_frame = input.real_dt_full;
         let dt_update = input.real_dt_update;

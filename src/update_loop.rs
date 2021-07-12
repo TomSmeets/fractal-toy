@@ -31,7 +31,6 @@ impl Loop {
             .build(&event_loop)
             .unwrap();
 
-        let time = Instant::now();
         Loop { event_loop, window }
     }
 

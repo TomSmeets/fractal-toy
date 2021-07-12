@@ -195,9 +195,9 @@ impl TileBuilder {
 
         if !in_cache {
             let result = if p.z < 16 {
-                self.gpu_sender.try_send(*p).map_err(|x| ())
+                self.gpu_sender.try_send(*p).map_err(|_| ())
             } else {
-                self.sender.try_send((*p, V2::zero())).map_err(|x| ())
+                self.sender.try_send((*p, V2::zero())).map_err(|_| ())
             };
 
             // tell a builder to build this tile

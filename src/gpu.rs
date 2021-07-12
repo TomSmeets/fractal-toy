@@ -28,14 +28,6 @@ pub struct Gpu {
     draw_ui: DrawUI,
 }
 
-/// This struct should contain whatever the gpu should show
-/// I don't like statefull apis, so this is the entire api
-/// Put in here whatever you like, and the gpu will try to show it
-pub struct GpuInput<'a> {
-    pub resolution: V2<u32>,
-    pub viewport: &'a Viewport,
-}
-
 pub struct GpuDevice {
     surface: Surface,
 
@@ -114,7 +106,7 @@ impl Gpu {
     pub fn render(&mut self, window: &Window, viewport: &Viewport, debug: &mut Debug) {
         let device = &self.device;
 
-        let (swap_chain, frame) = loop {
+        let frame = loop {
             let swap_chain = self.swap_chain.get_or_insert_with(|| {
                 let swap_chain = device.device.create_swap_chain(&device.surface, &SwapChainDescriptor {
                     usage: TextureUsage::RENDER_ATTACHMENT,
@@ -149,7 +141,7 @@ impl Gpu {
                 continue;
             }
 
-            break (swap_chain, frame);
+            break frame;
         };
 
         debug.time("draw_tiles");
