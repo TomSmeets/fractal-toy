@@ -44,7 +44,7 @@ impl TileBuilder {
             });
         }
 
-        for _ in 0..6 {
+        for _ in 0..(num_cpus::get() as i32 - 1).max(1) {
             let tile_send = tile_send.clone();
             let req_recv = req_recv.clone();
 

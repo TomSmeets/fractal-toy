@@ -565,6 +565,7 @@ dependencies = [
  "cgmath",
  "crossbeam-channel",
  "image",
+ "num_cpus",
  "pollster",
  "rusttype",
  "serde",
