@@ -31,7 +31,7 @@ impl TileBuilder {
         let (req_send, req_recv) = bounded::<(TilePos, V2)>(16);
         let (tile_send, tile_recv) = bounded::<(TilePos, Image)>(16);
 
-        let (req_send_gpu, req_recv_gpu)  = bounded::<TilePos>(16);
+        let (req_send_gpu, req_recv_gpu) = bounded::<TilePos>(16);
         {
             let gpu_builder = ComputeTile::load(alg, &gpu, asset_loader);
             let gpu_device = Arc::clone(&gpu);
