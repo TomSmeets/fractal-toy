@@ -1,6 +1,6 @@
 use crate::util::*;
-use std::time::Duration;
-use std::time::Instant;
+use ::instant::Duration;
+use ::instant::Instant;
 use winit::event::WindowEvent;
 use winit::event::{ElementState, Event, MouseButton, MouseScrollDelta};
 use winit::event_loop::{ControlFlow, EventLoop};

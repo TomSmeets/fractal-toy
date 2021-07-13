@@ -10,10 +10,11 @@ bytemuck = "1.5"
 cgmath = "0.18"
 crossbeam-channel = "0.5"
 image = "0.23"
+instant = "0.1.9"
 num_cpus = "1.13"
 pollster = "0.2"
 rusttype = "0.9"
 serde = { version = "1.0", features = [ "derive" ] }
 structopt = "0.3"
 wgpu = "0.9"
-winit = "0.25"
+winit = { version = "0.25", features = [ "web-sys" ] }
