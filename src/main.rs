@@ -186,10 +186,6 @@ impl State {
         // resize viewport
         self.viewport.size(input.resolution);
 
-        // update the ui with current input
-        self.ui.begin(self.viewport.size_in_pixels);
-        self.ui.mouse(input.mouse.map(|x| x as _), input.mouse_down);
-
         // handle input for the viewport, if the user didn't click the ui
         if !self.ui.has_input() {
             self.viewport.zoom_at(input.mouse_scroll as f64, input.mouse);
@@ -241,7 +237,7 @@ impl State {
             for s in STEP_VALUES.iter() {
                 let img = self.asset.data(step_img(*s));
                 let img = self.asset.image(img);
-                if self.ui.button(&mut self.gpu, &mut self.asset, img) {
+                if self.ui.button(img) {
                     self.steps.push(*s);
                 }
             }
@@ -253,7 +249,7 @@ impl State {
             for (i, s) in self.steps.iter().enumerate() {
                 let img = self.asset.data(step_img(*s));
                 let img = self.asset.image(img);
-                if self.ui.button(&mut self.gpu, &mut self.asset, img) {
+                if self.ui.button(img) {
                     remove.push(i);
                 }
             }
@@ -265,6 +261,7 @@ impl State {
         // send the render commands to the gpu
         self.debug.time("gpu render");
         self.asset.text(&mut self.gpu, &self.debug.draw());
+        self.ui.update(input, &mut self.gpu, &mut self.asset);
         self.gpu.render(window, &self.viewport, &mut self.debug);
 
         // update tile builder cache

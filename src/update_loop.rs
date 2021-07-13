@@ -13,8 +13,11 @@ pub struct Input {
     pub real_dt_full: Duration,
     pub real_dt_update: Duration,
     pub resolution: V2<u32>,
+
     pub mouse: V2<i32>,
     pub mouse_down: bool,
+    pub mouse_click: bool,
+
     pub mouse_scroll: f32,
 }
 
@@ -46,6 +49,7 @@ impl Loop {
             resolution: V2::new(resolution.width, resolution.height),
             mouse: V2::new(0, 0),
             mouse_down: false,
+            mouse_click: false,
             mouse_scroll: 0.0,
         };
 
@@ -84,7 +88,10 @@ impl Loop {
                     event: WindowEvent::MouseInput { button, state, .. },
                 } => {
                     if button == MouseButton::Left {
-                        input.mouse_down = state == ElementState::Pressed;
+                        let was_down = input.mouse_down;
+                        let is_down = state == ElementState::Pressed;
+                        input.mouse_down = is_down;
+                        input.mouse_click = is_down;
                     }
                 },
 
@@ -121,6 +128,7 @@ impl Loop {
                         input.real_dt_update = Instant::now() - current_time;
                         last_frame_time = current_time;
                         input.mouse_scroll = 0.0;
+                        input.mouse_click = false;
 
                         while next_frame_time < current_time {
                             next_frame_time += Duration::from_secs_f32(target_dt);
