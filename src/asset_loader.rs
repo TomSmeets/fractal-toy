@@ -55,7 +55,7 @@ pub struct AssetLoader {
 
 impl AssetLoader {
     pub fn new() -> Self {
-        let font = std::fs::read("./res/DejaVuSansMono-Bold.ttf").unwrap();
+        let font = std::fs::read("./res/DejaVuSans.ttf").unwrap();
         let font = Font::try_from_vec(font).unwrap();
 
         AssetLoader {
@@ -65,15 +65,44 @@ impl AssetLoader {
         }
     }
 
-    // TODO: This should not be here
-    pub fn text(&mut self, p: V2<i32>, gpu: &mut Gpu, text: &str) {
-        let x = p.x as f32;
-        let mut y = p.y as f32;
-        let font_scale = Scale::uniform(26.0);
+    fn text_bounds(&self, scale: Scale, text: &str) -> V2<u32> {
+        let mut max_width = 0;
+        let mut max_height = 0.0;
+        let metrics = self.font.v_metrics(scale);
+        let line_height = metrics.ascent - metrics.descent + metrics.line_gap;
 
         for line in text.lines() {
-            let m = self.font.v_metrics(font_scale);
-            y += m.ascent - m.descent + m.line_gap;
+            max_height += line_height;
+            if let Some(bb) = self
+                .font
+                .layout(line, scale, rusttype::Point { x: 0.0, y: 0.0 })
+                .flat_map(|g| g.pixel_bounding_box())
+                .last()
+            {
+                if bb.max.x > max_width {
+                    max_width = bb.max.x;
+                }
+            }
+        }
+
+        V2::new(max_width as u32, max_height.ceil() as u32)
+    }
+
+    // TODO: This should not be here
+    pub fn text(&mut self, p: V2<i32>, gpu: &mut Gpu, text: &str) {
+        let font_scale = Scale::uniform(26.0);
+
+        let metrics = self.font.v_metrics(font_scale);
+
+        let line_height = metrics.ascent - metrics.descent + metrics.line_gap;
+
+        // not ideal
+        let bounds = self.text_bounds(font_scale, text);
+        let x = p.x as f32 - bounds.x as f32 / 2.0;
+        let mut y = p.y as f32 - bounds.y as f32 / 2.0;
+
+        for line in text.lines() {
+            y += line_height;
             let i = self.font.layout(line, font_scale, rusttype::Point { x, y });
             for g in i {
                 let bb = match g.pixel_bounding_box() {
