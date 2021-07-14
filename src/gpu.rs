@@ -148,8 +148,7 @@ impl Gpu {
         self.draw_tiles.render(device, viewport);
 
         debug.time("draw_ui");
-        let ui_vtx_count = self.draw_ui.vertex_list.len();
-        self.draw_ui.render(device, viewport);
+        let ui_vtx_count = self.draw_ui.render(device, viewport);
 
         // We finally have a frame, now it is time to create the render commands
         let mut encoder = device.device.create_command_encoder(&CommandEncoderDescriptor { label: None });

@@ -9,6 +9,7 @@ mod glyph_cache;
 mod gpu;
 mod image;
 mod pack;
+mod shelf_pack;
 mod tilemap;
 mod ui;
 mod update_loop;
@@ -252,7 +253,8 @@ impl State {
 
         // send the render commands to the gpu
         self.debug.time("gpu render");
-        self.asset.text(&mut self.gpu, &self.debug.draw());
+        self.asset
+            .text(input.mouse, &mut self.gpu, &self.debug.draw());
 
         self.ui.update(input, &mut self.gpu, &mut self.asset);
         self.gpu.render(window, &self.viewport, &mut self.debug);

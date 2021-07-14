@@ -66,16 +66,15 @@ impl AssetLoader {
     }
 
     // TODO: This should not be here
-    pub fn text(&mut self, gpu: &mut Gpu, text: &str) {
-        let mut y = 0.0;
+    pub fn text(&mut self, p: V2<i32>, gpu: &mut Gpu, text: &str) {
+        let x = p.x as f32 * 0.001;
+        let mut y = p.y as f32 * 0.001;
         let font_scale = Scale::uniform(26.0);
 
         for line in text.lines() {
             let m = self.font.v_metrics(font_scale);
             y += m.ascent - m.descent + m.line_gap;
-            let i = self
-                .font
-                .layout(line, font_scale, rusttype::Point { x: 0.0, y });
+            let i = self.font.layout(line, font_scale, rusttype::Point { x, y });
             for g in i {
                 let bb = match g.pixel_bounding_box() {
                     Some(bb) => bb,

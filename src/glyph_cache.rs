@@ -26,6 +26,7 @@ impl GlyphCache {
             f - f.floor()
         }
 
+        // TODO: the cache could explode if we choose this too big
         let sub_pixel_steps = 16.0;
 
         let position = glyph.position();

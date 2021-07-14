@@ -1,14 +1,14 @@
 use crate::gpu::GpuDevice;
 use crate::gpu::ShaderLoader;
 use crate::image::Image;
-use crate::pack::{Block, Pack};
+use crate::shelf_pack::ShelfPack;
 use crate::util::*;
 use crate::viewport::Viewport;
 use std::collections::BTreeMap;
 use wgpu::*;
 
 const MAX_VERTS: u64 = 1024 * 4;
-const ATLAS_SIZE: u32 = 1024;
+const ATLAS_SIZE: u32 = 1024 * 1;
 
 pub struct DrawUI {
     pub pipeline: RenderPipeline,
@@ -23,8 +23,8 @@ pub struct DrawUI {
 
     pub vertex_list: Vec<Vertex>,
 
-    blocks: BTreeMap<u32, (Block, V2<u32>)>,
-    pack: Pack,
+    blocks: BTreeMap<u32, Rect>,
+    pack: ShelfPack,
 }
 
 impl DrawUI {
@@ -62,6 +62,35 @@ impl DrawUI {
                 depth_or_array_layers: 1,
             },
         });
+
+
+        // clear the texture
+        // TODO: this is not very nice, we allocate a huge buffer here
+        // We don't have to clear it, but only if we want to show the texture in a debug preview
+        {
+            device.queue.write_texture(
+                ImageCopyTexture {
+                    texture: &texture,
+                    mip_level: 0,
+                    origin: Origin3d {
+                        x: 0,
+                        y: 0,
+                        z: 0,
+                    },
+                },
+                &vec![0; ATLAS_SIZE as usize *ATLAS_SIZE as usize * 4],
+                ImageDataLayout {
+                    offset: 0,
+                    bytes_per_row: Some(std::num::NonZeroU32::new(4 * ATLAS_SIZE).unwrap()),
+                    rows_per_image: Some(std::num::NonZeroU32::new(ATLAS_SIZE).unwrap()),
+                },
+                Extent3d {
+                    width: ATLAS_SIZE,
+                    height: ATLAS_SIZE,
+                    depth_or_array_layers: 1,
+                },
+            );
+        }
 
         let texture_view = texture.create_view(&TextureViewDescriptor::default());
 
@@ -181,73 +210,106 @@ impl DrawUI {
             vertex_list: Vec::new(),
 
             blocks: BTreeMap::new(),
-            pack: Pack::new(ATLAS_SIZE as _),
+            pack: ShelfPack::new(V2::new(ATLAS_SIZE as _, ATLAS_SIZE as _)),
         }
     }
 
     #[rustfmt::skip]
-    pub fn blit(&mut self, device: &GpuDevice, rect: &Rect, img: &Image) {
-        let lx = rect.corner_min().x as f32;
-        let ly = rect.corner_min().y as f32;
-        let hx = rect.corner_max().x as f32;
-        let hy = rect.corner_max().y as f32;
+    pub fn blit(&mut self, device: &GpuDevice, screen_rect: &Rect, img: &Image) {
+        let lx = screen_rect.corner_min().x as f32;
+        let ly = screen_rect.corner_min().y as f32;
+        let hx = screen_rect.corner_max().x as f32;
+        let hy = screen_rect.corner_max().y as f32;
 
         // We don't free blocks yet, but we might in the future, just add a 'used' flag
-        let blocks = &mut self.blocks;
-        let pack = &mut self.pack;
-        let texture = &self.texture;
-        let (block, size) = blocks.entry(img.id()).or_insert_with(|| {
-            let size = img.size();
-            let block = pack.alloc(size.map(|x| x as _)).unwrap();
+        let atlas_rect = self.blocks.get(&img.id()).copied();
 
-            eprintln!("ui upload: {} = {:?}", img.id(), block);
-            device.queue.write_texture(
-                ImageCopyTexture {
-                    texture: &texture,
-                    mip_level: 0,
-                    origin: Origin3d {
-                        x: block.pos.x as u32,
-                        y: block.pos.y as u32,
-                        z: 0 as u32,
+        let rect = match atlas_rect {
+            None => {
+                let size = img.size();
+                let rect = match self.pack.add(size) {
+                    Some(rect) => rect,
+                    None => {
+                        // nope
+                        self.blocks = BTreeMap::new();
+                        self.pack = ShelfPack::new(V2::new(ATLAS_SIZE, ATLAS_SIZE));
+                        self.blit(device, screen_rect, img);
+                        return;
                     },
-                },
-                img.data(),
-                ImageDataLayout {
-                    offset: 0,
-                    bytes_per_row: Some(std::num::NonZeroU32::new(4 * img.size().x).unwrap()),
-                    rows_per_image: Some(std::num::NonZeroU32::new(img.size().y).unwrap()),
-                },
-                Extent3d {
-                    width: img.size().x,
-                    height: img.size().y,
-                    depth_or_array_layers: 1,
-                },
-            );
+                };
 
-            (block, size)
-        });
+                eprintln!("ui upload: {}", img.id());
+                device.queue.write_texture(
+                    ImageCopyTexture {
+                        texture: &self.texture,
+                        mip_level: 0,
+                        origin: Origin3d {
+                            x: rect.corner_min().x as u32,
+                            y: rect.corner_min().y as u32,
+                            z: 0 as u32,
+                        },
+                    },
+                    img.data(),
+                    ImageDataLayout {
+                        offset: 0,
+                        bytes_per_row: Some(std::num::NonZeroU32::new(4 * img.size().x).unwrap()),
+                        rows_per_image: Some(std::num::NonZeroU32::new(img.size().y).unwrap()),
+                    },
+                    Extent3d {
+                        width: img.size().x,
+                        height: img.size().y,
+                        depth_or_array_layers: 1,
+                    },
+                );
 
-        let uv_lx = block.pos.x as f32 / ATLAS_SIZE as f32;
-        let uv_ly = block.pos.y as f32 / ATLAS_SIZE as f32;
-        let uv_hx = (block.pos.x + size.x as i32) as f32 / ATLAS_SIZE as f32;
-        let uv_hy = (block.pos.y + size.y as i32) as f32 / ATLAS_SIZE as f32;
+                self.blocks.insert(img.id(), rect.clone());
+
+                rect
+            },
+
+            Some(rect) => rect,
+        };
+
+        let uv_l = rect.corner_min().map(|x| x as f32) / ATLAS_SIZE as f32;
+        let uv_h = rect.corner_max().map(|x| x as f32) / ATLAS_SIZE as f32;
 
         if self.vertex_list.len() + 6 < MAX_VERTS as _ {
             self.vertex_list.extend_from_slice(&[
-                Vertex { pos: V2::new(lx, ly), uv: V2::new(uv_lx, uv_ly),  },
-                Vertex { pos: V2::new(hx, ly), uv: V2::new(uv_hx, uv_ly),  },
-                Vertex { pos: V2::new(lx, hy), uv: V2::new(uv_lx, uv_hy), },
+                Vertex { pos: V2::new(lx, ly), uv: V2::new(uv_l.x, uv_l.y), },
+                Vertex { pos: V2::new(hx, ly), uv: V2::new(uv_h.x, uv_l.y), },
+                Vertex { pos: V2::new(lx, hy), uv: V2::new(uv_l.x, uv_h.y), },
 
-                Vertex { pos: V2::new(hx, ly), uv: V2::new(uv_hx, uv_ly),  },
-                Vertex { pos: V2::new(hx, hy), uv: V2::new(uv_hx, uv_hy), },
-                Vertex { pos: V2::new(lx, hy), uv: V2::new(uv_lx, uv_hy), },
+                Vertex { pos: V2::new(hx, ly), uv: V2::new(uv_h.x, uv_l.y), },
+                Vertex { pos: V2::new(hx, hy), uv: V2::new(uv_h.x, uv_h.y), },
+                Vertex { pos: V2::new(lx, hy), uv: V2::new(uv_l.x, uv_h.y), },
             ]);
         } else {
             eprintln!("TOO MANY VERTS IN UI!");
         }
     }
 
-    pub fn render(&mut self, device: &GpuDevice, viewport: &Viewport) {
+    pub fn show_debug_atlas(&mut self, size: f32) {
+        let lx = 0.0;
+        let ly = 0.0;
+        let hx = size;
+        let hy = size;
+
+        let uv_lx = 0.0;
+        let uv_ly = 0.0;
+        let uv_hx = 1.0;
+        let uv_hy = 1.0;
+        self.vertex_list.extend_from_slice(&[
+            Vertex { pos: V2::new(lx, ly), uv: V2::new(uv_lx, uv_ly), },
+            Vertex { pos: V2::new(hx, ly), uv: V2::new(uv_hx, uv_ly), },
+            Vertex { pos: V2::new(lx, hy), uv: V2::new(uv_lx, uv_hy), },
+
+            Vertex { pos: V2::new(hx, ly), uv: V2::new(uv_hx, uv_ly), },
+            Vertex { pos: V2::new(hx, hy), uv: V2::new(uv_hx, uv_hy), },
+            Vertex { pos: V2::new(lx, hy), uv: V2::new(uv_lx, uv_hy), },
+        ]);
+    }
+
+    pub fn render(&mut self, device: &GpuDevice, viewport: &Viewport) -> usize {
         // update uniform data
         device.queue.write_buffer(
             &self.uniform,
@@ -260,6 +322,8 @@ impl DrawUI {
             }),
         );
 
+        // self.show_debug_atlas(ATLAS_SIZE as _);
+
         // write out vertex buffer
         device.queue.write_buffer(
             &self.vertex_buffer,
@@ -267,8 +331,12 @@ impl DrawUI {
             bytemuck::cast_slice(&self.vertex_list),
         );
 
+        let count = self.vertex_list.len();
+
         // clear last frame vertex list
         self.vertex_list.clear();
+
+        count
     }
 }
 
