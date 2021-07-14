@@ -145,12 +145,32 @@ impl TileBuilder {
             for s in alg.iter() {
                 let it = values.iter_mut();
                 match s {
-                    FractalStep::Conj   => for (_, _, z) in it { z.y = -z.y;  },
-                    FractalStep::AbsR   => for (_, _, z) in it { z.x = z.x.abs()  },
-                    FractalStep::AbsI   => for (_, _, z) in it { z.y = -z.y.abs() },
-                    FractalStep::Square => for (_, _, z) in it { *z = cpx_sqr(*z)   },
-                    FractalStep::Cube   => for (_, _, z) in it { *z = cpx_cube(*z)  },
-                    FractalStep::AddC   => {
+                    FractalStep::Conj => {
+                        for (_, _, z) in it {
+                            z.y = -z.y;
+                        }
+                    },
+                    FractalStep::AbsR => {
+                        for (_, _, z) in it {
+                            z.x = z.x.abs()
+                        }
+                    },
+                    FractalStep::AbsI => {
+                        for (_, _, z) in it {
+                            z.y = -z.y.abs()
+                        }
+                    },
+                    FractalStep::Square => {
+                        for (_, _, z) in it {
+                            *z = cpx_sqr(*z)
+                        }
+                    },
+                    FractalStep::Cube => {
+                        for (_, _, z) in it {
+                            *z = cpx_cube(*z)
+                        }
+                    },
+                    FractalStep::AddC => {
                         for (_, c, z) in values.iter_mut() {
                             *z = *z + *c;
                         }

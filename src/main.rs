@@ -55,13 +55,10 @@ static COOL: &[FractalStep] = &[
     FractalStep::AbsR,
     FractalStep::Square,
     FractalStep::AddC,
-
     FractalStep::Square,
     FractalStep::AddC,
-
     FractalStep::Square,
     FractalStep::AddC,
-
     FractalStep::Square,
     FractalStep::AddC,
 ];
@@ -183,7 +180,8 @@ impl State {
 
         // handle input for the viewport, if the user didn't click the ui
         if !self.ui.has_input() {
-            self.viewport.zoom_at(input.mouse_scroll as f64, input.mouse);
+            self.viewport
+                .zoom_at(input.mouse_scroll as f64, input.mouse);
 
             if input.mouse_down {
                 self.viewport.drag(input.mouse);
