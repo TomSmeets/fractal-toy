@@ -39,7 +39,9 @@ impl TileBuilder {
             std::thread::spawn(move || {
                 while let Ok(pos) = req_recv_gpu.recv() {
                     let img = gpu_builder.build(&gpu_device, &pos);
-                    tile_send.send((pos, img)).unwrap();
+                    if let Err(_) = tile_send.send((pos, img)) {
+                        break;
+                    }
                 }
             });
         }
@@ -52,7 +54,9 @@ impl TileBuilder {
             std::thread::spawn(move || {
                 while let Ok((pos, a)) = req_recv.recv() {
                     let img = Self::gen_tile(&alg, &pos, a);
-                    tile_send.send((pos, img)).unwrap();
+                    if let Err(_) = tile_send.send((pos, img)) {
+                        break;
+                    }
                 }
             });
         }
