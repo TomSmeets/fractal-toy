@@ -5,13 +5,13 @@ use crate::AssetLoader;
 use crate::Gpu;
 
 pub struct UI {
-    pub row: u32,
-    pub col: u32,
-    pub elements: Vec<(u32, u32, ImageID)>,
+    row: u32,
+    col: u32,
+    elements: Vec<(u32, u32, ImageID)>,
 
-    pub hover: Option<u32>,
-    pub down: Option<u32>,
-    pub click: Option<u32>,
+    hover: Option<u32>,
+    down: Option<u32>,
+    click: Option<u32>,
 }
 
 impl UI {
