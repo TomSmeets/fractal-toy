@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use wgpu::*;
 
 const MAX_VERTS: u64 = 1024 * 4;
-const ATLAS_SIZE: u32 = 1024 * 1;
+const ATLAS_SIZE: u32 = 1024 * 2;
 
 pub struct DrawUI {
     pub pipeline: RenderPipeline,
@@ -78,7 +78,7 @@ impl DrawUI {
                         z: 0,
                     },
                 },
-                &vec![0; ATLAS_SIZE as usize *ATLAS_SIZE as usize * 4],
+                &vec![0; ATLAS_SIZE as usize * ATLAS_SIZE as usize * 4],
                 ImageDataLayout {
                     offset: 0,
                     bytes_per_row: Some(std::num::NonZeroU32::new(4 * ATLAS_SIZE).unwrap()),
@@ -288,6 +288,7 @@ impl DrawUI {
         }
     }
 
+    #[rustfmt::skip]
     pub fn show_debug_atlas(&mut self, size: f32) {
         let lx = 0.0;
         let ly = 0.0;
