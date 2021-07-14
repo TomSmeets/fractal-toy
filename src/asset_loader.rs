@@ -4,7 +4,9 @@ use ::rusttype::Font;
 use ::rusttype::Scale;
 use std::time::SystemTime;
 
-// TODO: I don't like this, but not sure what to do yet
+// OLD comment about ImageID's, but lets keep it here for now.
+//
+// I don't like this, but not sure what to do ye
 //
 // All ui elements can be stored in memory, but they wouldent have to, as the atlas is
 // permanent anyway. glyphs and ui images are never removed from the atlas
