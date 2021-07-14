@@ -230,9 +230,7 @@ impl State {
 
             // Pick modules from these
             for s in STEP_VALUES.iter() {
-                let img = self.asset.data(step_img(*s));
-                let img = self.asset.image(img);
-                if self.ui.button(img) {
+                if self.ui.button(self.asset.image(step_img(*s))) {
                     self.steps.push(*s);
                     recreate_builder = true;
                 }
@@ -243,9 +241,7 @@ impl State {
             // and drop them here
             let mut remove = Vec::new();
             for (i, s) in self.steps.iter().enumerate() {
-                let img = self.asset.data(step_img(*s));
-                let img = self.asset.image(img);
-                if self.ui.button(img) {
+                if self.ui.button(self.asset.image(step_img(*s))) {
                     remove.push(i);
                 }
             }
@@ -259,6 +255,7 @@ impl State {
         // send the render commands to the gpu
         self.debug.time("gpu render");
         self.asset.text(&mut self.gpu, &self.debug.draw());
+
         self.ui.update(input, &mut self.gpu, &mut self.asset);
         self.gpu.render(window, &self.viewport, &mut self.debug);
 
@@ -266,16 +263,18 @@ impl State {
         self.debug.time("builder update");
         self.builder.update();
 
-        let dt_frame = input.real_dt_full;
-        let dt_update = input.real_dt_update;
-        let rate = format!(
-            "real {:6.1} Hz ({:6} µs)\nbest {:6.1} Hz ({:6} µs)",
-            1.0 / dt_frame.as_secs_f32(),
-            dt_frame.as_micros(),
-            1.0 / dt_update.as_secs_f32(),
-            dt_update.as_micros(),
-        );
-        self.debug.print(&rate);
+        {
+            let dt_frame = input.real_dt_full;
+            let dt_update = input.real_dt_update;
+            let rate = format!(
+                "real {:6.1} Hz ({:6} µs)\nbest {:6.1} Hz ({:6} µs)",
+                1.0 / dt_frame.as_secs_f32(),
+                dt_frame.as_micros(),
+                1.0 / dt_update.as_secs_f32(),
+                dt_update.as_micros(),
+            );
+            self.debug.print(&rate);
+        }
 
         if recreate_builder {
             self.builder = TileBuilder::new(self.gpu.device(), &mut self.asset, &self.steps);

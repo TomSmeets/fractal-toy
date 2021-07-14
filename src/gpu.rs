@@ -93,8 +93,8 @@ impl Gpu {
         Arc::clone(&self.device)
     }
 
-    pub fn blit(&mut self, asset_loader: &mut AssetLoader, rect: &Rect, img: ImageID) {
-        self.draw_ui.blit(asset_loader, &self.device, rect, img)
+    pub fn blit(&mut self, rect: &Rect, img: &Image) {
+        self.draw_ui.blit(&self.device, rect, img);
     }
 
     pub fn tile(&mut self, vp: &Viewport, p: &TilePos, img: &Image) {

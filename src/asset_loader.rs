@@ -1,5 +1,5 @@
 use crate::*;
-use rusttype::{Font, GlyphId, Scale};
+use rusttype::{Font, GlyphId, PositionedGlyph, Scale};
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, Debug)]
 pub struct DataID(u32);
@@ -49,14 +49,75 @@ pub enum ImageID {
     Glyph(GlyphId),
 }
 
+pub struct GlyphCache {
+    // not using V2 here as it doesn't implement ord :/
+    cache: BTreeMap<(GlyphId, [u16; 2], [u16; 2]), Image>,
+}
+
+impl GlyphCache {
+    pub fn new() -> Self {
+        GlyphCache {
+            cache: BTreeMap::new(),
+        }
+    }
+
+    pub fn render_glyph(&mut self, glyph: &PositionedGlyph) -> &Image {
+        /// normally f.fract() can return negative numbers, because it rounds to 0,
+        /// floor rounds to negative infinity, so this will alawys return a number form 0 to 1
+        pub fn fract_abs(f: f32) -> f32 {
+            f - f.floor()
+        }
+
+        let sub_pixel_steps = 16.0;
+
+        let position = glyph.position();
+
+        // sub-pixel position
+        let sub_pixel_position = [
+            (fract_abs(position.x) * sub_pixel_steps).floor() as u16,
+            (fract_abs(position.y) * sub_pixel_steps).floor() as u16,
+        ];
+
+        let scale = glyph.scale();
+        let sub_pixel_scale = [
+            (scale.x * sub_pixel_steps).floor() as u16,
+            (scale.y * sub_pixel_steps).floor() as u16,
+        ];
+
+        // TODO: The glyph id does not depend on the scale nor position!
+        self.cache
+            .entry((glyph.id(), sub_pixel_position, sub_pixel_scale))
+            .or_insert_with(|| {
+                let bb = match glyph.pixel_bounding_box() {
+                    Some(bb) => bb,
+
+                    // TODO: what is this? Just an empty glyph like a space?
+                    None => rusttype::Rect {
+                        min: rusttype::Point { x: 0, y: 0 },
+                        max: rusttype::Point { x: 0, y: 0 },
+                    },
+                };
+
+                let mut data = vec![0; bb.width() as usize * bb.height() as usize * 4];
+                glyph.draw(|x, y, v| {
+                    let ix = (y as usize * bb.width() as usize + x as usize) * 4;
+                    let v = (v * 255.0).round() as u8;
+                    data[ix + 0] = v;
+                    data[ix + 1] = v;
+                    data[ix + 2] = v;
+                    data[ix + 3] = v;
+                });
+
+                Image::new(V2::new(bb.width() as _, bb.height() as _), data)
+            })
+    }
+}
+
 pub struct AssetLoader {
-    cache: BTreeMap<String, (SystemTime, Image)>,
-    glyph_cache: BTreeMap<GlyphId, Image>,
     font: Font<'static>,
 
-    last_mtime: SystemTime,
-    data_counter: DataID,
-    data_cache: BTreeMap<String, DataID>,
+    image_cache: BTreeMap<String, Image>,
+    glyph_cache: GlyphCache,
 }
 
 impl AssetLoader {
@@ -65,13 +126,9 @@ impl AssetLoader {
         let font = Font::try_from_vec(font).unwrap();
 
         AssetLoader {
-            cache: BTreeMap::new(),
-            glyph_cache: BTreeMap::new(),
+            image_cache: BTreeMap::new(),
+            glyph_cache: GlyphCache::new(),
             font,
-
-            last_mtime: SystemTime::now(),
-            data_counter: DataID(1),
-            data_cache: BTreeMap::new(),
         }
     }
 
@@ -86,7 +143,6 @@ impl AssetLoader {
             let i = self
                 .font
                 .layout(line, font_scale, rusttype::Point { x: 0.0, y });
-            let mut blit = Vec::new();
             for g in i {
                 let bb = match g.pixel_bounding_box() {
                     Some(bb) => bb,
@@ -98,26 +154,10 @@ impl AssetLoader {
                     V2::new(bb.max.x as f64 * s, bb.max.y as f64 * s),
                 );
 
-                // insert glyph
-                let _ = self.glyph_cache.entry(g.id()).or_insert_with(|| {
-                    let mut data = vec![0; bb.width() as usize * bb.height() as usize * 4];
-                    g.draw(|x, y, v| {
-                        let ix = (y as usize * bb.width() as usize + x as usize) * 4;
-                        let v = (v * 255.0).round() as u8;
-                        data[ix + 0] = v;
-                        data[ix + 1] = v;
-                        data[ix + 2] = v;
-                        data[ix + 3] = v;
-                    });
-                    Image::new(V2::new(bb.width() as _, bb.height() as _), data)
-                });
+                let img = self.glyph_cache.render_glyph(&g);
 
                 // return id
-                blit.push((rect, ImageID::Glyph(g.id())));
-            }
-
-            for (rect, id) in blit.into_iter() {
-                gpu.blit(self, &rect, id);
+                gpu.blit(&rect, img);
             }
         }
     }
@@ -126,19 +166,8 @@ impl AssetLoader {
         std::fs::read_to_string(path).unwrap()
     }
 
-    pub fn data(&mut self, path: &str) -> DataID {
-        match self.data_cache.get(path).copied() {
-            Some(id) => id,
-            None => {
-                let id = self.data_counter;
-                self.data_counter.0 += 1;
-                self.data_cache.insert(path.to_string(), id);
-                id
-            },
-        }
-    }
-
     pub fn hot_reload(&mut self) {
+        /*
         let mut next_mtime = self.last_mtime;
         for (path, id) in self.data_cache.iter_mut() {
             let meta = std::fs::metadata(path).unwrap();
@@ -154,52 +183,32 @@ impl AssetLoader {
         }
 
         self.last_mtime = next_mtime;
+        */
     }
 
-    pub fn image(&mut self, data: DataID) -> ImageID {
-        ImageID::Raw(data)
-    }
-
-    pub fn get_path(&mut self, id: DataID) -> &str {
-        let (path, _) = self.data_cache.iter().find(|(k, v)| **v == id).unwrap();
-        path
-    }
-
-    pub fn get_data(&mut self, id: DataID) -> Vec<u8> {
-        eprintln!("get_data({:?})", id);
-        // slow, but reading a file is also slow, so this should be fine
-        std::fs::read(self.get_path(id)).unwrap()
-    }
-
-    pub fn get_image(&mut self, id: ImageID) -> Option<Image> {
-        eprintln!("get_image({:?})", id);
-
-        match id {
-            ImageID::Glyph(id) => self.glyph_cache.get(&id).cloned(),
-            ImageID::Raw(id) => loop {
-                let buf = ::image::open(self.get_path(id));
-                let buf = match buf {
-                    Ok(buf) => buf,
-                    Err(_) => {
-                        std::thread::sleep(std::time::Duration::from_millis(100));
-                        continue;
-                    },
-                };
-                let buf = buf.into_rgba8();
-
-                let (w, h) = buf.dimensions();
-                let data = buf.into_raw();
-                let i = Image::new(V2::new(w, h), data);
-                break Some(i);
-            },
+    pub fn image(&mut self, path: &str) -> Image {
+        if let Some(img) = self.image_cache.get(path) {
+            return img.clone();
         }
-    }
 
-    /*
-    pub fn get_regio(id: ImageID) -> Rect {
-        match self.atlas.get(id) {
-            Some(r) => r,
-            None
+        let img = loop {
+            let buf = ::image::open(path);
+            let buf = match buf {
+                Ok(buf) => buf,
+                Err(_) => {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                    continue;
+                },
+            };
+            let buf = buf.into_rgba8();
+
+            let (w, h) = buf.dimensions();
+            let data = buf.into_raw();
+            break Image::new(V2::new(w, h), data);
+        };
+
+        self.image_cache.insert(path.to_string(), img.clone());
+
+        return img;
     }
-    */
 }

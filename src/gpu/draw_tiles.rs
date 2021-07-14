@@ -218,7 +218,7 @@ impl DrawTiles {
                 slot.mode = SlotMode::Used;
 
                 // upload image
-                eprintln!("upload: [{}] = {}", ix, img.id());
+                // eprintln!("upload: [{}] = {}", ix, img.id());
 
                 // this is still slow for some reason
                 // Only while building gpu tiles, so either we build the tiles  too quickly

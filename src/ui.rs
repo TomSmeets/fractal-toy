@@ -1,4 +1,5 @@
 use crate::asset_loader::ImageID;
+use crate::image::Image;
 use crate::update_loop::Input;
 use crate::util::*;
 use crate::AssetLoader;
@@ -7,7 +8,9 @@ use crate::Gpu;
 pub struct UI {
     row: u32,
     col: u32,
-    elements: Vec<(u32, u32, ImageID)>,
+
+    // Image is not that big, it uses Arc<>
+    elements: Vec<(u32, u32, Image)>,
 
     hover: Option<u32>,
     down: Option<u32>,
@@ -35,7 +38,7 @@ impl UI {
         self.col = 0;
     }
 
-    pub fn button(&mut self, img: ImageID) -> bool {
+    pub fn button(&mut self, img: Image) -> bool {
         let id = self.elements.len() as _;
         self.elements.push((self.row, self.col, img));
         self.col += 1;
@@ -88,27 +91,21 @@ impl UI {
             let is_active = self.down == Some(id);
 
             // back
-            {
-                let id = asset.data("res/button_back.png");
-                let id = asset.image(id);
-                gpu.blit(asset, &rect, id);
-            }
+            gpu.blit(&rect, &asset.image("res/button_back.png"));
 
             // image
-            gpu.blit(asset, &rect, img);
+            gpu.blit(&rect, &img);
 
             // front
             {
                 let id = if is_active {
-                    asset.data("res/button_front_down.png")
+                    asset.image("res/button_front_down.png")
                 } else if is_hover {
-                    asset.data("res/button_front_hot.png")
+                    asset.image("res/button_front_hot.png")
                 } else {
-                    asset.data("res/button_front_norm.png")
+                    asset.image("res/button_front_norm.png")
                 };
-
-                let id = asset.image(id);
-                gpu.blit(asset, &rect, id);
+                gpu.blit(&rect, &id);
             }
         }
 

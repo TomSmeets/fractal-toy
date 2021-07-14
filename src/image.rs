@@ -2,10 +2,17 @@ use crate::util::*;
 use std::sync::atomic::AtomicU32;
 use std::sync::Arc;
 
+// NOTE: clone should be cheap, because we are passing this image around a lot, so we want to clone
+// it to prevent borrow checker issues
 #[derive(Clone)]
 pub struct Image {
+    /// Checking if two images are the same would be very expensive if we have to check every pixel
+    /// This is why we assign every image a unique id, we only check this for equality
     id: u32,
+
     size: V2<u32>,
+
+    // TODO: also support images that live in gpu memory?
     data: Arc<Vec<u8>>,
 }
 

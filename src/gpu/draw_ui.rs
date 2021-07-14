@@ -1,7 +1,6 @@
-use crate::asset_loader::AssetLoader;
-use crate::asset_loader::ImageID;
 use crate::gpu::GpuDevice;
 use crate::gpu::ShaderLoader;
+use crate::image::Image;
 use crate::pack::{Block, Pack};
 use crate::util::*;
 use crate::viewport::Viewport;
@@ -24,7 +23,7 @@ pub struct DrawUI {
 
     pub vertex_list: Vec<Vertex>,
 
-    blocks: BTreeMap<ImageID, (Block, V2<u32>)>,
+    blocks: BTreeMap<u32, (Block, V2<u32>)>,
     pack: Pack,
 }
 
@@ -187,7 +186,7 @@ impl DrawUI {
     }
 
     #[rustfmt::skip]
-    pub fn blit(&mut self, asset_loader: &mut AssetLoader, device: &GpuDevice, rect: &Rect, img: ImageID) {
+    pub fn blit(&mut self, device: &GpuDevice, rect: &Rect, img: &Image) {
         let lx = rect.corner_min().x as f32;
         let ly = rect.corner_min().y as f32;
         let hx = rect.corner_max().x as f32;
@@ -197,8 +196,7 @@ impl DrawUI {
         let blocks = &mut self.blocks;
         let pack = &mut self.pack;
         let texture = &self.texture;
-        let (block, size) = blocks.entry(img).or_insert_with(|| {
-            let img = asset_loader.get_image(img).unwrap();
+        let (block, size) = blocks.entry(img.id()).or_insert_with(|| {
             let size = img.size();
             let block = pack.alloc(size.map(|x| x as _)).unwrap();
 
