@@ -46,35 +46,57 @@ use std::time::SystemTime;
 //
 // Font renderer just has GlyphId -> Image like before
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum FontType {
+    Normal,
+    Mono,
+}
+
 pub struct AssetLoader {
-    font: Font<'static>,
+    // TODO: more font types
+    //   mono    for debug text
+    //   normral for ui ext
+    // so two types should be enough
+    font_mono: Font<'static>,
+    font_norm: Font<'static>,
+
+    glyph_cache_mono: GlyphCache,
+    glyph_cache_norm: GlyphCache,
 
     image_cache: BTreeMap<String, (Image, SystemTime)>,
-    glyph_cache: GlyphCache,
 }
 
 impl AssetLoader {
     pub fn new() -> Self {
-        let font = std::fs::read("./res/DejaVuSansMono-Bold.ttf").unwrap();
-        let font = Font::try_from_vec(font).unwrap();
+        let font_mono = std::fs::read("./res/DejaVuSansMono-Bold.ttf").unwrap();
+        let font_mono = Font::try_from_vec(font_mono).unwrap();
+
+        let font_norm = std::fs::read("./res/DejaVuSans.ttf").unwrap();
+        let font_norm = Font::try_from_vec(font_norm).unwrap();
 
         AssetLoader {
             image_cache: BTreeMap::new(),
-            glyph_cache: GlyphCache::new(),
-            font,
+            glyph_cache_norm: GlyphCache::new(),
+            glyph_cache_mono: GlyphCache::new(),
+            font_norm,
+            font_mono,
         }
     }
 
-    fn text_bounds(&self, scale: Scale, text: &str) -> V2<u32> {
+    fn text_bounds(&self, font_type: FontType, scale: Scale, text: &str) -> V2<u32> {
+        let font = match font_type {
+            FontType::Mono => &self.font_mono,
+            FontType::Normal => &self.font_norm,
+        };
+
         let mut max_width = 0;
         let mut max_height = 0.0;
-        let metrics = self.font.v_metrics(scale);
+        let metrics = font.v_metrics(scale);
         let line_height = metrics.ascent - metrics.descent + metrics.line_gap;
 
         for line in text.lines() {
             max_height += line_height;
-            if let Some(bb) = self
-                .font
+            if let Some(bb) = font
                 .layout(line, scale, rusttype::Point { x: 0.0, y: 0.0 })
                 .flat_map(|g| g.pixel_bounding_box())
                 .last()
@@ -93,21 +115,38 @@ impl AssetLoader {
     ///   0.0 -> left
     ///   0.5 -> center
     ///   1.0 -> right
-    pub fn text(&mut self, p: V2<i32>, align: V2<f32>, gpu: &mut Gpu, text: &str) {
-        let font_scale = Scale::uniform(26.0);
-
-        let metrics = self.font.v_metrics(font_scale);
-
-        let line_height = metrics.ascent - metrics.descent + metrics.line_gap;
+    pub fn text(
+        &mut self,
+        font_type: FontType,
+        p: V2<i32>,
+        align: V2<f32>,
+        size: f32,
+        gpu: &mut Gpu,
+        text: &str,
+    ) {
+        let font_scale = Scale::uniform(size);
 
         // not ideal
-        let bounds = self.text_bounds(font_scale, text);
+        let bounds = self.text_bounds(font_type, font_scale, text);
         let x = p.x as f32 - bounds.x as f32 * align.x;
         let mut y = p.y as f32 - bounds.y as f32 * align.y;
 
+        let font = match font_type {
+            FontType::Mono => &self.font_mono,
+            FontType::Normal => &self.font_norm,
+        };
+
+        let cache = match font_type {
+            FontType::Mono => &mut self.glyph_cache_mono,
+            FontType::Normal => &mut self.glyph_cache_norm,
+        };
+
+        let metrics = font.v_metrics(font_scale);
+        let line_height = metrics.ascent - metrics.descent + metrics.line_gap;
+
         for line in text.lines() {
             y += line_height;
-            let i = self.font.layout(line, font_scale, rusttype::Point { x, y });
+            let i = font.layout(line, font_scale, rusttype::Point { x, y });
             for g in i {
                 let bb = match g.pixel_bounding_box() {
                     Some(bb) => bb,
@@ -119,7 +158,7 @@ impl AssetLoader {
                     V2::new(bb.max.x as f64 * s, bb.max.y as f64 * s),
                 );
 
-                let img = self.glyph_cache.render_glyph(&g);
+                let img = cache.render_glyph(&g);
 
                 // return id
                 gpu.blit(&rect, img);

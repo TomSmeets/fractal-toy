@@ -17,6 +17,7 @@ mod util;
 mod viewport;
 
 use self::asset_loader::AssetLoader;
+use self::asset_loader::FontType;
 use self::builder::TileBuilder;
 use self::gpu::Gpu;
 use self::image::Image;
@@ -254,8 +255,18 @@ impl State {
         // send the render commands to the gpu
         self.debug.time("gpu render");
         self.asset.text(
+            FontType::Mono,
+            V2::new(0, 0),
+            V2::new(0.0, 0.0),
+            26.0,
+            &mut self.gpu,
+            &self.debug.draw(),
+        );
+        self.asset.text(
+            FontType::Normal,
             input.mouse,
             V2::new(0.5, 0.5),
+            11.0,
             &mut self.gpu,
             &self.debug.draw(),
         );
