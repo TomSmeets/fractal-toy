@@ -5,6 +5,7 @@
 mod asset_loader;
 mod builder;
 mod debug;
+mod glyph_cache;
 mod gpu;
 mod image;
 mod pack;

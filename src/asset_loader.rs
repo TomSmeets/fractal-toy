@@ -1,5 +1,8 @@
+use crate::glyph_cache::GlyphCache;
 use crate::*;
-use rusttype::{Font, GlyphId, PositionedGlyph, Scale};
+use ::rusttype::Font;
+use ::rusttype::Scale;
+use std::time::SystemTime;
 
 // TODO: I don't like this, but not sure what to do yet
 //
@@ -41,74 +44,10 @@ use rusttype::{Font, GlyphId, PositionedGlyph, Scale};
 //
 // Font renderer just has GlyphId -> Image like before
 
-pub struct GlyphCache {
-    // not using V2 here as it doesn't implement ord :/
-    cache: BTreeMap<(GlyphId, [u16; 2], [u16; 2]), Image>,
-}
-
-impl GlyphCache {
-    pub fn new() -> Self {
-        GlyphCache {
-            cache: BTreeMap::new(),
-        }
-    }
-
-    pub fn render_glyph(&mut self, glyph: &PositionedGlyph) -> &Image {
-        /// normally f.fract() can return negative numbers, because it rounds to 0,
-        /// floor rounds to negative infinity, so this will alawys return a number form 0 to 1
-        pub fn fract_abs(f: f32) -> f32 {
-            f - f.floor()
-        }
-
-        let sub_pixel_steps = 16.0;
-
-        let position = glyph.position();
-
-        // sub-pixel position
-        let sub_pixel_position = [
-            (fract_abs(position.x) * sub_pixel_steps).floor() as u16,
-            (fract_abs(position.y) * sub_pixel_steps).floor() as u16,
-        ];
-
-        let scale = glyph.scale();
-        let sub_pixel_scale = [
-            (scale.x * sub_pixel_steps).floor() as u16,
-            (scale.y * sub_pixel_steps).floor() as u16,
-        ];
-
-        // TODO: The glyph id does not depend on the scale nor position!
-        self.cache
-            .entry((glyph.id(), sub_pixel_position, sub_pixel_scale))
-            .or_insert_with(|| {
-                let bb = match glyph.pixel_bounding_box() {
-                    Some(bb) => bb,
-
-                    // TODO: what is this? Just an empty glyph like a space?
-                    None => rusttype::Rect {
-                        min: rusttype::Point { x: 0, y: 0 },
-                        max: rusttype::Point { x: 0, y: 0 },
-                    },
-                };
-
-                let mut data = vec![0; bb.width() as usize * bb.height() as usize * 4];
-                glyph.draw(|x, y, v| {
-                    let ix = (y as usize * bb.width() as usize + x as usize) * 4;
-                    let v = (v * 255.0).round() as u8;
-                    data[ix + 0] = v;
-                    data[ix + 1] = v;
-                    data[ix + 2] = v;
-                    data[ix + 3] = v;
-                });
-
-                Image::new(V2::new(bb.width() as _, bb.height() as _), data)
-            })
-    }
-}
-
 pub struct AssetLoader {
     font: Font<'static>,
 
-    image_cache: BTreeMap<String, Image>,
+    image_cache: BTreeMap<String, (Image, SystemTime)>,
     glyph_cache: GlyphCache,
 }
 
@@ -159,27 +98,30 @@ impl AssetLoader {
     }
 
     pub fn hot_reload(&mut self) {
-        /*
-        let mut next_mtime = self.last_mtime;
-        for (path, id) in self.data_cache.iter_mut() {
-            let meta = std::fs::metadata(path).unwrap();
-            let mtime = meta.modified().unwrap();
-            if mtime > self.last_mtime {
-                *id = self.data_counter;
+        let mut to_remove = Vec::new();
 
-                // new ids for those
-                // we could also just remove them, but this might be faster
-                self.data_counter.0 += 1;
-                next_mtime = next_mtime.max(mtime);
+        for (path, (_, stored_mtime)) in self.image_cache.iter() {
+            let current_mtime = std::fs::metadata(path).unwrap().modified().unwrap();
+
+            if current_mtime != *stored_mtime {
+                // yes thsese allocations are fine
+                // this only happens very rarely, and during debugging.
+                // And an empty Vec doesnt allocate
+                to_remove.push(path.clone());
             }
         }
 
-        self.last_mtime = next_mtime;
-        */
+        // just remove them from the cache
+        // this forces them to be reloaded the next time
+        // Note that the images are reference counted, so they will not be deallocated yet
+        // however no-one else should store them longer than a frame
+        for path in to_remove {
+            self.image_cache.remove(&path);
+        }
     }
 
     pub fn image(&mut self, path: &str) -> Image {
-        if let Some(img) = self.image_cache.get(path) {
+        if let Some((img, _)) = self.image_cache.get(path) {
             return img.clone();
         }
 
@@ -199,7 +141,9 @@ impl AssetLoader {
             break Image::new(V2::new(w, h), data);
         };
 
-        self.image_cache.insert(path.to_string(), img.clone());
+        let mtime = std::fs::metadata(path).unwrap().modified().unwrap();
+        self.image_cache
+            .insert(path.to_string(), (img.clone(), mtime));
 
         return img;
     }
