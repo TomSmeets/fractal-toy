@@ -149,34 +149,34 @@ impl TileBuilder {
                         for (_, _, z) in it {
                             z.y = -z.y;
                         }
-                    },
+                    }
                     FractalStep::AbsR => {
                         for (_, _, z) in it {
                             z.x = z.x.abs()
                         }
-                    },
+                    }
                     FractalStep::AbsI => {
                         for (_, _, z) in it {
                             z.y = -z.y.abs()
                         }
-                    },
+                    }
                     FractalStep::Square => {
                         for (_, _, z) in it {
                             *z = cpx_sqr(*z)
                         }
-                    },
+                    }
                     FractalStep::Cube => {
                         for (_, _, z) in it {
                             *z = cpx_cube(*z)
                         }
-                    },
+                    }
                     FractalStep::AddC => {
                         for (_, c, z) in values.iter_mut() {
                             *z = *z + *c;
                         }
 
                         t += 1.0;
-                    },
+                    }
                 }
             }
 
@@ -238,7 +238,7 @@ impl TileBuilder {
                 Some((img, count)) => {
                     *count += 1;
                     return Some(img);
-                },
+                }
 
                 // The tile is already queud, just not done yet
                 None => return None,
@@ -254,10 +254,10 @@ impl TileBuilder {
             match v {
                 Some((img, cnt)) if cnt > 0 => {
                     new_cache.insert(k, Some((img, 0)));
-                },
+                }
                 None => {
                     new_cache.insert(k, None);
-                },
+                }
                 _ => (),
             };
         }

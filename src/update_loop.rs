@@ -81,7 +81,7 @@ impl Loop {
                 } => {
                     input.resolution.x = size.width;
                     input.resolution.y = size.height;
-                },
+                }
 
                 Event::WindowEvent {
                     window_id: _,
@@ -93,7 +93,7 @@ impl Loop {
                         input.mouse_down = is_down;
                         input.mouse_click = is_down;
                     }
-                },
+                }
 
                 Event::WindowEvent {
                     window_id: _,
@@ -104,7 +104,7 @@ impl Loop {
                         },
                 } => {
                     input.mouse_scroll += dy;
-                },
+                }
 
                 Event::WindowEvent {
                     window_id: _,
@@ -112,7 +112,7 @@ impl Loop {
                 } => {
                     input.mouse.x = pos.x as _;
                     input.mouse.y = pos.y as _;
-                },
+                }
 
                 // After all events are handled, time to update.
                 // or not, if this is called on any event that might have happened
@@ -136,7 +136,7 @@ impl Loop {
                     }
 
                     *control_flow = ControlFlow::WaitUntil(next_frame_time);
-                },
+                }
                 _ => (),
             }
         })

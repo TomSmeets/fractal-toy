@@ -63,7 +63,7 @@ impl ShelfPack {
                     height: image_size.y,
                 });
                 (ix, y)
-            },
+            }
         };
 
         let shelf = &mut self.shelves[ix];

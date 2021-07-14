@@ -54,11 +54,11 @@ impl ShaderLoader {
                     dbg!(source);
                     eprintln!("{}", description);
                     None
-                },
+                }
                 e => {
                     dbg!(e);
                     None
-                },
+                }
             },
         }
     }

@@ -166,7 +166,7 @@ impl AssetLoader {
                 Err(_) => {
                     std::thread::sleep(std::time::Duration::from_millis(100));
                     continue;
-                },
+                }
             };
             let buf = buf.into_rgba8();
 

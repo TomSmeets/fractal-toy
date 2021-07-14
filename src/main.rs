@@ -253,8 +253,12 @@ impl State {
 
         // send the render commands to the gpu
         self.debug.time("gpu render");
-        self.asset
-            .text(input.mouse, V2::new(0.5, 0.5), &mut self.gpu, &self.debug.draw());
+        self.asset.text(
+            input.mouse,
+            V2::new(0.5, 0.5),
+            &mut self.gpu,
+            &self.debug.draw(),
+        );
 
         self.ui.update(input, &mut self.gpu, &mut self.asset);
         self.gpu.render(window, &self.viewport, &mut self.debug);

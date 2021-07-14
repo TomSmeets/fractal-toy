@@ -67,13 +67,13 @@ impl Viewport {
         match self.drag_anchor {
             None => {
                 self.drag_anchor = Some(current);
-            },
+            }
 
             Some(target) => {
                 self.offset -= current;
                 self.offset += target;
                 self.move_vel = target - current;
-            },
+            }
         };
 
         self.did_drag = true;
