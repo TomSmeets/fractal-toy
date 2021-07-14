@@ -89,7 +89,11 @@ impl AssetLoader {
     }
 
     // TODO: This should not be here
-    pub fn text(&mut self, p: V2<i32>, gpu: &mut Gpu, text: &str) {
+    /// text alignment:
+    ///   0.0 -> left
+    ///   0.5 -> center
+    ///   1.0 -> right
+    pub fn text(&mut self, p: V2<i32>, align: V2<f32>, gpu: &mut Gpu, text: &str) {
         let font_scale = Scale::uniform(26.0);
 
         let metrics = self.font.v_metrics(font_scale);
@@ -98,8 +102,8 @@ impl AssetLoader {
 
         // not ideal
         let bounds = self.text_bounds(font_scale, text);
-        let x = p.x as f32 - bounds.x as f32 / 2.0;
-        let mut y = p.y as f32 - bounds.y as f32 / 2.0;
+        let x = p.x as f32 - bounds.x as f32 * align.x;
+        let mut y = p.y as f32 - bounds.y as f32 * align.y;
 
         for line in text.lines() {
             y += line_height;
