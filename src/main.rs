@@ -27,7 +27,6 @@ use self::viewport::Viewport;
 
 use debug::Debug;
 use std::collections::BTreeMap;
-use std::time::SystemTime;
 use winit::window::Window;
 
 static MANDELBROT: &[FractalStep] = &[FractalStep::Square, FractalStep::AddC];

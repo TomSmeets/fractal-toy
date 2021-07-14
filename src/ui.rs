@@ -1,4 +1,3 @@
-use crate::asset_loader::ImageID;
 use crate::image::Image;
 use crate::update_loop::Input;
 use crate::util::*;
