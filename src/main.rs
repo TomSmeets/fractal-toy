@@ -107,7 +107,6 @@ pub struct State {
     viewport: Viewport,
 
     steps: Vec<FractalStep>,
-    steps_old: Vec<FractalStep>,
 }
 
 impl State {
@@ -123,7 +122,6 @@ impl State {
             viewport: Viewport::new(),
             asset,
             ui: UI::new(),
-            steps_old: steps.to_vec(),
             steps,
         }
     }
@@ -175,10 +173,7 @@ impl State {
 
     /// always called at regular intervals
     pub fn update(&mut self, window: &Window, input: &Input) {
-        if self.steps != self.steps_old {
-            self.steps_old = self.steps.to_vec();
-            self.builder = TileBuilder::new(self.gpu.device(), &mut self.asset, &self.steps);
-        }
+        let mut recreate_builder = false;
 
         self.debug.begin();
         self.debug.time("start");
@@ -239,6 +234,7 @@ impl State {
                 let img = self.asset.image(img);
                 if self.ui.button(img) {
                     self.steps.push(*s);
+                    recreate_builder = true;
                 }
             }
 
@@ -253,8 +249,10 @@ impl State {
                     remove.push(i);
                 }
             }
+
             for i in remove {
                 self.steps.remove(i);
+                recreate_builder = true;
             }
         }
 
@@ -278,6 +276,10 @@ impl State {
             dt_update.as_micros(),
         );
         self.debug.print(&rate);
+
+        if recreate_builder {
+            self.builder = TileBuilder::new(self.gpu.device(), &mut self.asset, &self.steps);
+        }
 
         self.debug.time("state.update (end)");
     }
