@@ -55,7 +55,7 @@ pub struct AssetLoader {
 
 impl AssetLoader {
     pub fn new() -> Self {
-        let font = std::fs::read("./res/DejaVuSans.ttf").unwrap();
+        let font = std::fs::read("./res/DejaVuSansMono-Bold.ttf").unwrap();
         let font = Font::try_from_vec(font).unwrap();
 
         AssetLoader {
