@@ -6,6 +6,45 @@ pub struct DataID(u32);
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, Debug)]
 pub enum ImageID {
+    // TODO: I don't like this, but not sure what to do yet
+    //
+    // All ui elements can be stored in memory, but they wouldent have to, as the atlas is
+    // permanent anyway. glyphs and ui images are never removed from the atlas
+    //
+    // The fractal tile images are removed regularly however, they also don't go in to the atlas,
+    // but in a array texture.
+    //
+    //
+    // Ok, I think i am going back to also storing everything on the cpu. because we are storing
+    // the biggest things, like the fractal tiles, on the cpu anyway. so no reason to  not do that
+    // with the ui elements, which are quite small.
+    //
+    // What about tiles generated on the gpu, can we somehow make them stay there?
+    //
+    // > Image(id, size, data: Gpu | Vec<u8>)
+    // could be a sloution
+    // the gpu texture array would be shared.
+    // > GpuMemory(atlas) // also remembers which slots are used
+    //
+    // All tiles are only stored in the builders. The gpu buffer is owned by the compute_tile
+    // builder. The gpu renderer should only use it.
+    //
+    // gpu.tile(rect, image) {
+    //   match image {
+    //      cpu => altas.alloc(imgage) -> use region
+    //      gpu => use buffer directly
+    //   }
+    // }
+    //
+    // This seems better, so not an image ID like this, just for fast equality checking. always
+    // include the data, because that is just easier. But the data can be stored on the gpu.
+    //
+    // Maybe maybe, we could even do
+    // > Image(id, size, data: Gpu | Vec<u8> | FileSystem(path))
+    // but don't know how it would be usefull
+    //
+    //
+    // Font renderer just has GlyphId -> Image like before
     Raw(DataID),
     Glyph(GlyphId),
 }
