@@ -143,11 +143,9 @@ impl Gpu {
             break frame;
         };
 
-        debug.time("draw_tiles");
         let vtx_count = self.draw_tiles.vertex_list.len();
         self.draw_tiles.render(device, viewport);
 
-        debug.time("draw_ui");
         let ui_vtx_count = self.draw_ui.render(device, viewport);
 
         // We finally have a frame, now it is time to create the render commands
@@ -183,8 +181,6 @@ impl Gpu {
             rpass.draw(0..ui_vtx_count as u32, 0..1);
         }
 
-        debug.time("submit");
         device.queue.submit(Some(encoder.finish()));
-
     }
 }

@@ -54,9 +54,9 @@ pub enum FontType {
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum TextAlignment {
-    Left   = 0,
+    Left = 0,
     Center = 1,
-    Right  = 2,
+    Right = 2,
 }
 
 pub struct AssetLoader {

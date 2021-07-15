@@ -176,7 +176,7 @@ impl State {
         let mut recreate_builder = false;
 
         self.debug.begin();
-        self.debug.time("start");
+        self.debug.push("update()");
 
         // resize viewport
         self.viewport.size(input.resolution);
@@ -198,26 +198,28 @@ impl State {
         self.asset.hot_reload();
 
         // queue which tiles should be built, we include a 1 tile border here
-        self.debug.time("build tiles");
+        self.debug.push("builder.tile() [build]");
         for p in self.viewport.get_pos_all(1) {
             self.builder.tile(&p);
         }
+        self.debug.pop();
 
-        self.debug.time("show tiles");
         // draw tiles, without a border, so just those visible
+        self.debug.push("builder.tile() [draw]");
         for p in self.viewport.get_pos_all(0) {
             // if we don't have a tile don't draw it yet
             if let Some(img) = self.builder.tile(&p) {
                 self.gpu.tile(&self.viewport, &p, img);
             }
         }
+        self.debug.pop();
 
         // random information text
-        self.debug.time("info text");
         self.debug.print(&Self::distance(self.viewport.scale));
 
         // The user interface buttons on the bottom
         {
+            self.debug.push("ui.buttons()");
             fn step_img(s: FractalStep) -> &'static str {
                 match s {
                     FractalStep::Square => "res/mod_2.png",
@@ -251,33 +253,49 @@ impl State {
                 self.steps.remove(i);
                 recreate_builder = true;
             }
+            self.debug.pop();
         }
 
-        // send the render commands to the gpu
-        self.debug.time("gpu render");
-        self.asset.text(
-            FontType::Mono,
-            V2::new(0, 0),
-            V2::new(0.0, 0.0),
-            26.0,
-            &mut self.gpu,
-            &self.debug.draw(),
-        );
-        self.asset.text(
-            FontType::Normal,
-            input.mouse,
-            V2::new(0.5, 0.5),
-            11.0,
-            &mut self.gpu,
-            &self.debug.draw(),
-        );
+        {
+            self.debug.push("asset.text()");
 
+            self.debug.push("asset.text(Debug)");
+            self.asset.text(
+                FontType::Mono,
+                V2::new(0, 0),
+                V2::new(TextAlignment::Left, TextAlignment::Left),
+                26.0,
+                &mut self.gpu,
+                &self.debug.draw(),
+            );
+            self.debug.pop();
+
+            self.debug.push("asset.text(Cursor)");
+            self.asset.text(
+                FontType::Normal,
+                input.mouse,
+                V2::new(TextAlignment::Center, TextAlignment::Center),
+                11.0,
+                &mut self.gpu,
+                &self.debug.draw(),
+            );
+            self.debug.pop();
+
+            self.debug.pop();
+        }
+
+        self.debug.push("ui.update()");
         self.ui.update(input, &mut self.gpu, &mut self.asset);
+        self.debug.pop();
+
+        self.debug.push("gpu.update()");
         self.gpu.render(window, &self.viewport, &mut self.debug);
+        self.debug.pop();
 
         // update tile builder cache
-        self.debug.time("builder update");
+        self.debug.push("builder.update()");
         self.builder.update();
+        self.debug.pop();
 
         {
             let dt_frame = input.real_dt_full;
@@ -296,7 +314,7 @@ impl State {
             self.builder = TileBuilder::new(self.gpu.device(), &mut self.asset, &self.steps);
         }
 
-        self.debug.time("state.update (end)");
+        self.debug.pop();
     }
 }
 
