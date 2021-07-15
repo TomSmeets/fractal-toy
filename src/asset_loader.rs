@@ -175,8 +175,6 @@ impl AssetLoader {
                 );
 
                 let img = cache.render_glyph(&g);
-
-                // return id
                 gpu.blit(&rect, img);
             }
         }
