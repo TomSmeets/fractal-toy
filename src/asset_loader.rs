@@ -52,6 +52,13 @@ pub enum FontType {
     Mono,
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum TextAlignment {
+    Left   = 0,
+    Center = 1,
+    Right  = 2,
+}
+
 pub struct AssetLoader {
     // TODO: more font types
     //   mono    for debug text
@@ -119,17 +126,26 @@ impl AssetLoader {
         &mut self,
         font_type: FontType,
         p: V2<i32>,
-        align: V2<f32>,
+        align: V2<TextAlignment>,
         size: f32,
         gpu: &mut Gpu,
         text: &str,
     ) {
         let font_scale = Scale::uniform(size);
 
-        // not ideal
-        let bounds = self.text_bounds(font_type, font_scale, text);
-        let x = p.x as f32 - bounds.x as f32 * align.x;
-        let mut y = p.y as f32 - bounds.y as f32 * align.y;
+        let mut x = p.x as f32;
+        let mut y = p.y as f32;
+
+        if align.x != TextAlignment::Left && align.y != TextAlignment::Left {
+            // align is an integer from 0 to 2
+            let dx = (align.x as u32) as f32 * 0.5;
+            let dy = (align.y as u32) as f32 * 0.5;
+
+            // not ideal
+            let bounds = self.text_bounds(font_type, font_scale, text);
+            x -= bounds.x as f32 * dx;
+            y -= bounds.y as f32 * dy;
+        }
 
         let font = match font_type {
             FontType::Mono => &self.font_mono,

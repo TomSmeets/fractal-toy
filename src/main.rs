@@ -28,6 +28,7 @@ use self::update_loop::Loop;
 use self::util::*;
 use self::viewport::Viewport;
 
+use asset_loader::TextAlignment;
 use debug::Debug;
 use std::collections::BTreeMap;
 use winit::window::Window;
