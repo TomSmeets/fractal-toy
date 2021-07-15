@@ -7,7 +7,7 @@ use crate::viewport::Viewport;
 use std::collections::BTreeMap;
 use wgpu::*;
 
-const MAX_VERTS: u64 = 1024 * 4;
+const MAX_VERTS: u64 = 1024 * 8;
 const ATLAS_SIZE: u32 = 1024 * 2;
 
 pub struct DrawUI {
