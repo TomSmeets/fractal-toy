@@ -195,7 +195,9 @@ impl State {
         self.viewport.update(input.dt as f64);
 
         // check for asset changes
+        self.debug.push("asset.hot_reload()");
         self.asset.hot_reload();
+        self.debug.pop();
 
         // queue which tiles should be built, we include a 1 tile border here
         self.debug.push("builder.tile() [build]");
