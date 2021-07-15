@@ -75,7 +75,7 @@ static STEP_VALUES: &[FractalStep] = &[
     FractalStep::Conj,
 ];
 
-#[derive(Eq, PartialEq, Clone, Copy)]
+#[derive(Eq, PartialEq, Clone, Copy, Debug)]
 pub enum FractalStep {
     /// z = z^2
     Square,
@@ -115,13 +115,14 @@ impl State {
         let gpu = Gpu::init(window, &mut asset);
         let steps = MANDELBROT.to_vec();
         let builder = TileBuilder::new(gpu.device(), &mut asset, &steps);
+        let ui = UI::new(&mut asset);
         State {
             debug: Debug::new(),
             gpu,
             builder,
             viewport: Viewport::new(),
             asset,
-            ui: UI::new(),
+            ui,
             steps,
         }
     }
@@ -235,13 +236,14 @@ impl State {
 
             // Pick modules from these
             for s in STEP_VALUES.iter() {
+                self.ui.text(&mut self.asset, &format!("{:?}", s));
                 if self.ui.button(self.asset.image(step_img(*s))) {
                     self.steps.push(*s);
                     recreate_builder = true;
                 }
             }
 
-            self.ui.next_line();
+            self.ui.next_row();
 
             // and drop them here
             let mut remove = Vec::new();
@@ -255,6 +257,9 @@ impl State {
                 self.steps.remove(i);
                 recreate_builder = true;
             }
+
+            self.ui.text(&mut self.asset, "HELLO WORLD!");
+
             self.debug.pop();
         }
 

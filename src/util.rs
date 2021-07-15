@@ -7,8 +7,8 @@ pub type V3<S = f64> = Vector3<S>;
 
 #[derive(Copy, Clone)]
 pub struct Rect {
-    min: V2,
-    max: V2,
+    pub min: V2,
+    pub max: V2,
 }
 
 impl Rect {

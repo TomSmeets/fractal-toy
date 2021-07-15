@@ -118,10 +118,6 @@ impl AssetLoader {
     }
 
     // TODO: This should not be here
-    /// text alignment:
-    ///   0.0 -> left
-    ///   0.5 -> center
-    ///   1.0 -> right
     pub fn text(
         &mut self,
         font_type: FontType,
@@ -131,6 +127,20 @@ impl AssetLoader {
         gpu: &mut Gpu,
         text: &str,
     ) {
+        for (rect, img) in self.text_iter(font_type, p, align, size, text).into_iter() {
+            gpu.blit(&rect, &img);
+        }
+    }
+
+    // TODO: This should not be here
+    pub fn text_iter(
+        &mut self,
+        font_type: FontType,
+        p: V2<i32>,
+        align: V2<TextAlignment>,
+        size: f32,
+        text: &str,
+    ) -> Vec<(Rect, Image)> {
         let font_scale = Scale::uniform(size);
 
         let mut x = p.x as f32;
@@ -160,6 +170,7 @@ impl AssetLoader {
         let metrics = font.v_metrics(font_scale);
         let line_height = metrics.ascent - metrics.descent + metrics.line_gap;
 
+        let mut result = Vec::new();
         for line in text.lines() {
             y += line_height;
             let i = font.layout(line, font_scale, rusttype::Point { x, y });
@@ -175,9 +186,11 @@ impl AssetLoader {
                 );
 
                 let img = cache.render_glyph(&g);
-                gpu.blit(&rect, img);
+                result.push((rect, img.clone()));
             }
         }
+
+        result
     }
 
     pub fn text_file(&mut self, path: &str) -> String {
