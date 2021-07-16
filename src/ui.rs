@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use crate::image::Image;
 use crate::update_loop::Input;
 use crate::util::*;
@@ -17,26 +19,67 @@ use crate::asset_loader::TextAlignment;
 
 type UIPos = V2<u16>;
 
-enum Command {
-    NextRow,
-    NextCol,
-    MoveUp,
-    MoveDown,
-    Image(Rect, Image),
+// simple window, single grid/table layout
+// future: many a list of tables, not nested, just linear
+struct Window {
+    name: &'static str,
+    used: bool,
+
+    position: V2,
+    bounds: Rect,
+    images: Vec<(Rect, Image)>,
+}
+
+impl Window {
+    pub fn new(name: &'static str) -> Self {
+        Window {
+            name,
+            used: true,
+            bounds: Rect::min_max(V2::zero(), V2::zero()),
+            position: V2::zero(),
+            images: Vec::new(),
+        }
+    }
+
+    pub fn content_rect(&self) -> Rect {
+        Rect::corner_size(self.position, self.bounds.size())
+    }
+
+    pub fn unuse(&mut self) {
+        self.used = false;
+    }
+
+    pub fn push(&mut self, rect: &Rect, image: &Image) {
+        self.used = true;
+        self.bounds.extend(rect);
+        self.images.push((*rect, image.clone()));
+    }
+
+    pub fn reset(&mut self) {
+        self.bounds = Rect::min_max(V2::zero(), V2::zero());
+        self.images.clear();
+    }
+
+    pub fn draw(&mut self, asset_loader: &mut AssetLoader, gpu: &mut Gpu) {
+        let content_rect = self.content_rect();
+        gpu.blit(&content_rect, &asset_loader.image("res/window_back.png"));
+        for (rect, img) in self.images.iter() {
+            let mut rect = *rect;
+            rect.translate(-self.bounds.corner_min() + content_rect.corner_min());
+            gpu.blit(&rect, img);
+        }
+    }
 }
 
 pub struct UI {
-    current_pos: UIPos,
-    parent_pos: Vec<UIPos>,
-
     // Image is not that big, it uses Arc<>
     //
     // text is also just images. lest just snap those images to the cosest pixel
     // hinting is done when creating an entire string, but that string can be moved in pixel space.
     // hinting only makes sense wihtin a string.
-    elements: Vec<(UIPos, Image)>,
-
-    commands: Vec<Command>,
+    draggin_window: Option<(&'static str, V2)>,
+    current_window: Option<Window>,
+    windows: BTreeMap<&'static str, Window>,
 
     hover: Option<u32>,
     down: Option<u32>,
@@ -48,10 +91,10 @@ pub struct UI {
 impl UI {
     pub fn new(asset: &mut AssetLoader) -> Self {
         UI {
-            current_pos: V2::zero(),
-            parent_pos: Vec::new(),
-            elements: Vec::new(),
-            commands: Vec::new(),
+            current_window: None,
+            draggin_window: None,
+            windows: BTreeMap::new(),
+
             hover: None,
             down: None,
             click: None,
@@ -61,35 +104,34 @@ impl UI {
     }
 
     pub fn has_input(&self) -> bool {
-        self.hover.is_some() || self.down.is_some()
+        self.hover.is_some() || self.down.is_some() || self.draggin_window.is_some()
     }
 
-    pub fn next_row(&mut self) {
-        self.commands.push(Command::NextRow);
+    pub fn next_row(&mut self) {}
+
+    pub fn next_col(&mut self) {}
+
+    pub fn begin_window(&mut self, name: &'static str) {
+        let mut window = self.windows.remove(name).unwrap_or(Window::new(name));
+        window.used = true;
+        self.current_window = Some(window);
     }
 
-    pub fn next_col(&mut self) {
-        self.commands.push(Command::NextCol);
-    }
-
-    pub fn down(&mut self) {
-        self.commands.push(Command::MoveDown);
-    }
-
-    pub fn up(&mut self) {
-        self.commands.push(Command::MoveUp);
+    pub fn end_window(&mut self) {
+        let window = self.current_window.take().unwrap();
+        self.windows.insert(window.name, window);
     }
 
     /// push an image, the rect is relative to the current cell
     pub fn image(&mut self, rect: Rect, img: Image) {
-        self.commands.push(Command::Image(rect, img));
+        self.current_window.as_mut().unwrap().push(&rect, &img);
     }
 
-    pub fn text(&mut self, asset_loader: &mut AssetLoader, text: &str) {
+    pub fn text(&mut self, asset_loader: &mut AssetLoader, kind: FontType, text: &str) {
         let itr = asset_loader.text_iter(
-            FontType::Normal,
+            kind,
             V2::zero(),
-            V2::new(TextAlignment::Center, TextAlignment::Center),
+            V2::new(TextAlignment::Left, TextAlignment::Left),
             26.0,
             text,
         );
@@ -113,119 +155,48 @@ impl UI {
     pub fn update(&mut self, input: &Input, gpu: &mut Gpu, asset: &mut AssetLoader) {
         self.click = None;
 
-        let pad = 8.0;
+        assert!(self.current_window.is_none());
 
-        let mut pos = V2 {
-            x: 0.0,
-            y: input.resolution.y as f64,
-        };
+        if self.draggin_window.is_some() && !input.mouse_down {
+            self.draggin_window = None;
+        }
 
-        // current cell range
-        // size of one tile
-        let mut min = V2::<f64>::zero();
-        let mut max = V2::<f64>::zero();
-        let mut imgs = Vec::<(Rect, Image)>::new();
-        for e in self.commands.iter() {
-            match e {
-                Command::NextCol => {
-                    for (r, img) in imgs.drain(..) {
-                        let off = V2::new(min.x, max.y);
-                        let low = r.corner_min() - off + pos;
-                        let high = r.corner_max() - off + pos;
-                        let rect = Rect::min_max(low, high);
-                        gpu.blit(&rect, &img);
+        let mouse_pos = input.mouse.map(|x| x as _);
+        let mut had_hover = false;
+        for w in self.windows.values_mut() {
+            let rect = w.content_rect();
+            let hover = rect.contains(mouse_pos);
+
+            if hover && input.mouse_down && self.draggin_window.is_none() {
+                self.draggin_window = Some((w.name, mouse_pos - w.position));
+            }
+
+            if let Some((name, off)) = self.draggin_window {
+                if name == w.name {
+                    w.position = mouse_pos - off;
+
+                    let mut rect = w.content_rect();
+                    rect.grow(-16.0);
+
+                    if rect.max.x < 0.0 {
+                        w.position.x -= rect.max.x;
+                    }
+                    if rect.max.y < 0.0 {
+                        w.position.y -= rect.max.y;
                     }
 
-                    pos.x += max.x - min.x;
-
-                    min.x = 0.0;
-                    max.x = 0.0;
-                }
-
-                Command::NextRow => {
-                    pos.x = 0.0;
-                    pos.y -= max.y - min.y;
-
-                    min.y = 0.0;
-                    max.y = 0.0;
-                }
-
-                Command::Image(rect, img) => {
-                    min.x = min.x.min(rect.corner_min().x - pad);
-                    min.y = min.y.min(rect.corner_min().y - pad);
-
-                    max.x = max.x.max(rect.corner_max().x + pad);
-                    max.y = max.y.max(rect.corner_max().y + pad);
-
-                    imgs.push((*rect, img.clone()));
-                }
-                _ => {
-                    // min = V2::zero();
-                    // max = V2::zero();
+                    if rect.min.x > input.resolution.x as f64 {
+                        w.position.x -= rect.min.x - input.resolution.x as f64;
+                    }
+                    if rect.min.y > input.resolution.y as f64 {
+                        w.position.y -= rect.min.y - input.resolution.y as f64;
+                    }
                 }
             }
+
+            w.draw(asset, gpu);
+            w.reset();
+            w.used = false;
         }
-
-        self.commands.clear();
-
-        /*
-        let mut hover = None;
-        let mut rects = Vec::new();
-        for (id, (row, col, img)) in self.elements.drain(..).enumerate() {
-            let id = id as u32;
-
-            let x = col * size_outer;
-            let y = input.resolution.y - (line_count - row) * size_outer;
-
-            let inner_min = V2::new(x + size_border, y + size_border);
-            let inner_max = inner_min + V2::new(size_inner, size_inner);
-            let inner = Rect::min_max(inner_min.map(|x| x as _), inner_max.map(|x| x as _));
-
-            let is_hover = inner.contains(input.mouse.map(|x| x as _));
-
-            if is_hover {
-                hover = Some(id);
-            }
-
-            rects.push((id, inner, img));
-        }
-
-        if !input.mouse_down && self.down.is_some() {
-            self.down = None;
-        }
-
-        if input.mouse_down && self.down.is_none() {
-            self.down = hover;
-            self.click = hover;
-        }
-
-        for (id, rect, img) in rects.drain(..) {
-            let id = id as u32;
-
-            let is_hover = hover == Some(id);
-            let is_active = self.down == Some(id);
-
-            // back
-            gpu.blit(&rect, &asset.image("res/button_back.png"));
-
-            // image
-            gpu.blit(&rect, &img);
-
-            // front
-            {
-                let id = if is_active {
-                    asset.image("res/button_front_down.png")
-                } else if is_hover {
-                    asset.image("res/button_front_hot.png")
-                } else {
-                    asset.image("res/button_front_norm.png")
-                };
-                gpu.blit(&rect, &id);
-            }
-        }
-
-        self.row = 0;
-        self.col = 0;
-        */
     }
 }

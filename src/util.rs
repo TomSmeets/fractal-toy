@@ -49,4 +49,23 @@ impl Rect {
     pub fn contains(&self, v: V2) -> bool {
         v.x >= self.min.x && v.x < self.max.x && v.y >= self.min.y && v.y < self.max.y
     }
+
+    pub fn translate(&mut self, v: V2) {
+        self.min += v;
+        self.max += v;
+    }
+
+    pub fn grow(&mut self, amount: f64) {
+        self.min.x -= amount;
+        self.min.y -= amount;
+        self.max.x += amount;
+        self.max.y += amount;
+    }
+
+    pub fn extend(&mut self, r: &Rect) {
+        self.min.x = self.min.x.min(r.min.x);
+        self.min.y = self.min.y.min(r.min.y);
+        self.max.x = self.max.x.max(r.max.x);
+        self.max.y = self.max.y.max(r.max.y);
+    }
 }

@@ -222,6 +222,7 @@ impl State {
 
         // The user interface buttons on the bottom
         {
+            self.ui.begin_window("Buttons");
             self.debug.push("ui.buttons()");
             fn step_img(s: FractalStep) -> &'static str {
                 match s {
@@ -234,18 +235,22 @@ impl State {
                 }
             }
 
+            // self.ui.text(&mut self.asset, &self.debug.draw());
+
             // Pick modules from these
             for s in STEP_VALUES.iter() {
-                self.ui.text(&mut self.asset, &format!("{:?}", s));
+                self.ui
+                    .text(&mut self.asset, FontType::Mono, &format!("{:?}", s));
                 if self.ui.button(self.asset.image(step_img(*s))) {
                     self.steps.push(*s);
                     recreate_builder = true;
                 }
+                self.ui.next_row();
             }
-
-            self.ui.next_row();
+            self.ui.end_window();
 
             // and drop them here
+            self.ui.begin_window("Current Steps");
             let mut remove = Vec::new();
             for (i, s) in self.steps.iter().enumerate() {
                 if self.ui.button(self.asset.image(step_img(*s))) {
@@ -257,35 +262,26 @@ impl State {
                 self.steps.remove(i);
                 recreate_builder = true;
             }
-
-            self.ui.text(&mut self.asset, "HELLO WORLD!");
+            self.ui.end_window();
 
             self.debug.pop();
         }
 
-        {
+        if true {
             self.debug.push("asset.text()");
 
+            self.ui.begin_window("Debug Text (mono)");
             self.debug.push("asset.text(Debug)");
-            self.asset.text(
-                FontType::Mono,
-                V2::new(0, 0),
-                V2::new(TextAlignment::Left, TextAlignment::Left),
-                26.0,
-                &mut self.gpu,
-                &self.debug.draw(),
-            );
+            self.ui
+                .text(&mut self.asset, FontType::Mono, &self.debug.draw());
             self.debug.pop();
+            self.ui.end_window();
 
             self.debug.push("asset.text(Cursor)");
-            self.asset.text(
-                FontType::Normal,
-                input.mouse,
-                V2::new(TextAlignment::Center, TextAlignment::Center),
-                11.0,
-                &mut self.gpu,
-                &self.debug.draw(),
-            );
+            self.ui.begin_window("Debug Text (Normal)");
+            self.ui
+                .text(&mut self.asset, FontType::Normal, &self.debug.draw());
+            self.ui.end_window();
             self.debug.pop();
 
             self.debug.pop();
