@@ -2,8 +2,9 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use crate::fractal::State;
+use crate::fractal::Fractal;
 use crate::update_loop::Loop;
+use crate::state::State;
 
 mod asset_loader;
 mod builder;
@@ -19,10 +20,18 @@ mod ui;
 mod update_loop;
 mod util;
 mod viewport;
+mod state;
 
 pub fn main() {
     let update_loop = Loop::new("Fractal Toy!");
 
     let mut state = State::init(&update_loop.window);
-    update_loop.run(move |window, input| state.update(window, input));
+    let mut fractal = Fractal::init(&mut state);
+    update_loop.run(move |window, input| {
+        if !input.mouse_down {
+            fractal.update(&mut state, window, input);
+        }
+
+        state.update(window, input);
+    });
 }

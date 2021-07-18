@@ -3,7 +3,6 @@ use crate::gpu::ShaderLoader;
 use crate::image::Image;
 use crate::shelf_pack::ShelfPack;
 use crate::util::*;
-use crate::viewport::Viewport;
 use std::collections::BTreeMap;
 use wgpu::*;
 
@@ -310,17 +309,12 @@ impl DrawUI {
         ]);
     }
 
-    pub fn render(&mut self, device: &GpuDevice, viewport: &Viewport) -> usize {
+    pub fn render(&mut self, device: &GpuDevice, resolution: V2<f32>) -> usize {
         // update uniform data
         device.queue.write_buffer(
             &self.uniform,
             0,
-            bytemuck::bytes_of(&UniformData {
-                resolution: V2::new(
-                    viewport.size_in_pixels.x as _,
-                    viewport.size_in_pixels.y as _,
-                ),
-            }),
+            bytemuck::bytes_of(&UniformData { resolution }),
         );
 
         // self.show_debug_atlas(ATLAS_SIZE as _);

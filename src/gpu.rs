@@ -100,7 +100,7 @@ impl Gpu {
     }
 
     #[rustfmt::skip]
-    pub fn render(&mut self, window: &Window, viewport: &Viewport, debug: &mut Debug) {
+    pub fn render(&mut self, window: &Window, resolution: V2<u32>, debug: &mut Debug) {
         let device = &self.device;
 
         let frame = loop {
@@ -108,18 +108,18 @@ impl Gpu {
                 let swap_chain = device.device.create_swap_chain(&device.surface, &SwapChainDescriptor {
                     usage: TextureUsage::RENDER_ATTACHMENT,
                     format: device.swap_chain_format,
-                    width: viewport.size_in_pixels_i.x,
-                    height: viewport.size_in_pixels_i.y,
+                    width: resolution.x,
+                    height: resolution.y,
                     present_mode: PresentMode::Mailbox,
                 });
 
                 SwapChain {
                     swap_chain,
-                    resolution: viewport.size_in_pixels_i,
+                    resolution
                 }
             });
 
-            if swap_chain.resolution != viewport.size_in_pixels_i {
+            if swap_chain.resolution != resolution {
                 self.swap_chain = None;
                 continue;
             }
@@ -142,9 +142,9 @@ impl Gpu {
         };
 
         let vtx_count = self.draw_tiles.vertex_list.len();
-        self.draw_tiles.render(device, viewport);
+        self.draw_tiles.render(device, resolution.map(|x| x as _));
 
-        let ui_vtx_count = self.draw_ui.render(device, viewport);
+        let ui_vtx_count = self.draw_ui.render(device,  resolution.map(|x| x as _));
 
         // We finally have a frame, now it is time to create the render commands
         let mut encoder = device.device.create_command_encoder(&CommandEncoderDescriptor { label: None });

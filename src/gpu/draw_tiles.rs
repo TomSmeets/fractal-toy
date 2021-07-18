@@ -3,7 +3,6 @@ use crate::gpu::pipeline::ShaderLoader;
 use crate::gpu::GpuDevice;
 use crate::image::Image;
 use crate::util::*;
-use crate::viewport::Viewport;
 use wgpu::*;
 
 // GPU mem = MAX_TILES * (vtx(5*4)*3*4 + 256*256)
@@ -268,17 +267,12 @@ impl DrawTiles {
         }
     }
 
-    pub fn render(&mut self, device: &GpuDevice, viewport: &Viewport) {
+    pub fn render(&mut self, device: &GpuDevice, resolution: V2<f32>) {
         // update uniform data
         device.queue.write_buffer(
             &self.uniform,
             0,
-            bytemuck::bytes_of(&UniformData {
-                resolution: V2::new(
-                    viewport.size_in_pixels.x as _,
-                    viewport.size_in_pixels.y as _,
-                ),
-            }),
+            bytemuck::bytes_of(&UniformData { resolution }),
         );
 
         // write out vertex buffer
