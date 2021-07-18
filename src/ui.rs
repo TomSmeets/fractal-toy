@@ -3,8 +3,8 @@ use std::collections::BTreeMap;
 use crate::image::Image;
 use crate::update_loop::Input;
 use crate::util::*;
-use crate::AssetLoader;
-use crate::Gpu;
+use crate::asset_loader::AssetLoader;
+use crate::gpu::Gpu;
 
 use crate::asset_loader::FontType;
 use crate::asset_loader::TextAlignment;
@@ -21,7 +21,7 @@ type UIPos = V2<u16>;
 
 // simple window, single grid/table layout
 // future: many a list of tables, not nested, just linear
-struct Window {
+pub struct Window {
     name: &'static str,
     used: bool,
 
@@ -49,10 +49,24 @@ impl Window {
         self.used = false;
     }
 
-    pub fn push(&mut self, rect: &Rect, image: &Image) {
+    pub fn image(&mut self, rect: Rect, image: Image) {
         self.used = true;
-        self.bounds.extend(rect);
-        self.images.push((*rect, image.clone()));
+        self.bounds.extend(&rect);
+        self.images.push((rect, image));
+    }
+
+    pub fn text(&mut self, asset_loader: &mut AssetLoader, kind: FontType, text: &str) {
+        let itr = asset_loader.text_iter(
+            kind,
+            V2::zero(),
+            V2::new(TextAlignment::Left, TextAlignment::Left),
+            26.0,
+            text,
+        );
+
+        for (rect, img) in itr {
+            self.image(rect, img);
+        }
     }
 
     pub fn reset(&mut self) {
@@ -68,6 +82,11 @@ impl Window {
             rect.translate(-self.bounds.corner_min() + content_rect.corner_min());
             gpu.blit(&rect, img);
         }
+    }
+
+    pub fn button(&mut self, img: Image) -> bool {
+        self.image(Rect::center_size(V2::zero(), V2::new(60.0, 60.0)), img);
+        false
     }
 }
 
@@ -111,46 +130,12 @@ impl UI {
 
     pub fn next_col(&mut self) {}
 
-    pub fn begin_window(&mut self, name: &'static str) {
-        let mut window = self.windows.remove(name).unwrap_or(Window::new(name));
-        window.used = true;
-        self.current_window = Some(window);
+    pub fn window(&mut self, name: &'static str) -> &mut Window {
+        let mut window = self.windows.entry(name).or_insert(Window::new(name));
+        window.reset();
+        window
     }
 
-    pub fn end_window(&mut self) {
-        let window = self.current_window.take().unwrap();
-        self.windows.insert(window.name, window);
-    }
-
-    /// push an image, the rect is relative to the current cell
-    pub fn image(&mut self, rect: Rect, img: Image) {
-        self.current_window.as_mut().unwrap().push(&rect, &img);
-    }
-
-    pub fn text(&mut self, asset_loader: &mut AssetLoader, kind: FontType, text: &str) {
-        let itr = asset_loader.text_iter(
-            kind,
-            V2::zero(),
-            V2::new(TextAlignment::Left, TextAlignment::Left),
-            26.0,
-            text,
-        );
-
-        for (rect, img) in itr {
-            self.image(rect, img);
-        }
-        self.next_col();
-    }
-
-    pub fn button(&mut self, img: Image) -> bool {
-        self.image(Rect::center_size(V2::zero(), V2::new(60.0, 60.0)), img);
-        self.image(
-            Rect::center_size(V2::zero(), V2::new(80.0, 80.0)),
-            self.button_img.clone(),
-        );
-        self.next_col();
-        false
-    }
 
     pub fn update(&mut self, input: &Input, gpu: &mut Gpu, asset: &mut AssetLoader) {
         self.click = None;

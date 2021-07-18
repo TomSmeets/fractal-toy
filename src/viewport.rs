@@ -1,5 +1,5 @@
 use crate::util::*;
-use crate::TilePos;
+use crate::tilemap::TilePos;
 
 #[derive(Debug)]
 pub struct Viewport {

@@ -1,24 +1,22 @@
 use wgpu::*;
 use winit::window::Window;
-
 use crate::debug::Debug;
 use crate::tilemap::TilePos;
 use crate::util::*;
 use crate::viewport::Viewport;
-use crate::Image;
-
-pub mod compute_tile;
-mod draw_tiles;
-mod draw_ui;
-mod pipeline;
-mod swap_chain;
-
+use crate::image::Image;
 use self::draw_tiles::DrawTiles;
 use self::draw_ui::DrawUI;
 use self::pipeline::ShaderLoader;
 use self::swap_chain::SwapChain;
 use crate::asset_loader::AssetLoader;
 use std::sync::Arc;
+
+pub mod compute_tile;
+mod draw_tiles;
+mod draw_ui;
+mod pipeline;
+mod swap_chain;
 
 pub struct Gpu {
     device: Arc<GpuDevice>,

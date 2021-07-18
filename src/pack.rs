@@ -1,5 +1,5 @@
 /// Like buddy allocation but in 2d
-use crate::*;
+use crate::util::*;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Block {
