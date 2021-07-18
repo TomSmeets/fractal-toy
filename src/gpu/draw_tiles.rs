@@ -1,9 +1,9 @@
 use crate::asset_loader::AssetLoader;
 use crate::gpu::pipeline::ShaderLoader;
 use crate::gpu::GpuDevice;
+use crate::image::Image;
 use crate::util::*;
 use crate::viewport::Viewport;
-use crate::image::Image;
 use wgpu::*;
 
 // GPU mem = MAX_TILES * (vtx(5*4)*3*4 + 256*256)

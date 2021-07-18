@@ -1,13 +1,11 @@
-use std::collections::BTreeMap;
-
+use crate::asset_loader::AssetLoader;
+use crate::asset_loader::FontType;
+use crate::asset_loader::TextAlignment;
+use crate::gpu::Gpu;
 use crate::image::Image;
 use crate::update_loop::Input;
 use crate::util::*;
-use crate::asset_loader::AssetLoader;
-use crate::gpu::Gpu;
-
-use crate::asset_loader::FontType;
-use crate::asset_loader::TextAlignment;
+use std::collections::BTreeMap;
 
 // Nested grid of centered rects
 // then make as compact as possible
@@ -135,7 +133,6 @@ impl UI {
         window.reset();
         window
     }
-
 
     pub fn update(&mut self, input: &Input, gpu: &mut Gpu, asset: &mut AssetLoader) {
         self.click = None;

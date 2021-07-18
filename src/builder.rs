@@ -1,10 +1,10 @@
 use crate::asset_loader::AssetLoader;
+use crate::fractal::FractalStep;
 use crate::gpu::compute_tile::ComputeTile;
 use crate::gpu::GpuDevice;
+use crate::image::Image;
 use crate::tilemap::TilePos;
 use crate::util::*;
-use crate::image::Image;
-use crate::fractal::FractalStep;
 use crossbeam_channel::Receiver;
 use crossbeam_channel::{bounded, Sender};
 use std::collections::BTreeMap;

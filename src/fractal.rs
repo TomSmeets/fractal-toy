@@ -1,11 +1,11 @@
 use crate::asset_loader::AssetLoader;
 use crate::asset_loader::FontType;
 use crate::builder::TileBuilder;
+use crate::debug::Debug;
 use crate::gpu::Gpu;
 use crate::ui::UI;
 use crate::update_loop::Input;
 use crate::viewport::Viewport;
-use crate::debug::Debug;
 use winit::window::Window;
 
 static MANDELBROT: &[FractalStep] = &[FractalStep::Square, FractalStep::AddC];
@@ -242,11 +242,19 @@ impl State {
             self.debug.push("asset.text()");
 
             self.debug.push("asset.text(Debug)");
-            self.ui.window("Debug Text (mono)").text(&mut self.asset, FontType::Mono, &self.debug.draw());
+            self.ui.window("Debug Text (mono)").text(
+                &mut self.asset,
+                FontType::Mono,
+                &self.debug.draw(),
+            );
             self.debug.pop();
 
             self.debug.push("asset.text(Cursor)");
-            self.ui.window("Debug Text (Normal)").text(&mut self.asset, FontType::Mono, &self.debug.draw());
+            self.ui.window("Debug Text (Normal)").text(
+                &mut self.asset,
+                FontType::Mono,
+                &self.debug.draw(),
+            );
             self.debug.pop();
 
             self.debug.pop();

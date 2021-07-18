@@ -1,11 +1,11 @@
 use crate::glyph_cache::GlyphCache;
-use crate::util::*;
-use crate::image::Image;
 use crate::gpu::Gpu;
+use crate::image::Image;
+use crate::util::*;
 use ::rusttype::Font;
 use ::rusttype::Scale;
-use std::time::SystemTime;
 use std::collections::BTreeMap;
+use std::time::SystemTime;
 
 // OLD comment about ImageID's, but lets keep it here for now.
 //
