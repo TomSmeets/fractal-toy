@@ -13,7 +13,6 @@ pub struct State {
     pub ui: UI,
 }
 
-
 impl State {
     pub fn init(window: &Window) -> Self {
         let mut asset = AssetLoader::new();
@@ -55,4 +54,3 @@ impl State {
         self.debug.begin();
     }
 }
-

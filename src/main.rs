@@ -3,8 +3,8 @@
 #![allow(unused_variables)]
 
 use crate::fractal::Fractal;
-use crate::update_loop::Loop;
 use crate::state::State;
+use crate::update_loop::Loop;
 
 mod asset_loader;
 mod builder;
@@ -15,12 +15,12 @@ mod gpu;
 mod image;
 mod pack;
 mod shelf_pack;
+mod state;
 mod tilemap;
 mod ui;
 mod update_loop;
 mod util;
 mod viewport;
-mod state;
 
 pub fn main() {
     let update_loop = Loop::new("Fractal Toy!");

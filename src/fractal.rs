@@ -1,8 +1,8 @@
 use crate::asset_loader::FontType;
 use crate::builder::TileBuilder;
+use crate::state::State;
 use crate::update_loop::Input;
 use crate::viewport::Viewport;
-use crate::state::State;
 use winit::window::Window;
 
 static MANDELBROT: &[FractalStep] = &[FractalStep::Square, FractalStep::AddC];
@@ -68,14 +68,12 @@ pub enum FractalStep {
     Conj,
 }
 
-
 pub struct Fractal {
     // actual state that is relevant
     builder: TileBuilder,
     viewport: Viewport,
     steps: Vec<FractalStep>,
 }
-
 
 impl Fractal {
     pub fn init(state: &mut State) -> Self {
@@ -220,7 +218,6 @@ impl Fractal {
 
         if true {
             state.debug.push("asset.text()");
-
 
             state.debug.push("asset.text(Cursor)");
             state.ui.window("Debug Text (Normal)").text(
