@@ -99,11 +99,9 @@ impl Gpu {
         self.draw_tiles.blit(&self.device, &rect, img);
     }
 
-    #[rustfmt::skip]
-    pub fn render(&mut self, window: &Window, resolution: V2<u32>, debug: &mut Debug) {
-        let device = &self.device;
-
-        let frame = loop {
+    pub fn next_frame(&mut self, resolution: V2<u32>) -> SwapChainFrame {
+        loop {
+            let device = &self.device;
             let swap_chain = self.swap_chain.get_or_insert_with(|| {
                 let swap_chain = device.device.create_swap_chain(&device.surface, &SwapChainDescriptor {
                     usage: TextureUsage::RENDER_ATTACHMENT,
@@ -139,15 +137,20 @@ impl Gpu {
             }
 
             break frame;
-        };
+        }
+    }
 
+    #[rustfmt::skip]
+    pub fn render(&mut self, window: &Window, resolution: V2<u32>, debug: &mut Debug) {
         let vtx_count = self.draw_tiles.vertex_list.len();
-        self.draw_tiles.render(device, resolution.map(|x| x as _));
+        self.draw_tiles.render(&self.device, resolution.map(|x| x as _));
 
-        let ui_vtx_count = self.draw_ui.render(device,  resolution.map(|x| x as _));
+        let ui_vtx_count = self.draw_ui.render(&self.device,  resolution.map(|x| x as _));
 
         // We finally have a frame, now it is time to create the render commands
-        let mut encoder = device.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
+        let mut encoder = self.device.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
+
+        let frame = self.next_frame(resolution);
 
         // TODO: what do we do with compute commands? do they block? do we do them async?
         // How about instead of compute we just render to a texture view?
@@ -182,7 +185,7 @@ impl Gpu {
         }
 
         debug.push("submit");
-        device.queue.submit(Some(encoder.finish()));
+        self.device.queue.submit(Some(encoder.finish()));
         debug.pop();
     }
 }
