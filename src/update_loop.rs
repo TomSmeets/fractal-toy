@@ -1,10 +1,14 @@
 use crate::util::*;
 use ::instant::Duration;
 use ::instant::Instant;
+use winit::event::ElementState;
+use winit::event::Event;
+use winit::event::MouseButton;
+use winit::event::MouseScrollDelta;
 use winit::event::VirtualKeyCode;
 use winit::event::WindowEvent;
-use winit::event::{ElementState, Event, MouseButton, MouseScrollDelta};
-use winit::event_loop::{ControlFlow, EventLoop};
+use winit::event_loop::ControlFlow;
+use winit::event_loop::EventLoop;
 use winit::window::Window;
 use winit::window::WindowBuilder;
 

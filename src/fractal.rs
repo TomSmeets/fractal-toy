@@ -5,7 +5,8 @@ use crate::update_loop::Input;
 use crate::util::*;
 use crate::viewport::Viewport;
 use crate::viewport::ViewportInput;
-use cgmath::{vec2, InnerSpace};
+use cgmath::vec2;
+use cgmath::InnerSpace;
 use winit::event::VirtualKeyCode;
 use winit::window::Window;
 

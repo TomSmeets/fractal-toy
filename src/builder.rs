@@ -5,8 +5,9 @@ use crate::gpu::GpuDevice;
 use crate::image::Image;
 use crate::tilemap::TilePos;
 use crate::util::*;
+use crossbeam_channel::bounded;
 use crossbeam_channel::Receiver;
-use crossbeam_channel::{bounded, Sender};
+use crossbeam_channel::Sender;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 

@@ -1,4 +1,5 @@
-use crate::util::{Rect, V2};
+use crate::util::Rect;
+use crate::util::V2;
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord, Debug)]
 pub struct TilePos {
