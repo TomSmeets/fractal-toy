@@ -75,6 +75,19 @@ pub enum FractalStep {
     Conj,
 }
 
+impl FractalStep {
+    fn step_txt(&self) -> &'static str {
+        match *self {
+            FractalStep::Square => "z^2",
+            FractalStep::Cube => "z^3",
+            FractalStep::AbsR => "|Re|",
+            FractalStep::AbsI => "|Im|",
+            FractalStep::AddC => "z+c",
+            FractalStep::Conj => "z\u{0305}",
+        }
+    }
+}
+
 pub struct Fractal {
     // actual state that is relevant
     builder: TileBuilder,
@@ -171,17 +184,6 @@ impl Fractal {
             let window = state.ui.window("Buttons");
             state.debug.push("ui.buttons()");
 
-            fn step_txt(s: FractalStep) -> &'static str {
-                match s {
-                    FractalStep::Square => "z^2",
-                    FractalStep::Cube => "z^3",
-                    FractalStep::AbsR => "|Re|",
-                    FractalStep::AbsI => "|Im|",
-                    FractalStep::AddC => "z+c",
-                    FractalStep::Conj => "z\u{0305}",
-                }
-            }
-
 
             // self.ui.text(&mut self.asset, &self.debug.draw());
 
@@ -194,7 +196,7 @@ impl Fractal {
 
                 let image_back = state.asset.image("res/button_back.png");
                 state.gpu.blit(&rect, &image_back);
-                state.asset.text(FontType::Normal, rect.center().map(|x| x as _), V2{x: TextAlignment::Center, y: TextAlignment::Center}, 42., &mut state.gpu, step_txt(*s));
+                state.asset.text(FontType::Normal, rect.center().map(|x| x as _), V2{x: TextAlignment::Center, y: TextAlignment::Center}, 42., &mut state.gpu, s.step_txt());
 
                 let image_front = state.asset.image(if region.down {
                     "res/button_front_down.png"
@@ -224,7 +226,7 @@ impl Fractal {
 
                 let image_back = state.asset.image("res/button_back.png");
                 state.gpu.blit(&rect, &image_back);
-                state.asset.text(FontType::Normal, rect.center().map(|x| x as _), V2{x: TextAlignment::Center, y: TextAlignment::Center}, 42., &mut state.gpu, step_txt(*s));
+                state.asset.text(FontType::Normal, rect.center().map(|x| x as _), V2{x: TextAlignment::Center, y: TextAlignment::Center}, 42., &mut state.gpu, s.step_txt());
 
                 let image_front = state.asset.image(if region.down {
                     "res/button_front_down.png"
