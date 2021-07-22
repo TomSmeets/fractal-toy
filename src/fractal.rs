@@ -4,6 +4,7 @@ use crate::state::State;
 use crate::update_loop::Input;
 use crate::util::*;
 use crate::viewport::Viewport;
+use crate::viewport::ViewportInput;
 use cgmath::{vec2, InnerSpace};
 use winit::event::VirtualKeyCode;
 use winit::window::Window;
@@ -95,9 +96,6 @@ impl Fractal {
 
         state.debug.push("fractal.update()");
 
-        // resize viewport
-        self.viewport.size(input.resolution);
-
         {
             let mut dir: V2<f64> = vec2(0.0, 0.0);
             let mut speed = 1.0;
@@ -123,23 +121,27 @@ impl Fractal {
                 }
             }
             let dir = dir / dir.magnitude().max(1.0) * speed * 1.0;
-            self.viewport.do_move(input.dt as f64, dir);
-            self.viewport
-                .zoom_center(input.dt as f64 * zoom * speed * 40.0);
-        }
 
-        // handle input for the viewport, if the user didn't click the ui
-        if !state.ui.has_input() {
-            self.viewport
-                .zoom_at(input.mouse_scroll as f64, input.mouse);
+            let mut viewport_input = ViewportInput {
+                dt: input.dt as f64,
+                resolution: input.resolution,
+                dir_move: dir,
+                zoom_center: zoom * speed * 4.0,
+                drag: None,
+                scroll_at: (input.mouse, 0.0),
+            };
 
-            if input.mouse_down {
-                self.viewport.drag(input.mouse);
+            // handle input for the viewport, if the user didn't click the ui
+            if !state.ui.has_input() {
+                if input.mouse_down {
+                    viewport_input.drag = Some(input.mouse);
+                }
+                viewport_input.scroll_at.1 = input.mouse_scroll as f64;
             }
-        }
 
-        // animate the viewport
-        self.viewport.update(input.dt as f64);
+            // resize viewport
+            self.viewport.update(&viewport_input);
+        }
 
         // queue which tiles should be built, we include a 1 tile border here
         state.debug.push("builder.tile() [build]");

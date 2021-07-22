@@ -10,7 +10,15 @@ pub struct Viewport {
     pub size_in_pixels_i: V2<u32>,
     pub move_vel: V2,
     pub drag_anchor: Option<V2<f64>>,
-    pub did_drag: bool,
+}
+
+pub struct ViewportInput {
+    pub dt: f64,
+    pub resolution: V2<u32>,
+    pub dir_move: V2<f64>,
+    pub zoom_center: f64,
+    pub scroll_at: (V2<i32>, f64),
+    pub drag: Option<V2<i32>>,
 }
 
 impl Viewport {
@@ -24,84 +32,57 @@ impl Viewport {
             move_vel: V2::zero(),
 
             drag_anchor: None,
-            did_drag: false,
         }
     }
 
-    pub fn size(&mut self, resolution: V2<u32>) {
-        self.size_in_pixels = resolution.map(|x| x as f64);
-        self.size_in_pixels_i = resolution;
-    }
+    pub fn update(&mut self, input: &ViewportInput) {
+        self.size_in_pixels = input.resolution.map(|x| x as f64);
+        self.size_in_pixels_i = input.resolution;
 
-    pub fn do_move(&mut self, dt: f64, dir: V2<f64>) {
-        self.offset += dir * self.scale * dt;
-    }
-
-    pub fn zoom_at(&mut self, amount: f64, target: V2<i32>) {
-        if amount * amount < 1e-6 {
-            return;
-        }
-
-        let target_world = self.screen_to_world(target);
-        self.zoom_center(amount);
-        let current_world = self.screen_to_world(target);
-        self.offset += target_world - current_world;
-    }
-
-    pub fn zoom_center(&mut self, amount: f64) {
-        let amount = amount * 0.1;
-        self.zoom += amount;
-        self.update_scale();
-    }
-
-    fn update_scale(&mut self) {
-        // zooming in too far will result in overflows, we might go to 128 bit numbers?
-        if self.zoom > 53.0 {
-            self.zoom = 53.0;
-        }
-        if self.zoom < -4.0 {
-            self.zoom = -4.0;
-        }
-        self.scale = 0.5_f64.powf(self.zoom);
-    }
-
-    pub fn drag(&mut self, mouse: V2<i32>) {
-        let current = self.screen_to_world(mouse);
-
-        match self.drag_anchor {
+        match input.drag {
+            Some(mouse) => {
+                let mouse_world = self.screen_to_world(mouse);
+                let target_world = *self.drag_anchor.get_or_insert(mouse_world);
+                let diff = target_world - mouse_world;
+                self.offset += diff;
+                self.move_vel = diff * 1.0 / input.dt;
+            }
             None => {
-                self.drag_anchor = Some(current);
-            }
+                self.drag_anchor = None;
 
-            Some(target) => {
-                self.offset -= current;
-                self.offset += target;
-                self.move_vel = target - current;
-            }
-        };
+                self.offset += input.dt * self.scale * input.dir_move;
 
-        self.did_drag = true;
-    }
-
-    pub fn update(&mut self, dt: f64) {
-        self.update_scale();
-
-        if self.drag_anchor.is_some() && !self.did_drag {
-            self.drag_anchor = None;
-        }
-
-        if !self.did_drag {
-            self.offset += self.move_vel;
-            self.move_vel *= 1.0 - dt * 5.0;
-
-            if self.move_vel.magnitude2() < (self.scale * dt) * (self.scale * dt) * 1e-6 {
-                self.move_vel = V2::zero();
+                // velocity
+                self.offset += input.dt * self.move_vel;
+                self.move_vel *= 1.0 - input.dt * 5.0;
+                if self.move_vel.magnitude2()
+                    < (self.scale * input.dt) * (self.scale * input.dt) * 1e-6
+                {
+                    self.move_vel = V2::zero();
+                }
             }
         }
+
+        let mut scroll_world_pos = None;
+        let (scroll_pos, scroll_amount) = input.scroll_at;
+        if scroll_amount * scroll_amount > 1e-6 {
+            self.zoom += scroll_amount * 0.1;
+            scroll_world_pos = Some(self.screen_to_world(scroll_pos));
+        }
+
+        self.zoom += input.dt * input.zoom_center;
 
         self.offset.x = self.offset.x.min(3.0).max(-3.0);
         self.offset.y = self.offset.y.min(3.0).max(-3.0);
-        self.did_drag = false;
+
+        // zooming in too far will result in overflows, we might go to 128 bit numbers?
+        self.zoom = self.zoom.min(53.0).max(-4.0);
+        self.scale = 0.5_f64.powf(self.zoom);
+
+        if let Some(scroll_world_pos) = scroll_world_pos {
+            let current_world_pos = self.screen_to_world(scroll_pos);
+            self.offset += scroll_world_pos - current_world_pos;
+        }
     }
 
     pub fn world_to_screen_rect(&self, r: &Rect) -> Rect {
