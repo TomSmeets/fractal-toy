@@ -100,6 +100,7 @@ impl Fractal {
 
         let dir = {
             let mut dir: V2<f64> = vec2(0.0, 0.0);
+            let mut speed = 1.0;
             for k in input.keys_down.iter() {
                 match k {
                     VirtualKeyCode::W => dir.y += 1.0,
@@ -107,20 +108,17 @@ impl Fractal {
                     VirtualKeyCode::D => dir.x += 1.0,
                     VirtualKeyCode::A => dir.x -= 1.0,
 
-                    VirtualKeyCode::Up    => dir.y += 1.0,
-                    VirtualKeyCode::Down  => dir.y -= 1.0,
+                    VirtualKeyCode::Up => dir.y += 1.0,
+                    VirtualKeyCode::Down => dir.y -= 1.0,
                     VirtualKeyCode::Right => dir.x += 1.0,
-                    VirtualKeyCode::Left  => dir.x -= 1.0,
+                    VirtualKeyCode::Left => dir.x -= 1.0,
+
+                    VirtualKeyCode::LShift => speed = 2.0,
+                    VirtualKeyCode::RShift => speed = 2.0,
                     _ => (),
                 }
             }
-            let mut dir = dir / dir.magnitude().max(1.0);
-
-            if input.key(VirtualKeyCode::LShift) || input.key(VirtualKeyCode::RShift) {
-                dir *= 2.0;
-            }
-
-            dir
+            dir / dir.magnitude().max(1.0) * speed
         };
 
         self.viewport.do_move(input.dt as f64, dir);
