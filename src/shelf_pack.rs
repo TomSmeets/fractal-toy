@@ -21,6 +21,8 @@ impl ShelfPack {
     }
 
     pub fn add(&mut self, image_size: V2<u32>) -> Option<Rect> {
+        let pad = 1;
+        let image_size = image_size + V2::new(pad, pad);
         // TODO: implement rotation?
 
         let mut best_shelf = None;
@@ -72,7 +74,7 @@ impl ShelfPack {
 
         Some(Rect::corner_size(
             V2::new(x as _, y as _),
-            V2::new(image_size.x as _, image_size.y as _),
+            V2::new((image_size.x - pad) as _, (image_size.y - pad) as _),
         ))
     }
 }

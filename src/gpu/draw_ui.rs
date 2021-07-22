@@ -64,7 +64,6 @@ impl DrawUI {
             },
         });
 
-
         // clear the texture
         // TODO: this is not very nice, we allocate a huge buffer here
         // We don't have to clear it, but only if we want to show the texture in a debug preview
@@ -236,7 +235,7 @@ impl DrawUI {
                         self.pack = ShelfPack::new(V2::new(ATLAS_SIZE, ATLAS_SIZE));
                         self.blit(device, screen_rect, img);
                         return;
-                    },
+                    }
                 };
 
                 eprintln!("ui upload: {}", img.id());
@@ -266,7 +265,7 @@ impl DrawUI {
                 self.blocks.insert(img.id(), rect.clone());
 
                 rect
-            },
+            }
 
             Some(rect) => rect,
         };
