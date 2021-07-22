@@ -3,7 +3,10 @@ use crate::builder::TileBuilder;
 use crate::state::State;
 use crate::update_loop::Input;
 use crate::viewport::Viewport;
+use cgmath::{InnerSpace, vec2};
 use winit::window::Window;
+use crate::util::*;
+use winit::event::VirtualKeyCode;
 
 static MANDELBROT: &[FractalStep] = &[FractalStep::Square, FractalStep::AddC];
 
@@ -86,51 +89,6 @@ impl Fractal {
         }
     }
 
-    pub fn distance(scale: f64) -> String {
-        let mut result = String::new();
-        let scales = [
-            ("*10^6 km", 1e9),
-            ("*10^3 km", 1e6),
-            ("km", 1e3),
-            (" m", 1e1),
-            ("mm", 1e-3),
-            ("um", 1e-6),
-            ("nm", 1e-9),
-            ("pm", 1e-12),
-        ];
-
-        // TODO: visual scale indicator,
-        // Small solarsystem -> eart -> tree -> etc
-        let objects = [
-            ("solar system", 8.99683742e12),
-            ("the sun", 1.391e9),
-            ("earth", 1.2742018e7),
-            ("europe", 13791e3),
-            ("The Netherlands", 115e3),
-            ("City", 6.3e3),
-            ("Street", 146.0),
-            ("House", 16.0),
-        ];
-
-        let size_meters = scale * 9e12;
-
-        for (n, s) in scales.iter() {
-            if size_meters > *s {
-                result += &format!("{:6.2} {}\n", size_meters / s, n);
-                break;
-            }
-        }
-
-        for (n, s) in objects.iter().rev() {
-            if size_meters <= *s * 2.0 {
-                result += &format!(" {:6.1} x {}", size_meters / s, n);
-                break;
-            }
-        }
-
-        result
-    }
-
     /// always called at regular intervals
     pub fn update(&mut self, state: &mut State, window: &Window, input: &Input) {
         let mut recreate_builder = false;
@@ -139,6 +97,24 @@ impl Fractal {
 
         // resize viewport
         self.viewport.size(input.resolution);
+
+        let dir = {
+            let mut dir: V2<f64> = vec2(0.0, 0.0);
+            if input.key(VirtualKeyCode::W) { dir.y += 1.0; }
+            if input.key(VirtualKeyCode::S) { dir.y -= 1.0; }
+            if input.key(VirtualKeyCode::D) { dir.x += 1.0; }
+            if input.key(VirtualKeyCode::A) { dir.x -= 1.0; }
+            let mut dir = dir / dir.magnitude().max(1.0);
+
+            if input.key(VirtualKeyCode::LShift) || input.key(VirtualKeyCode::RShift) {
+                dir *= 2.0;
+            }
+
+            dir
+        };
+        
+
+        self.viewport.do_move(input.dt as f64, dir);
 
         // handle input for the viewport, if the user didn't click the ui
         if !state.ui.has_input() {
@@ -254,4 +230,50 @@ impl Fractal {
 
         state.debug.pop();
     }
+
+    pub fn distance(scale: f64) -> String {
+        let mut result = String::new();
+        let scales = [
+            ("*10^6 km", 1e9),
+            ("*10^3 km", 1e6),
+            ("km", 1e3),
+            (" m", 1e1),
+            ("mm", 1e-3),
+            ("um", 1e-6),
+            ("nm", 1e-9),
+            ("pm", 1e-12),
+        ];
+
+        // TODO: visual scale indicator,
+        // Small solarsystem -> eart -> tree -> etc
+        let objects = [
+            ("solar system", 8.99683742e12),
+            ("the sun", 1.391e9),
+            ("earth", 1.2742018e7),
+            ("europe", 13791e3),
+            ("The Netherlands", 115e3),
+            ("City", 6.3e3),
+            ("Street", 146.0),
+            ("House", 16.0),
+        ];
+
+        let size_meters = scale * 9e12;
+
+        for (n, s) in scales.iter() {
+            if size_meters > *s {
+                result += &format!("{:6.2} {}\n", size_meters / s, n);
+                break;
+            }
+        }
+
+        for (n, s) in objects.iter().rev() {
+            if size_meters <= *s * 2.0 {
+                result += &format!(" {:6.1} x {}", size_meters / s, n);
+                break;
+            }
+        }
+
+        result
+    }
+
 }

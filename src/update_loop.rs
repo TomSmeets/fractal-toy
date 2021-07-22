@@ -1,6 +1,7 @@
 use crate::util::*;
 use ::instant::Duration;
 use ::instant::Instant;
+use winit::event::VirtualKeyCode;
 use winit::event::WindowEvent;
 use winit::event::{ElementState, Event, MouseButton, MouseScrollDelta};
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -19,6 +20,15 @@ pub struct Input {
     pub mouse_click: bool,
 
     pub mouse_scroll: f32,
+
+    // TODO: is there a better way to do this?
+    pub keys_down: Vec<VirtualKeyCode>,
+}
+
+impl Input {
+    pub fn key(&self, key: VirtualKeyCode) -> bool {
+        self.keys_down.contains(&key)
+    }
 }
 
 pub struct Loop {
@@ -37,6 +47,7 @@ impl Loop {
         Loop { event_loop, window }
     }
 
+
     pub fn run<F: FnMut(&Window, &Input) + 'static>(self, mut update: F) -> ! {
         // Decide what framerate we want to run
         let target_dt = 1.0 / 180.0;
@@ -51,6 +62,7 @@ impl Loop {
             mouse_down: false,
             mouse_click: false,
             mouse_scroll: 0.0,
+            keys_down: Vec::new(),
         };
 
         // At what time do we want a new update
@@ -69,6 +81,29 @@ impl Loop {
             *control_flow = ControlFlow::WaitUntil(next_frame_time);
 
             match event {
+                Event::WindowEvent {
+                    window_id: _,
+                    event: WindowEvent::KeyboardInput {
+                        device_id: _,
+                        is_synthetic: _,
+                        input: winit::event::KeyboardInput {
+                            state,
+                            virtual_keycode: Some(key_code),
+                            ..
+                        },
+                        ..
+                    },
+                } =>  {
+                    match state {
+                        ElementState::Pressed => if !input.key(key_code) { input.keys_down.push(key_code) },
+                        ElementState::Released => {
+                            if let Some(ix) = input.keys_down.iter().position(|x| *x == key_code) {
+                                input.keys_down.swap_remove(ix);
+                            }
+                        }
+                    }
+                },
+
                 // Respect window close button
                 Event::WindowEvent {
                     window_id: _,

@@ -33,6 +33,10 @@ impl Viewport {
         self.size_in_pixels_i = resolution;
     }
 
+    pub fn do_move(&mut self, dt: f64, dir: V2<f64>) {
+        self.offset += dir * self.scale * dt;
+    }
+
     pub fn zoom_at(&mut self, amount: f64, target: V2<i32>) {
         if amount * amount < 1e-6 {
             return;
