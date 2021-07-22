@@ -1,10 +1,11 @@
+use winit::window::Window;
+
 use crate::asset_loader::AssetLoader;
 use crate::asset_loader::FontType;
 use crate::debug::Debug;
 use crate::gpu::Gpu;
 use crate::ui::UI;
 use crate::update_loop::Input;
-use winit::window::Window;
 
 pub struct State {
     pub gpu: Gpu,

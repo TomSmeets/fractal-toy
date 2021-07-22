@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::path::PathBuf;
 use std::time::SystemTime;
+
 use wgpu::*;
 
 pub struct ShaderLoader {

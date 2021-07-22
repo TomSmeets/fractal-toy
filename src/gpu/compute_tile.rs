@@ -1,3 +1,7 @@
+use std::num::NonZeroU32;
+
+use wgpu::*;
+
 use crate::asset_loader::AssetLoader;
 use crate::fractal::FractalStep;
 use crate::gpu::GpuDevice;
@@ -5,8 +9,6 @@ use crate::gpu::ShaderLoader;
 use crate::image::Image;
 use crate::tilemap::TilePos;
 use crate::util::*;
-use std::num::NonZeroU32;
-use wgpu::*;
 
 const TILE_SIZE: u32 = 256;
 

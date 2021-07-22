@@ -1,6 +1,7 @@
-use crate::util::*;
 use std::sync::atomic::AtomicU32;
 use std::sync::Arc;
+
+use crate::util::*;
 
 // NOTE: clone should be cheap, because we are passing this image around a lot, so we want to clone
 // it to prevent borrow checker issues

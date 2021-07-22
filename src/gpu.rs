@@ -1,3 +1,8 @@
+use std::sync::Arc;
+
+use wgpu::*;
+use winit::window::Window;
+
 use self::draw_tiles::DrawTiles;
 use self::draw_ui::DrawUI;
 use self::pipeline::ShaderLoader;
@@ -8,9 +13,6 @@ use crate::image::Image;
 use crate::tilemap::TilePos;
 use crate::util::*;
 use crate::viewport::Viewport;
-use std::sync::Arc;
-use wgpu::*;
-use winit::window::Window;
 
 pub mod compute_tile;
 mod draw_tiles;
@@ -108,16 +110,16 @@ impl Gpu {
         loop {
             let device = &self.device;
             let swap_chain = self.swap_chain.get_or_insert_with(|| {
-                let swap_chain = device.device.create_swap_chain(
-                    &device.surface,
-                    &SwapChainDescriptor {
-                        usage: TextureUsage::RENDER_ATTACHMENT,
-                        format: device.swap_chain_format,
-                        width: resolution.x,
-                        height: resolution.y,
-                        present_mode: PresentMode::Mailbox,
-                    },
-                );
+                let swap_chain =
+                    device
+                        .device
+                        .create_swap_chain(&device.surface, &SwapChainDescriptor {
+                            usage: TextureUsage::RENDER_ATTACHMENT,
+                            format: device.swap_chain_format,
+                            width: resolution.x,
+                            height: resolution.y,
+                            present_mode: PresentMode::Mailbox,
+                        });
 
                 SwapChain {
                     swap_chain,
@@ -148,15 +150,20 @@ impl Gpu {
         }
     }
 
-    #[rustfmt::skip]
     pub fn render(&mut self, window: &Window, resolution: V2<u32>, debug: &mut Debug) {
         let vtx_count = self.draw_tiles.vertex_list.len();
-        self.draw_tiles.render(&self.device, resolution.map(|x| x as _));
+        self.draw_tiles
+            .render(&self.device, resolution.map(|x| x as _));
 
-        let ui_vtx_count = self.draw_ui.render(&self.device,  resolution.map(|x| x as _));
+        let ui_vtx_count = self
+            .draw_ui
+            .render(&self.device, resolution.map(|x| x as _));
 
         // We finally have a frame, now it is time to create the render commands
-        let mut encoder = self.device.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
+        let mut encoder = self
+            .device
+            .device
+            .create_command_encoder(&CommandEncoderDescriptor { label: None });
 
         let frame = self.next_frame(resolution);
 

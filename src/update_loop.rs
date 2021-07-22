@@ -1,4 +1,3 @@
-use crate::util::*;
 use ::instant::Duration;
 use ::instant::Instant;
 use winit::event::ElementState;
@@ -11,6 +10,8 @@ use winit::event_loop::ControlFlow;
 use winit::event_loop::EventLoop;
 use winit::window::Window;
 use winit::window::WindowBuilder;
+
+use crate::util::*;
 
 #[derive(Debug)]
 pub struct Input {

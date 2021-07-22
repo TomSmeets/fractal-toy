@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use crate::asset_loader::AssetLoader;
 use crate::asset_loader::FontType;
 use crate::asset_loader::TextAlignment;
@@ -5,7 +7,6 @@ use crate::gpu::Gpu;
 use crate::image::Image;
 use crate::update_loop::Input;
 use crate::util::*;
-use std::collections::BTreeMap;
 
 // Nested grid of centered rects
 // then make as compact as possible

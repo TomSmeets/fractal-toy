@@ -1,8 +1,10 @@
-use crate::image::Image;
-use crate::util::V2;
+use std::collections::BTreeMap;
+
 use ::rusttype::GlyphId;
 use ::rusttype::PositionedGlyph;
-use std::collections::BTreeMap;
+
+use crate::image::Image;
+use crate::util::V2;
 
 /// Cache glyphs of a given font
 ///

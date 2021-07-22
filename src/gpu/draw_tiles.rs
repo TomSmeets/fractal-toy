@@ -1,9 +1,10 @@
+use wgpu::*;
+
 use crate::asset_loader::AssetLoader;
 use crate::gpu::pipeline::ShaderLoader;
 use crate::gpu::GpuDevice;
 use crate::image::Image;
 use crate::util::*;
-use wgpu::*;
 
 // GPU mem = MAX_TILES * (vtx(5*4)*3*4 + 256*256)
 const MAX_TILES: u32 = 512 * 2;

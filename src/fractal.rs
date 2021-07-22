@@ -1,3 +1,8 @@
+use cgmath::vec2;
+use cgmath::InnerSpace;
+use winit::event::VirtualKeyCode;
+use winit::window::Window;
+
 use crate::asset_loader::FontType;
 use crate::builder::TileBuilder;
 use crate::state::State;
@@ -5,10 +10,6 @@ use crate::update_loop::Input;
 use crate::util::*;
 use crate::viewport::Viewport;
 use crate::viewport::ViewportInput;
-use cgmath::vec2;
-use cgmath::InnerSpace;
-use winit::event::VirtualKeyCode;
-use winit::window::Window;
 
 static MANDELBROT: &[FractalStep] = &[FractalStep::Square, FractalStep::AddC];
 
