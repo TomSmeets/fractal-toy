@@ -37,8 +37,8 @@ pub struct GpuDevice {
     swap_chain_format: TextureFormat,
 }
 
-impl Gpu {
-    pub fn init(window: &Window, asset_loader: &mut AssetLoader) -> Gpu {
+impl GpuDevice {
+    pub fn init(window: &Window) -> Self {
         // NOTE: does not have to be kept alive
         let instance = Instance::new(BackendBit::all());
 
@@ -68,13 +68,18 @@ impl Gpu {
 
         let swap_chain_format = adapter.get_swap_chain_preferred_format(&surface).unwrap();
 
-        let device = GpuDevice {
+        GpuDevice {
             surface,
             device,
             queue,
             swap_chain_format,
-        };
+        }
+    }
+}
 
+impl Gpu {
+    pub fn init(window: &Window, asset_loader: &mut AssetLoader) -> Gpu {
+        let device = GpuDevice::init(window);
         let draw_ui = DrawUI::load(&device);
         let draw_tiles = DrawTiles::load(&device, asset_loader);
 
