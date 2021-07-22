@@ -184,16 +184,10 @@ impl Fractal {
             let window = state.ui.window("Buttons");
             state.debug.push("ui.buttons()");
 
-            // self.ui.text(&mut self.asset, &self.debug.draw());
-
-            // Pick modules from these
-            let size = vec2(100.0, 100.0);
-            let mut pos = vec2(size.x * 0.5, self.viewport.size_in_pixels.y - size.y * 1.5);
-            for s in STEP_VALUES.iter() {
-                let rect = Rect::center_size(pos, size * 0.9);
+            fn do_button(state: &mut State, s: FractalStep, rect: Rect) -> bool {
                 let region = state.ui.region(&rect);
-
                 let image_back = state.asset.image("res/button_back.png");
+
                 state.gpu.blit(&rect, &image_back);
                 state.asset.text(
                     FontType::Normal,
@@ -216,12 +210,20 @@ impl Fractal {
                 });
 
                 state.gpu.blit(&rect, &image_front);
+                region.click
+            }
 
-                if region.click {
-                    self.steps.push(*s);
+            // self.ui.text(&mut self.asset, &self.debug.draw());
+
+            // Pick modules from these
+            let size = vec2(100.0, 100.0);
+            let mut pos = vec2(size.x * 0.5, self.viewport.size_in_pixels.y - size.y * 1.5);
+            for s in STEP_VALUES.iter().copied() {
+                let rect = Rect::center_size(pos, size * 0.9);
+                if do_button(state, s, rect) {
+                    self.steps.push(s);
                     recreate_builder = true;
                 }
-
                 pos.x += size.x;
             }
             pos.y += size.y;
@@ -229,35 +231,9 @@ impl Fractal {
 
             // and drop them here
             let mut remove = Vec::new();
-            for (i, s) in self.steps.iter().enumerate() {
+            for (i, s) in self.steps.iter().copied().enumerate() {
                 let rect = Rect::center_size(pos, size * 0.9);
-                let region = state.ui.region(&rect);
-
-                let image_back = state.asset.image("res/button_back.png");
-                state.gpu.blit(&rect, &image_back);
-                state.asset.text(
-                    FontType::Normal,
-                    rect.center().map(|x| x as _),
-                    V2 {
-                        x: TextAlignment::Center,
-                        y: TextAlignment::Center,
-                    },
-                    42.,
-                    &mut state.gpu,
-                    s.step_txt(),
-                );
-
-                let image_front = state.asset.image(if region.down {
-                    "res/button_front_down.png"
-                } else if region.hover {
-                    "res/button_front_hot.png"
-                } else {
-                    "res/button_front_norm.png"
-                });
-
-                state.gpu.blit(&rect, &image_front);
-
-                if region.click {
+                if do_button(state, s, rect) {
                     remove.push(i);
                 }
 
