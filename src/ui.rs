@@ -88,7 +88,7 @@ impl Window {
     }
 }
 
-// imgui: https://github.com/ocornut/imgui/blob/c881667c00655c98dba41deb942587e0041d0ed0/imgui_internal.h#L1410 
+// imgui: https://github.com/ocornut/imgui/blob/c881667c00655c98dba41deb942587e0041d0ed0/imgui_internal.h#L1410
 pub struct UI {
     // Image is not that big, it uses Arc<>
     //
@@ -130,7 +130,7 @@ impl UI {
 
             hover: None,
             hover_prev_frame: None,
-            down:  None,
+            down: None,
 
             button_img: asset.image("res/button_front_hot.png"),
         }
@@ -163,7 +163,7 @@ impl UI {
 
     pub fn has_input(&self) -> bool {
         let has_hover = self.hover.is_some() || self.hover_prev_frame.is_some();
-        let has_down  = self.down.is_some() && self.down != Some(0);
+        let has_down = self.down.is_some() && self.down != Some(0);
         has_hover || has_down || self.draggin_window.is_some()
     }
 
@@ -192,7 +192,6 @@ impl UI {
         if !self.mouse_down {
             self.down = None;
         }
-
 
         assert!(self.current_window.is_none());
 

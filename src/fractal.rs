@@ -204,21 +204,42 @@ impl Fractal {
                 state.gpu.blit(&rect, &image_front);
 
                 if region.click {
-                    // self.steps.push(*s);
-                    // recreate_builder = true;
+                    self.steps.push(*s);
+                    recreate_builder = true;
                 }
 
                 pos.x += size.x;
             }
             pos.y += size.y;
+            pos.x = size.x * 0.5;
 
             // and drop them here
-            let window = state.ui.window("Current Steps");
             let mut remove = Vec::new();
             for (i, s) in self.steps.iter().enumerate() {
-                if window.button(state.asset.image(step_img(*s))) {
+                let rect = Rect::center_size(pos, size * 0.9);
+
+                let image = state.asset.image(step_img(*s));
+                let region = state.ui.region(&rect);
+
+                let image_back = state.asset.image("res/button_back.png");
+                state.gpu.blit(&rect, &image_back);
+                state.gpu.blit(&rect, &image);
+
+                let image_front = state.asset.image(if region.down {
+                    "res/button_front_down.png"
+                } else if region.hover {
+                    "res/button_front_hot.png"
+                } else {
+                    "res/button_front_norm.png"
+                });
+
+                state.gpu.blit(&rect, &image_front);
+
+                if region.click {
                     remove.push(i);
                 }
+
+                pos.x += size.x;
             }
 
             for i in remove {
