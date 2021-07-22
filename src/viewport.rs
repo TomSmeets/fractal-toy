@@ -146,7 +146,7 @@ impl Viewport {
 
     /// Returns an iterator with sorted tiles, the ordering is the same according to
     /// the ord implementation for TilePos
-    pub fn get_pos_all(&self, pad: i64) -> impl Iterator<Item = TilePos> {
+    pub fn get_pos_all(&self, pad: i64) -> Vec<TilePos> {
         let mut cache = Vec::new();
 
         // size of single pixel:
@@ -181,6 +181,6 @@ impl Viewport {
             TilePos::between(min, max, z, pad, &mut cache);
         }
 
-        cache.into_iter()
+        cache
     }
 }
