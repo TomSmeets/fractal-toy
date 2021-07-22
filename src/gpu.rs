@@ -108,17 +108,20 @@ impl Gpu {
         loop {
             let device = &self.device;
             let swap_chain = self.swap_chain.get_or_insert_with(|| {
-                let swap_chain = device.device.create_swap_chain(&device.surface, &SwapChainDescriptor {
-                    usage: TextureUsage::RENDER_ATTACHMENT,
-                    format: device.swap_chain_format,
-                    width: resolution.x,
-                    height: resolution.y,
-                    present_mode: PresentMode::Mailbox,
-                });
+                let swap_chain = device.device.create_swap_chain(
+                    &device.surface,
+                    &SwapChainDescriptor {
+                        usage: TextureUsage::RENDER_ATTACHMENT,
+                        format: device.swap_chain_format,
+                        width: resolution.x,
+                        height: resolution.y,
+                        present_mode: PresentMode::Mailbox,
+                    },
+                );
 
                 SwapChain {
                     swap_chain,
-                    resolution
+                    resolution,
                 }
             });
 
@@ -133,7 +136,7 @@ impl Gpu {
                     dbg!(e);
                     self.swap_chain = None;
                     continue;
-                },
+                }
             };
 
             if frame.suboptimal {

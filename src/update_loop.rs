@@ -47,7 +47,6 @@ impl Loop {
         Loop { event_loop, window }
     }
 
-
     pub fn run<F: FnMut(&Window, &Input) + 'static>(self, mut update: F) -> ! {
         // Decide what framerate we want to run
         let target_dt = 1.0 / 180.0;
@@ -83,23 +82,27 @@ impl Loop {
             match event {
                 Event::WindowEvent {
                     window_id: _,
-                    event: WindowEvent::KeyboardInput {
-                        device_id: _,
-                        is_synthetic: _,
-                        input: winit::event::KeyboardInput {
-                            state,
-                            virtual_keycode: Some(key_code),
+                    event:
+                        WindowEvent::KeyboardInput {
+                            device_id: _,
+                            is_synthetic: _,
+                            input:
+                                winit::event::KeyboardInput {
+                                    state,
+                                    virtual_keycode: Some(key_code),
+                                    ..
+                                },
                             ..
                         },
-                        ..
-                    },
-                } =>  {
-                    match state {
-                        ElementState::Pressed => if !input.key(key_code) { input.keys_down.push(key_code) },
-                        ElementState::Released => {
-                            if let Some(ix) = input.keys_down.iter().position(|x| *x == key_code) {
-                                input.keys_down.swap_remove(ix);
-                            }
+                } => match state {
+                    ElementState::Pressed => {
+                        if !input.key(key_code) {
+                            input.keys_down.push(key_code)
+                        }
+                    }
+                    ElementState::Released => {
+                        if let Some(ix) = input.keys_down.iter().position(|x| *x == key_code) {
+                            input.keys_down.swap_remove(ix);
                         }
                     }
                 },

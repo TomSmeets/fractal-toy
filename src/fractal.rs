@@ -2,11 +2,11 @@ use crate::asset_loader::FontType;
 use crate::builder::TileBuilder;
 use crate::state::State;
 use crate::update_loop::Input;
-use crate::viewport::Viewport;
-use cgmath::{InnerSpace, vec2};
-use winit::window::Window;
 use crate::util::*;
+use crate::viewport::Viewport;
+use cgmath::{vec2, InnerSpace};
 use winit::event::VirtualKeyCode;
+use winit::window::Window;
 
 static MANDELBROT: &[FractalStep] = &[FractalStep::Square, FractalStep::AddC];
 
@@ -100,10 +100,20 @@ impl Fractal {
 
         let dir = {
             let mut dir: V2<f64> = vec2(0.0, 0.0);
-            if input.key(VirtualKeyCode::W) { dir.y += 1.0; }
-            if input.key(VirtualKeyCode::S) { dir.y -= 1.0; }
-            if input.key(VirtualKeyCode::D) { dir.x += 1.0; }
-            if input.key(VirtualKeyCode::A) { dir.x -= 1.0; }
+            for k in input.keys_down.iter() {
+                match k {
+                    VirtualKeyCode::W => dir.y += 1.0,
+                    VirtualKeyCode::S => dir.y -= 1.0,
+                    VirtualKeyCode::D => dir.x += 1.0,
+                    VirtualKeyCode::A => dir.x -= 1.0,
+
+                    VirtualKeyCode::Up    => dir.y += 1.0,
+                    VirtualKeyCode::Down  => dir.y -= 1.0,
+                    VirtualKeyCode::Right => dir.x += 1.0,
+                    VirtualKeyCode::Left  => dir.x -= 1.0,
+                    _ => (),
+                }
+            }
             let mut dir = dir / dir.magnitude().max(1.0);
 
             if input.key(VirtualKeyCode::LShift) || input.key(VirtualKeyCode::RShift) {
@@ -112,7 +122,6 @@ impl Fractal {
 
             dir
         };
-        
 
         self.viewport.do_move(input.dt as f64, dir);
 
@@ -275,5 +284,4 @@ impl Fractal {
 
         result
     }
-
 }
