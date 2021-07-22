@@ -181,12 +181,26 @@ impl Fractal {
             // self.ui.text(&mut self.asset, &self.debug.draw());
 
             // Pick modules from these
+            let size = vec2(100.0, 100.0);
+            let mut pos  = vec2(size.x / 2.0, self.viewport.size_in_pixels.y - size.y / 2.0);
             for s in STEP_VALUES.iter() {
-                window.text(&mut state.asset, FontType::Mono, &format!("{:?}", s));
-                if window.button(state.asset.image(step_img(*s))) {
+                let rect = Rect::center_size(pos, size*0.9);
+
+                let image = state.asset.image(step_img(*s));
+                let region = state.ui.region(&rect);
+
+                state.gpu.blit(&rect, &state.asset.image("res/button_back.png"));
+                state.gpu.blit(&rect, &image);
+                if region.hover {
+                    state.gpu.blit(&rect, &state.asset.image("res/button_front_hot.png"));
+                }
+
+                if region.click {
                     self.steps.push(*s);
                     recreate_builder = true;
                 }
+
+                pos.x += size.x;
             }
 
             // and drop them here

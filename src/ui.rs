@@ -98,6 +98,11 @@ pub struct UI {
     current_window: Option<Window>,
     windows: BTreeMap<&'static str, Window>,
 
+
+    mouse: V2,
+    mouse_down: bool,
+
+    next_id: u32,
     hover: Option<u32>,
     down: Option<u32>,
     click: Option<u32>,
@@ -105,9 +110,20 @@ pub struct UI {
     button_img: Image,
 }
 
+pub struct RegionResult {
+    pub hover: bool,
+    pub down:  bool,
+    pub click: bool,
+}
+
 impl UI {
     pub fn new(asset: &mut AssetLoader) -> Self {
         UI {
+            next_id: 0,
+
+            mouse: V2::zero(),
+            mouse_down: false,
+
             current_window: None,
             draggin_window: None,
             windows: BTreeMap::new(),
@@ -117,6 +133,31 @@ impl UI {
             click: None,
 
             button_img: asset.image("res/button_front_hot.png"),
+        }
+    }
+
+    pub fn region(&mut self, rect: &Rect) -> RegionResult {
+        let id = self.next_id;
+        self.next_id += 1;
+
+        let mouse_in_rect = rect.contains(self.mouse);
+        let mouse_down    = self.mouse_down;
+        
+        let had_active = self.down.is_some();
+        let was_active  = self.down == Some(id);
+
+        let hover = was_active || (!had_active && mouse_in_rect);
+        let down  = was_active || (!had_active && mouse_in_rect && mouse_down);
+        let click = down && !was_active;
+        
+        if click {
+            self.down = Some(id);
+        }
+
+        RegionResult {
+            hover,
+            down,
+            click,
         }
     }
 
@@ -135,6 +176,13 @@ impl UI {
     }
 
     pub fn update(&mut self, input: &Input, gpu: &mut Gpu, asset: &mut AssetLoader) {
+        self.mouse_down = input.mouse_down;
+        self.mouse = input.mouse.map(|x| x as _);
+
+        if !self.mouse_down {
+            self.down = None;
+        }
+
         self.click = None;
 
         assert!(self.current_window.is_none());
