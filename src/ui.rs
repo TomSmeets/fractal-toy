@@ -149,6 +149,10 @@ impl UI {
         let down = was_active || (!had_active && mouse_in_rect && mouse_down);
         let click = down && !was_active;
 
+        if hover {
+            self.hover = Some(id);
+        }
+
         if click {
             self.down = Some(id);
         }
@@ -174,6 +178,7 @@ impl UI {
         self.mouse_down = input.mouse_down;
         self.mouse = input.mouse.map(|x| x as _);
 
+        self.next_id = 0;
         if !self.mouse_down {
             self.down = None;
         }

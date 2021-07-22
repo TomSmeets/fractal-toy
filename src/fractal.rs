@@ -182,18 +182,26 @@ impl Fractal {
 
             // Pick modules from these
             let size = vec2(100.0, 100.0);
-            let mut pos = vec2(size.x / 2.0, self.viewport.size_in_pixels.y - size.y / 2.0);
+            let mut pos = vec2(size.x * 0.5, self.viewport.size_in_pixels.y - size.y * 1.5);
             for s in STEP_VALUES.iter() {
                 let rect = Rect::center_size(pos, size * 0.9);
 
                 let image = state.asset.image(step_img(*s));
                 let region = state.ui.region(&rect);
 
-                state.gpu.blit(&rect, &state.asset.image("res/button_back.png"));
+                let image_back = state.asset.image("res/button_back.png");
+                state.gpu.blit(&rect, &image_back);
                 state.gpu.blit(&rect, &image);
-                if region.hover {
-                    state.gpu.blit(&rect, &state.asset.image("res/button_front_hot.png"));
-                }
+
+                let image_front = state.asset.image(if region.down {
+                    "res/button_front_down.png"
+                } else if region.hover {
+                    "res/button_front_hot.png"
+                } else {
+                    "res/button_front_norm.png"
+                });
+
+                state.gpu.blit(&rect, &image_front);
 
                 if region.click {
                     self.steps.push(*s);
@@ -202,6 +210,7 @@ impl Fractal {
 
                 pos.x += size.x;
             }
+            pos.y += size.y;
 
             // and drop them here
             let window = state.ui.window("Current Steps");
