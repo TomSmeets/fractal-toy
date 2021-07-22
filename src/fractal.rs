@@ -4,13 +4,13 @@ use winit::event::VirtualKeyCode;
 use winit::window::Window;
 
 use crate::asset_loader::FontType;
+use crate::asset_loader::TextAlignment;
 use crate::builder::TileBuilder;
 use crate::state::State;
 use crate::update_loop::Input;
 use crate::util::*;
 use crate::viewport::Viewport;
 use crate::viewport::ViewportInput;
-use crate::asset_loader::TextAlignment;
 
 static MANDELBROT: &[FractalStep] = &[FractalStep::Square, FractalStep::AddC];
 
@@ -184,7 +184,6 @@ impl Fractal {
             let window = state.ui.window("Buttons");
             state.debug.push("ui.buttons()");
 
-
             // self.ui.text(&mut self.asset, &self.debug.draw());
 
             // Pick modules from these
@@ -196,7 +195,17 @@ impl Fractal {
 
                 let image_back = state.asset.image("res/button_back.png");
                 state.gpu.blit(&rect, &image_back);
-                state.asset.text(FontType::Normal, rect.center().map(|x| x as _), V2{x: TextAlignment::Center, y: TextAlignment::Center}, 42., &mut state.gpu, s.step_txt());
+                state.asset.text(
+                    FontType::Normal,
+                    rect.center().map(|x| x as _),
+                    V2 {
+                        x: TextAlignment::Center,
+                        y: TextAlignment::Center,
+                    },
+                    42.,
+                    &mut state.gpu,
+                    s.step_txt(),
+                );
 
                 let image_front = state.asset.image(if region.down {
                     "res/button_front_down.png"
@@ -226,7 +235,17 @@ impl Fractal {
 
                 let image_back = state.asset.image("res/button_back.png");
                 state.gpu.blit(&rect, &image_back);
-                state.asset.text(FontType::Normal, rect.center().map(|x| x as _), V2{x: TextAlignment::Center, y: TextAlignment::Center}, 42., &mut state.gpu, s.step_txt());
+                state.asset.text(
+                    FontType::Normal,
+                    rect.center().map(|x| x as _),
+                    V2 {
+                        x: TextAlignment::Center,
+                        y: TextAlignment::Center,
+                    },
+                    42.,
+                    &mut state.gpu,
+                    s.step_txt(),
+                );
 
                 let image_front = state.asset.image(if region.down {
                     "res/button_front_down.png"

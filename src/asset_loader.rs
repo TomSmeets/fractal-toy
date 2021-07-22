@@ -110,7 +110,8 @@ impl AssetLoader {
         let mut first = true;
         for line in text.lines() {
             y += line_height;
-            for bb in font.layout(line, scale, rusttype::Point { x: 0.0, y })
+            for bb in font
+                .layout(line, scale, rusttype::Point { x: 0.0, y })
                 .flat_map(|g| g.pixel_bounding_box())
             {
                 let bb_min = V2::new(bb.min.x as f64, bb.min.y as f64);
