@@ -28,10 +28,7 @@ pub fn main() {
     let mut state = State::init(&update_loop.window);
     let mut fractal = Fractal::init(&mut state);
     update_loop.run(move |window, input| {
-        if !input.mouse_down {
-            fractal.update(&mut state, window, input);
-        }
-
+        fractal.update(&mut state, window, input);
         state.update(window, input);
     });
 }
