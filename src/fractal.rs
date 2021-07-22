@@ -181,7 +181,6 @@ impl Fractal {
 
         // The user interface buttons on the bottom
         {
-            let window = state.ui.window("Buttons");
             state.debug.push("ui.buttons()");
 
             fn do_button(state: &mut State, s: FractalStep, rect: Rect) -> bool {
@@ -244,20 +243,6 @@ impl Fractal {
                 self.steps.remove(i);
                 recreate_builder = true;
             }
-
-            state.debug.pop();
-        }
-
-        if true {
-            state.debug.push("asset.text()");
-
-            state.debug.push("asset.text(Cursor)");
-            state.ui.window("Debug Text (Normal)").text(
-                &mut state.asset,
-                FontType::Mono,
-                &state.debug.draw(),
-            );
-            state.debug.pop();
 
             state.debug.pop();
         }
