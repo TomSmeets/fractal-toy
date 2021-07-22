@@ -183,49 +183,4 @@ impl Viewport {
 
         cache.into_iter()
     }
-
-    /*
-    /// Convert a TilePos to a screen-space Rectangle as seen by this viewport
-    pub fn pos_to_rect(&self, p: &TilePos) -> Rect {
-        fn mk_rect(a: V2i, b: V2i) -> Rect {
-            let min_x = a.x.min(b.x);
-            let min_y = a.y.min(b.y);
-
-            let max_x = a.x.max(b.x);
-            let max_y = a.y.max(b.y);
-
-            let width = max_x.saturating_sub(min_x);
-            let height = max_y.saturating_sub(min_y);
-
-            Rect {
-                pos: V2i::new(min_x, min_y),
-                size: V2i::new(width, height),
-            }
-        }
-
-        let rect = p.square();
-        let min = rect.corner_min();
-        let max = rect.corner_max();
-        let min = self.world_to_screen(min);
-        let max = self.world_to_screen(max);
-        mk_rect(min, max)
-    }
-    */
 }
-
-/*
-#[test]
-fn test_viewport_pos_sorted() {
-    let mut v = Viewport::new();
-    let v = v.update(1.0, &ViewportInput {
-        resolution: V2::new(800, 600),
-        translate: V2::zero(),
-        zoom: 0.0,
-        world2screen: None,
-    });
-    let xs: Vec<_> = v.get_pos_all().collect();
-    let mut ys = xs.clone();
-    ys.sort();
-    assert_eq!(xs, ys);
-}
-*/
