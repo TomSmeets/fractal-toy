@@ -10,6 +10,7 @@ use crate::update_loop::Input;
 use crate::util::*;
 use crate::viewport::Viewport;
 use crate::viewport::ViewportInput;
+use crate::asset_loader::TextAlignment;
 
 static MANDELBROT: &[FractalStep] = &[FractalStep::Square, FractalStep::AddC];
 
@@ -169,16 +170,18 @@ impl Fractal {
         {
             let window = state.ui.window("Buttons");
             state.debug.push("ui.buttons()");
-            fn step_img(s: FractalStep) -> &'static str {
+
+            fn step_txt(s: FractalStep) -> &'static str {
                 match s {
-                    FractalStep::Square => "res/mod_2.png",
-                    FractalStep::Cube => "res/mod_3.png",
-                    FractalStep::AbsR => "res/mod_abs_r.png",
-                    FractalStep::AbsI => "res/mod_abs_i.png",
-                    FractalStep::AddC => "res/mod_c.png",
-                    FractalStep::Conj => "res/mod_conj.png",
+                    FractalStep::Square => "z^2",
+                    FractalStep::Cube => "z^3",
+                    FractalStep::AbsR => "|Re|",
+                    FractalStep::AbsI => "|Im|",
+                    FractalStep::AddC => "z+c",
+                    FractalStep::Conj => "z\u{0305}",
                 }
             }
+
 
             // self.ui.text(&mut self.asset, &self.debug.draw());
 
@@ -187,13 +190,11 @@ impl Fractal {
             let mut pos = vec2(size.x * 0.5, self.viewport.size_in_pixels.y - size.y * 1.5);
             for s in STEP_VALUES.iter() {
                 let rect = Rect::center_size(pos, size * 0.9);
-
-                let image = state.asset.image(step_img(*s));
                 let region = state.ui.region(&rect);
 
                 let image_back = state.asset.image("res/button_back.png");
                 state.gpu.blit(&rect, &image_back);
-                state.gpu.blit(&rect, &image);
+                state.asset.text(FontType::Normal, rect.center().map(|x| x as _), V2{x: TextAlignment::Center, y: TextAlignment::Center}, 42., &mut state.gpu, step_txt(*s));
 
                 let image_front = state.asset.image(if region.down {
                     "res/button_front_down.png"
@@ -219,13 +220,11 @@ impl Fractal {
             let mut remove = Vec::new();
             for (i, s) in self.steps.iter().enumerate() {
                 let rect = Rect::center_size(pos, size * 0.9);
-
-                let image = state.asset.image(step_img(*s));
                 let region = state.ui.region(&rect);
 
                 let image_back = state.asset.image("res/button_back.png");
                 state.gpu.blit(&rect, &image_back);
-                state.gpu.blit(&rect, &image);
+                state.asset.text(FontType::Normal, rect.center().map(|x| x as _), V2{x: TextAlignment::Center, y: TextAlignment::Center}, 42., &mut state.gpu, step_txt(*s));
 
                 let image_front = state.asset.image(if region.down {
                     "res/button_front_down.png"

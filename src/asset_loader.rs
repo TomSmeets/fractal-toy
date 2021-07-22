@@ -95,31 +95,41 @@ impl AssetLoader {
         }
     }
 
-    fn text_bounds(&self, font_type: FontType, scale: Scale, text: &str) -> V2<u32> {
+    fn text_bounds(&self, font_type: FontType, scale: Scale, text: &str) -> Rect {
         let font = match font_type {
             FontType::Mono => &self.font_mono,
             FontType::Normal => &self.font_norm,
         };
 
-        let mut max_width = 0;
-        let mut max_height = 0.0;
+        let mut y = 0.0;
         let metrics = font.v_metrics(scale);
         let line_height = metrics.ascent - metrics.descent + metrics.line_gap;
 
+        let mut min = V2::zero();
+        let mut max = V2::zero();
+        let mut first = true;
         for line in text.lines() {
-            max_height += line_height;
-            if let Some(bb) = font
-                .layout(line, scale, rusttype::Point { x: 0.0, y: 0.0 })
+            y += line_height;
+            for bb in font.layout(line, scale, rusttype::Point { x: 0.0, y })
                 .flat_map(|g| g.pixel_bounding_box())
-                .last()
             {
-                if bb.max.x > max_width {
-                    max_width = bb.max.x;
+                let bb_min = V2::new(bb.min.x as f64, bb.min.y as f64);
+                let bb_max = V2::new(bb.max.x as f64, bb.max.y as f64);
+
+                if first {
+                    min = bb_min;
+                    max = bb_max;
+                    first = false;
+                } else {
+                    min.x = min.x.min(bb_min.x);
+                    min.y = min.y.min(bb_min.y);
+                    max.x = max.x.max(bb_max.x);
+                    max.y = max.y.max(bb_max.y);
                 }
             }
         }
 
-        V2::new(max_width as u32, max_height.ceil() as u32)
+        Rect::min_max(min, max)
     }
 
     // TODO: This should not be here
@@ -151,15 +161,16 @@ impl AssetLoader {
         let mut x = p.x as f32;
         let mut y = p.y as f32;
 
-        if align.x != TextAlignment::Left && align.y != TextAlignment::Left {
-            // align is an integer from 0 to 2
-            let dx = (align.x as u32) as f32 * 0.5;
-            let dy = (align.y as u32) as f32 * 0.5;
-
-            // not ideal
-            let bounds = self.text_bounds(font_type, font_scale, text);
-            x -= bounds.x as f32 * dx;
-            y -= bounds.y as f32 * dy;
+        let bounds = self.text_bounds(font_type, font_scale, text);
+        match align.x {
+            TextAlignment::Left   => x -= bounds.corner_min().x as f32,
+            TextAlignment::Center => x -= bounds.center().x     as f32,
+            TextAlignment::Right  => x -= bounds.corner_max().x as f32,
+        }
+        match align.y {
+            TextAlignment::Left   => y -= bounds.corner_min().y as f32,
+            TextAlignment::Center => y -= bounds.center().y     as f32,
+            TextAlignment::Right  => y -= bounds.corner_max().y as f32,
         }
 
         let font = match font_type {
