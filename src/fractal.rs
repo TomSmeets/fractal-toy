@@ -98,9 +98,10 @@ impl Fractal {
         // resize viewport
         self.viewport.size(input.resolution);
 
-        let dir = {
+        {
             let mut dir: V2<f64> = vec2(0.0, 0.0);
             let mut speed = 1.0;
+            let mut zoom = 0.0;
             for k in input.keys_down.iter() {
                 match k {
                     VirtualKeyCode::W => dir.y += 1.0,
@@ -113,15 +114,19 @@ impl Fractal {
                     VirtualKeyCode::Right => dir.x += 1.0,
                     VirtualKeyCode::Left => dir.x -= 1.0,
 
-                    VirtualKeyCode::LShift => speed = 2.0,
-                    VirtualKeyCode::RShift => speed = 2.0,
+                    VirtualKeyCode::LShift => speed = 3.0,
+                    VirtualKeyCode::RShift => speed = 3.0,
+
+                    VirtualKeyCode::I => zoom += 1.0,
+                    VirtualKeyCode::K => zoom -= 1.0,
                     _ => (),
                 }
             }
-            dir / dir.magnitude().max(1.0) * speed
-        };
-
-        self.viewport.do_move(input.dt as f64, dir);
+            let dir = dir / dir.magnitude().max(1.0) * speed * 1.0;
+            self.viewport.do_move(input.dt as f64, dir);
+            self.viewport
+                .zoom_center(input.dt as f64 * zoom * speed * 40.0);
+        }
 
         // handle input for the viewport, if the user didn't click the ui
         if !state.ui.has_input() {
