@@ -182,9 +182,9 @@ impl Fractal {
 
             // Pick modules from these
             let size = vec2(100.0, 100.0);
-            let mut pos  = vec2(size.x / 2.0, self.viewport.size_in_pixels.y - size.y / 2.0);
+            let mut pos = vec2(size.x / 2.0, self.viewport.size_in_pixels.y - size.y / 2.0);
             for s in STEP_VALUES.iter() {
-                let rect = Rect::center_size(pos, size*0.9);
+                let rect = Rect::center_size(pos, size * 0.9);
 
                 let image = state.asset.image(step_img(*s));
                 let region = state.ui.region(&rect);

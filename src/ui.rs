@@ -98,7 +98,6 @@ pub struct UI {
     current_window: Option<Window>,
     windows: BTreeMap<&'static str, Window>,
 
-
     mouse: V2,
     mouse_down: bool,
 
@@ -112,7 +111,7 @@ pub struct UI {
 
 pub struct RegionResult {
     pub hover: bool,
-    pub down:  bool,
+    pub down: bool,
     pub click: bool,
 }
 
@@ -141,24 +140,20 @@ impl UI {
         self.next_id += 1;
 
         let mouse_in_rect = rect.contains(self.mouse);
-        let mouse_down    = self.mouse_down;
-        
+        let mouse_down = self.mouse_down;
+
         let had_active = self.down.is_some();
-        let was_active  = self.down == Some(id);
+        let was_active = self.down == Some(id);
 
         let hover = was_active || (!had_active && mouse_in_rect);
-        let down  = was_active || (!had_active && mouse_in_rect && mouse_down);
+        let down = was_active || (!had_active && mouse_in_rect && mouse_down);
         let click = down && !was_active;
-        
+
         if click {
             self.down = Some(id);
         }
 
-        RegionResult {
-            hover,
-            down,
-            click,
-        }
+        RegionResult { hover, down, click }
     }
 
     pub fn has_input(&self) -> bool {
