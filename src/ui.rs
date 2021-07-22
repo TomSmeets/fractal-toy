@@ -88,6 +88,7 @@ impl Window {
     }
 }
 
+// imgui: https://github.com/ocornut/imgui/blob/c881667c00655c98dba41deb942587e0041d0ed0/imgui_internal.h#L1410 
 pub struct UI {
     // Image is not that big, it uses Arc<>
     //
@@ -103,8 +104,8 @@ pub struct UI {
 
     next_id: u32,
     hover: Option<u32>,
+    hover_prev_frame: Option<u32>,
     down: Option<u32>,
-    click: Option<u32>,
 
     button_img: Image,
 }
@@ -118,7 +119,7 @@ pub struct RegionResult {
 impl UI {
     pub fn new(asset: &mut AssetLoader) -> Self {
         UI {
-            next_id: 0,
+            next_id: 1,
 
             mouse: V2::zero(),
             mouse_down: false,
@@ -128,8 +129,8 @@ impl UI {
             windows: BTreeMap::new(),
 
             hover: None,
-            down: None,
-            click: None,
+            hover_prev_frame: None,
+            down:  None,
 
             button_img: asset.image("res/button_front_hot.png"),
         }
@@ -161,7 +162,9 @@ impl UI {
     }
 
     pub fn has_input(&self) -> bool {
-        self.hover.is_some() || self.down.is_some() || self.draggin_window.is_some()
+        let has_hover = self.hover.is_some() || self.hover_prev_frame.is_some();
+        let has_down  = self.down.is_some() && self.down != Some(0);
+        has_hover || has_down || self.draggin_window.is_some()
     }
 
     pub fn next_row(&mut self) {}
@@ -175,15 +178,21 @@ impl UI {
     }
 
     pub fn update(&mut self, input: &Input, gpu: &mut Gpu, asset: &mut AssetLoader) {
+        // end of frame
+        if self.mouse_down && self.down.is_none() {
+            self.down = Some(0)
+        }
+        self.hover_prev_frame = self.hover.take();
+
+        // begin next frame
         self.mouse_down = input.mouse_down;
         self.mouse = input.mouse.map(|x| x as _);
+        self.next_id = 1;
 
-        self.next_id = 0;
         if !self.mouse_down {
             self.down = None;
         }
 
-        self.click = None;
 
         assert!(self.current_window.is_none());
 

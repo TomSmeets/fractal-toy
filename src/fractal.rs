@@ -204,8 +204,8 @@ impl Fractal {
                 state.gpu.blit(&rect, &image_front);
 
                 if region.click {
-                    self.steps.push(*s);
-                    recreate_builder = true;
+                    // self.steps.push(*s);
+                    // recreate_builder = true;
                 }
 
                 pos.x += size.x;
