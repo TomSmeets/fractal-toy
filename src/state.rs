@@ -12,6 +12,8 @@ pub struct State {
     pub asset: AssetLoader,
     pub debug: Debug,
     pub ui: UI,
+
+    show_debug: bool,
 }
 
 impl State {
@@ -24,19 +26,26 @@ impl State {
             gpu,
             asset,
             ui,
+            show_debug: false,
         }
     }
 
     pub fn update(&mut self, window: &Window, input: &Input) {
         self.debug.push("state.update()");
 
-        self.debug.push("asset.text(Debug)");
-        self.ui.window("Debug Text (mono)").text(
-            &mut self.asset,
-            FontType::Mono,
-            &self.debug.draw(),
-        );
-        self.debug.pop();
+        if input.key_click(winit::event::VirtualKeyCode::Key1) {
+            self.show_debug = !self.show_debug;
+        }
+
+        if self.show_debug {
+            self.debug.push("asset.text(Debug)");
+            self.ui.window("Debug Text (mono)").text(
+                &mut self.asset,
+                FontType::Mono,
+                &self.debug.draw(),
+            );
+            self.debug.pop();
+        }
 
         self.debug.push("ui.update()");
         self.ui.update(input, &mut self.gpu, &mut self.asset);

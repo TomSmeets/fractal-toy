@@ -28,11 +28,16 @@ pub struct Input {
 
     // TODO: is there a better way to do this?
     pub keys_down: Vec<VirtualKeyCode>,
+    pub keys_click: Vec<VirtualKeyCode>,
 }
 
 impl Input {
     pub fn key(&self, key: VirtualKeyCode) -> bool {
         self.keys_down.contains(&key)
+    }
+
+    pub fn key_click(&self, key: VirtualKeyCode) -> bool {
+        self.keys_click.contains(&key)
     }
 }
 
@@ -67,6 +72,7 @@ impl Loop {
             mouse_click: false,
             mouse_scroll: 0.0,
             keys_down: Vec::new(),
+            keys_click: Vec::new(),
         };
 
         // At what time do we want a new update
@@ -102,7 +108,8 @@ impl Loop {
                 } => match state {
                     ElementState::Pressed => {
                         if !input.key(key_code) {
-                            input.keys_down.push(key_code)
+                            input.keys_down.push(key_code);
+                            input.keys_click.push(key_code);
                         }
                     }
                     ElementState::Released => {
@@ -169,6 +176,7 @@ impl Loop {
                         update(&window, &input);
                         input.real_dt_full = current_time - last_frame_time;
                         input.real_dt_update = Instant::now() - current_time;
+                        input.keys_click.clear();
                         last_frame_time = current_time;
                         input.mouse_scroll = 0.0;
                         input.mouse_click = false;
