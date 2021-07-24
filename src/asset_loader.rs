@@ -95,7 +95,7 @@ impl AssetLoader {
         }
     }
 
-    fn text_bounds(&self, font_type: FontType, scale: Scale, text: &str) -> Rect {
+    pub fn text_bounds(&self, font_type: FontType, scale: Scale, text: &str) -> Rect {
         let font = match font_type {
             FontType::Mono => &self.font_mono,
             FontType::Normal => &self.font_norm,

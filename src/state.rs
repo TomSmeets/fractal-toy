@@ -1,11 +1,15 @@
+use cgmath::vec2;
+use rusttype::Scale;
 use winit::window::Window;
 
 use crate::asset_loader::AssetLoader;
 use crate::asset_loader::FontType;
+use crate::asset_loader::TextAlignment;
 use crate::debug::Debug;
 use crate::gpu::Gpu;
 use crate::ui::UI;
 use crate::update_loop::Input;
+use crate::util::Rect;
 
 pub struct State {
     pub gpu: Gpu,
@@ -39,10 +43,26 @@ impl State {
 
         if self.show_debug {
             self.debug.push("asset.text(Debug)");
-            self.ui.window("Debug Text (mono)").text(
-                &mut self.asset,
+            let font_type = FontType::Mono;
+            let font_size = 26.0;
+            let text = self.debug.draw();
+
+            let bounds = self
+                .asset
+                .text_bounds(font_type, Scale::uniform(font_size), &text);
+            let mut rect = Rect::corner_size(vec2(0.0, 0.0), bounds.size()); // Rect::corner_size(vec2(0.0, 0.0), vec2(400.0, 400.0));
+            rect.translate(vec2(100.0, 100.0));
+            let region = self.ui.region(&rect);
+            let image = self.asset.image("res/window_back.png");
+            self.gpu.blit(&rect, &image);
+
+            self.asset.text(
                 FontType::Mono,
-                &self.debug.draw(),
+                rect.corner_min().map(|x| x as _),
+                vec2(TextAlignment::Left, TextAlignment::Left),
+                26.0,
+                &mut self.gpu,
+                &text,
             );
             self.debug.pop();
         }
