@@ -8,9 +8,9 @@ pub struct Block {
 }
 
 impl Block {
-    #[rustfmt::skip]
     pub fn split(self) -> [Block; 4] {
         let size = self.size / 2;
+        #[rustfmt::skip]
         [
             Block { pos: self.pos + V2::new(0,    0),    size, },
             Block { pos: self.pos + V2::new(size, 0),    size, },

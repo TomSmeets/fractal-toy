@@ -28,7 +28,6 @@ pub struct DrawTiles {
 }
 
 impl DrawTiles {
-    #[rustfmt::skip]
     pub fn load(device: &GpuDevice, fs: &mut AssetLoader) -> DrawTiles {
         let source = fs.text_file("src/gpu/shader.wgsl");
         let shader = ShaderLoader::compile(&device.device, &source).unwrap();
@@ -78,6 +77,7 @@ impl DrawTiles {
             ..SamplerDescriptor::default()
         });
 
+        #[rustfmt::skip]
         let bind_group_layout = device.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: None,
             entries: &[
@@ -113,6 +113,7 @@ impl DrawTiles {
             ],
         });
 
+        #[rustfmt::skip]
         let bind_group = device.device.create_bind_group(&BindGroupDescriptor {
             label: None,
             layout: &bind_group_layout,
@@ -132,12 +133,14 @@ impl DrawTiles {
             ],
         });
 
+        #[rustfmt::skip]
         let pipeline_layout = device.device.create_pipeline_layout(&PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &[&bind_group_layout],
             push_constant_ranges: &[],
         });
 
+        #[rustfmt::skip]
         let pipeline = device.device.create_render_pipeline(&RenderPipelineDescriptor {
             label: None,
             layout: Some(&pipeline_layout),
@@ -176,12 +179,17 @@ impl DrawTiles {
             bind_group_layout,
             bind_group,
 
-            used: vec![TileSlot { id: 0, mode: SlotMode::Free }; MAX_TILES as _],
+            used: vec![
+                TileSlot {
+                    id: 0,
+                    mode: SlotMode::Free
+                };
+                MAX_TILES as _
+            ],
             vertex_list: Vec::new(),
         }
     }
 
-    #[rustfmt::skip]
     pub fn blit(&mut self, device: &GpuDevice, rect: &Rect, img: &Image) {
         let lx = rect.corner_min().x as f32;
         let ly = rect.corner_min().y as f32;
@@ -202,7 +210,7 @@ impl DrawTiles {
                 // mark slot as still used
                 slot.mode = SlotMode::Used;
                 ix
-            },
+            }
 
             None => {
                 // find free slot
@@ -248,12 +256,13 @@ impl DrawTiles {
 
                 // return index for the vertex uv's
                 ix
-            },
+            }
         };
 
         let ix = ix as i32;
 
         if self.vertex_list.len() + 6 < MAX_VERTS as _ {
+            #[rustfmt::skip]
             self.vertex_list.extend_from_slice(&[
                 Vertex { pos: V2::new(lx, ly), uv: V2::new(0.0, 0.0), ix, },
                 Vertex { pos: V2::new(hx, ly), uv: V2::new(1.0, 0.0), ix, },

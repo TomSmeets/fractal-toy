@@ -96,8 +96,9 @@ impl AssetLoader {
     }
 
     pub fn text_bounds(&self, font_type: FontType, scale: Scale, text: &str) -> Rect {
+        #[rustfmt::skip]
         let font = match font_type {
-            FontType::Mono => &self.font_mono,
+            FontType::Mono   => &self.font_mono,
             FontType::Normal => &self.font_norm,
         };
 
@@ -163,24 +164,30 @@ impl AssetLoader {
         let mut y = p.y as f32;
 
         let bounds = self.text_bounds(font_type, font_scale, text);
+
+        #[rustfmt::skip]
         match align.x {
             TextAlignment::Left   => x -= bounds.corner_min().x as f32,
             TextAlignment::Center => x -= bounds.center().x     as f32,
             TextAlignment::Right  => x -= bounds.corner_max().x as f32,
         }
+
+        #[rustfmt::skip]
         match align.y {
             TextAlignment::Left   => y -= bounds.corner_min().y as f32,
             TextAlignment::Center => y -= bounds.center().y     as f32,
             TextAlignment::Right  => y -= bounds.corner_max().y as f32,
         }
 
+        #[rustfmt::skip]
         let font = match font_type {
-            FontType::Mono => &self.font_mono,
+            FontType::Mono   => &self.font_mono,
             FontType::Normal => &self.font_norm,
         };
 
+        #[rustfmt::skip]
         let cache = match font_type {
-            FontType::Mono => &mut self.glyph_cache_mono,
+            FontType::Mono   => &mut self.glyph_cache_mono,
             FontType::Normal => &mut self.glyph_cache_norm,
         };
 

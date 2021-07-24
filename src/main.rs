@@ -1,6 +1,7 @@
 // Sorry, but these warnings are very annoying
 #![allow(dead_code)]
 #![allow(unused_variables)]
+#![feature(stmt_expr_attributes)]
 
 use crate::fractal::Fractal;
 use crate::state::State;

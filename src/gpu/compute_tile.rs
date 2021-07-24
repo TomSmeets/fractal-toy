@@ -25,11 +25,11 @@ pub struct ComputeTile {
 }
 
 impl ComputeTile {
-    #[rustfmt::skip]
     pub fn load(alg: &[FractalStep], device: &GpuDevice, asset_loader: &mut AssetLoader) -> Self {
         let source = asset_loader.text_file("src/gpu/compute_tile.wgsl");
         let source = source.replace("REAL", "f32");
 
+        #[rustfmt::skip]
         let implementation = alg.iter().map(|x| match x {
             FractalStep::Conj   => "z.y = -z.y;\n",
             FractalStep::AbsR   => "z.x = abs(z.x);\n",
@@ -74,6 +74,7 @@ impl ComputeTile {
 
         let texture_view = texture.create_view(&TextureViewDescriptor::default());
 
+        #[rustfmt::skip]
         let bind_group_layout = device.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: None,
             entries: &[],
@@ -85,12 +86,14 @@ impl ComputeTile {
             entries: &[],
         });
 
+        #[rustfmt::skip]
         let pipeline_layout = device.device.create_pipeline_layout(&PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &[&bind_group_layout],
             push_constant_ranges: &[],
         });
 
+        #[rustfmt::skip]
         let pipeline = device.device.create_render_pipeline(&RenderPipelineDescriptor {
             label: None,
             layout: Some(&pipeline_layout),
@@ -128,28 +131,31 @@ impl ComputeTile {
         }
     }
 
-    #[rustfmt::skip]
     pub fn build(&self, device: &GpuDevice, p: &TilePos) -> Image {
         let rect = p.square();
 
         let min = rect.corner_min();
         let max = rect.corner_max();
 
+        #[rustfmt::skip]
         let vertex_list = [
             Vertex { pos: V2::new(-1.0, -1.0), uv: V2::new(min.x as _, max.y as _), },
-            Vertex { pos: V2::new(1.0, -1.0), uv: V2::new(max.x as _, max.y as _), },
-            Vertex { pos: V2::new(-1.0, 1.0), uv: V2::new(min.x as _, min.y as _), },
+            Vertex { pos: V2::new( 1.0, -1.0), uv: V2::new(max.x as _, max.y as _), },
+            Vertex { pos: V2::new(-1.0,  1.0), uv: V2::new(min.x as _, min.y as _), },
 
-            Vertex { pos: V2::new(1.0, -1.0), uv: V2::new(max.x as _, max.y as _), },
-            Vertex { pos: V2::new(1.0, 1.0), uv: V2::new(max.x as _, min.y as _), },
-            Vertex { pos: V2::new(-1.0, 1.0), uv: V2::new(min.x as _, min.y as _), },
+            Vertex { pos: V2::new( 1.0, -1.0), uv: V2::new(max.x as _, max.y as _), },
+            Vertex { pos: V2::new( 1.0,  1.0), uv: V2::new(max.x as _, min.y as _), },
+            Vertex { pos: V2::new(-1.0,  1.0), uv: V2::new(min.x as _, min.y as _), },
         ];
 
         // write out vertex buffer
+        #[rustfmt::skip]
         device.queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertex_list));
 
         // We finally have a frame, now it is time to create the render commands
+        #[rustfmt::skip]
         let mut encoder = device.device.create_command_encoder(&CommandEncoderDescriptor { label: None });
+
         {
             let mut rpass = encoder.begin_render_pass(&RenderPassDescriptor {
                 label: None,
@@ -178,16 +184,18 @@ impl ComputeTile {
             },
             ImageCopyBuffer {
                 buffer: &self.buffer,
-                layout:  ImageDataLayout {
+                layout: ImageDataLayout {
                     offset: 0,
-                    bytes_per_row: Some(NonZeroU32::new(4*TILE_SIZE).unwrap()),
-                    rows_per_image: Some(NonZeroU32::new(TILE_SIZE).unwrap())
-                }
-            }, Extent3d {
+                    bytes_per_row: Some(NonZeroU32::new(4 * TILE_SIZE).unwrap()),
+                    rows_per_image: Some(NonZeroU32::new(TILE_SIZE).unwrap()),
+                },
+            },
+            Extent3d {
                 width: TILE_SIZE,
                 height: TILE_SIZE,
                 depth_or_array_layers: 1,
-            });
+            },
+        );
         device.queue.submit(Some(encoder.finish()));
 
         let image = {

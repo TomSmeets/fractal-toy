@@ -29,7 +29,6 @@ pub struct DrawUI {
 }
 
 impl DrawUI {
-    #[rustfmt::skip]
     pub fn load(device: &GpuDevice) -> Self {
         let mut loader = ShaderLoader::new();
         let (shader, _) = loader.load(&device.device, "src/gpu/draw_ui.wgsl");
@@ -72,11 +71,7 @@ impl DrawUI {
                 ImageCopyTexture {
                     texture: &texture,
                     mip_level: 0,
-                    origin: Origin3d {
-                        x: 0,
-                        y: 0,
-                        z: 0,
-                    },
+                    origin: Origin3d { x: 0, y: 0, z: 0 },
                 },
                 &vec![0; ATLAS_SIZE as usize * ATLAS_SIZE as usize * 4],
                 ImageDataLayout {
@@ -107,6 +102,7 @@ impl DrawUI {
             ..SamplerDescriptor::default()
         });
 
+        #[rustfmt::skip]
         let bind_group_layout = device.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: None,
             entries: &[
@@ -161,12 +157,14 @@ impl DrawUI {
             ],
         });
 
+        #[rustfmt::skip]
         let pipeline_layout = device.device.create_pipeline_layout(&PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &[&bind_group_layout],
             push_constant_ranges: &[],
         });
 
+        #[rustfmt::skip]
         let pipeline = device.device.create_render_pipeline(&RenderPipelineDescriptor {
             label: None,
             layout: Some(&pipeline_layout),
@@ -214,7 +212,6 @@ impl DrawUI {
         }
     }
 
-    #[rustfmt::skip]
     pub fn blit(&mut self, device: &GpuDevice, screen_rect: &Rect, img: &Image) {
         let lx = screen_rect.corner_min().x as f32;
         let ly = screen_rect.corner_min().y as f32;
@@ -274,6 +271,7 @@ impl DrawUI {
         let uv_h = rect.corner_max().map(|x| x as f32) / ATLAS_SIZE as f32;
 
         if self.vertex_list.len() + 6 < MAX_VERTS as _ {
+            #[rustfmt::skip]
             self.vertex_list.extend_from_slice(&[
                 Vertex { pos: V2::new(lx, ly), uv: V2::new(uv_l.x, uv_l.y), },
                 Vertex { pos: V2::new(hx, ly), uv: V2::new(uv_h.x, uv_l.y), },
@@ -288,7 +286,6 @@ impl DrawUI {
         }
     }
 
-    #[rustfmt::skip]
     pub fn show_debug_atlas(&mut self, size: f32) {
         let lx = 0.0;
         let ly = 0.0;
@@ -299,6 +296,8 @@ impl DrawUI {
         let uv_ly = 0.0;
         let uv_hx = 1.0;
         let uv_hy = 1.0;
+
+        #[rustfmt::skip]
         self.vertex_list.extend_from_slice(&[
             Vertex { pos: V2::new(lx, ly), uv: V2::new(uv_lx, uv_ly), },
             Vertex { pos: V2::new(hx, ly), uv: V2::new(uv_hx, uv_ly), },
