@@ -104,3 +104,12 @@ self.gpu.render(window, &GpuInput {
 + Has full knowledge of everything
 + backend  can be anything, gpu just takes a list
 - tiles has to be exactly that type. can't just convert between &[A], &[&A]] and BTreeMap<K, A>, etc
+
+# SPEED
+
+ toolchain  | link | full  | inc  | slow factor |
+------------+------+-------+------+-------------+
+ nightly    | lld  | 28.59 | 0.90 | 1x          |
+ stable     | lld  | 30.41 | 1.91 | 2x          |
+ nightly    | ld   | 31.69 | 3.65 | 4x          |
+ stable     | ld   | 33.46 | 4.48 | 5x          |
