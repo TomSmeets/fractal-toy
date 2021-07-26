@@ -49,7 +49,8 @@ impl GlyphCache {
         ];
 
         // TODO: The glyph id does not depend on the scale nor position!
-        let result = self.cache
+        let result = self
+            .cache
             .entry((glyph.id(), sub_pixel_position, sub_pixel_scale))
             .or_insert_with(|| {
                 let bb = match glyph.pixel_bounding_box() {

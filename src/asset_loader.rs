@@ -4,11 +4,11 @@ use std::time::SystemTime;
 use ::rusttype::Font;
 use ::rusttype::Scale;
 
+use crate::debug::Debug;
 use crate::glyph_cache::GlyphCache;
 use crate::gpu::Gpu;
 use crate::image::Image;
 use crate::util::*;
-use crate::debug::Debug;
 
 // OLD comment about ImageID's, but lets keep it here for now.
 //
