@@ -8,6 +8,7 @@ use crate::glyph_cache::GlyphCache;
 use crate::gpu::Gpu;
 use crate::image::Image;
 use crate::util::*;
+use crate::debug::Debug;
 
 // OLD comment about ImageID's, but lets keep it here for now.
 //
@@ -195,6 +196,7 @@ impl AssetLoader {
         let line_height = metrics.ascent - metrics.descent + metrics.line_gap;
 
         let mut result = Vec::new();
+        Debug::push("AssetLoader.text_iter");
         for line in text.lines() {
             y += line_height;
             let i = font.layout(line, font_scale, rusttype::Point { x, y });
@@ -213,6 +215,7 @@ impl AssetLoader {
                 result.push((rect, img.clone()));
             }
         }
+        Debug::pop();
 
         result
     }

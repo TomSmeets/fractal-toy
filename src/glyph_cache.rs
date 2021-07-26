@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use ::rusttype::GlyphId;
 use ::rusttype::PositionedGlyph;
 
+use crate::debug::Debug;
 use crate::image::Image;
 use crate::util::V2;
 
@@ -22,6 +23,8 @@ impl GlyphCache {
     }
 
     pub fn render_glyph(&mut self, glyph: &PositionedGlyph) -> &Image {
+        Debug::push("GlyphCache.render_glyph");
+
         /// normally f.fract() can return negative numbers, because it rounds to 0,
         /// floor rounds to negative infinity, so this will alawys return a number form 0 to 1
         pub fn fract_abs(f: f32) -> f32 {
@@ -46,7 +49,7 @@ impl GlyphCache {
         ];
 
         // TODO: The glyph id does not depend on the scale nor position!
-        self.cache
+        let result = self.cache
             .entry((glyph.id(), sub_pixel_position, sub_pixel_scale))
             .or_insert_with(|| {
                 let bb = match glyph.pixel_bounding_box() {
@@ -70,6 +73,8 @@ impl GlyphCache {
                 });
 
                 Image::new(V2::new(bb.width() as _, bb.height() as _), data)
-            })
+            });
+        Debug::pop();
+        result
     }
 }

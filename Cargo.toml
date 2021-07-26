@@ -19,3 +19,9 @@ serde = { version = "1.0", features = [ "derive" ] }
 structopt = "0.3"
 wgpu = "0.9"
 winit = { version = "0.25", features = [ "web-sys" ] }
+
+[profile.dev.package.rusttype]
+opt-level = 3
+
+[profile.dev.package.cgmath]
+opt-level = 3
