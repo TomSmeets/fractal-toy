@@ -11,6 +11,7 @@ use crate::update_loop::Input;
 use crate::util::*;
 use crate::viewport::Viewport;
 use crate::viewport::ViewportInput;
+use crate::debug::Debug;
 
 static MANDELBROT: &[FractalStep] = &[FractalStep::Square, FractalStep::AddC];
 
@@ -110,7 +111,7 @@ impl Fractal {
     pub fn update(&mut self, state: &mut State, window: &Window, input: &Input) {
         let mut recreate_builder = false;
 
-        state.debug.push("fractal.update()");
+        Debug::push("fractal.update()");
 
         {
             let mut dir: V2<f64> = vec2(0.0, 0.0);
@@ -160,28 +161,28 @@ impl Fractal {
         }
 
         // queue which tiles should be built, we include a 1 tile border here
-        state.debug.push("builder.tile() [build]");
+        Debug::push("builder.tile() [build]");
         for p in self.viewport.get_pos_all(1) {
             self.builder.tile(&p);
         }
-        state.debug.pop();
+        Debug::pop();
 
         // draw tiles, without a border, so just those visible
-        state.debug.push("builder.tile() [draw]");
+        Debug::push("builder.tile() [draw]");
         for p in self.viewport.get_pos_all(0) {
             // if we don't have a tile don't draw it yet
             if let Some(img) = self.builder.tile(&p) {
                 state.gpu.tile(&self.viewport, &p, img);
             }
         }
-        state.debug.pop();
+        Debug::pop();
 
         // random information text
         state.debug.print(&Self::distance(self.viewport.scale));
 
         // The user interface buttons on the bottom
         {
-            state.debug.push("ui.buttons()");
+            Debug::push("ui.buttons()");
 
             fn do_button(state: &mut State, s: FractalStep, rect: Rect) -> bool {
                 let region = state.ui.region(&rect);
@@ -244,13 +245,13 @@ impl Fractal {
                 recreate_builder = true;
             }
 
-            state.debug.pop();
+            Debug::pop();
         }
 
         // update tile builder cache
-        state.debug.push("builder.update()");
+        Debug::push("builder.update()");
         self.builder.update();
-        state.debug.pop();
+        Debug::pop();
 
         {
             let dt_frame = input.real_dt_full;
@@ -269,7 +270,7 @@ impl Fractal {
             self.builder = TileBuilder::new(state.gpu.device(), &mut state.asset, &self.steps);
         }
 
-        state.debug.pop();
+        Debug::pop();
     }
 
     pub fn distance(scale: f64) -> String {

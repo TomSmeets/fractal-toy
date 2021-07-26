@@ -6,6 +6,7 @@ use crossbeam_channel::Receiver;
 use crossbeam_channel::Sender;
 
 use crate::asset_loader::AssetLoader;
+use crate::debug::Debug;
 use crate::fractal::FractalStep;
 use crate::gpu::compute_tile::ComputeTile;
 use crate::gpu::GpuDevice;
@@ -40,7 +41,9 @@ impl TileBuilder {
             let tile_send = tile_send.clone();
             std::thread::spawn(move || {
                 while let Ok(pos) = req_recv_gpu.recv() {
+                    Debug::push("builder.gpu.build()");
                     let img = gpu_builder.build(&gpu_device, &pos);
+                    Debug::pop();
                     if let Err(_) = tile_send.send((pos, img)) {
                         break;
                     }
@@ -55,7 +58,9 @@ impl TileBuilder {
             let alg = alg.to_vec();
             std::thread::spawn(move || {
                 while let Ok((pos, a)) = req_recv.recv() {
+                    Debug::push("builder.cpu.build()");
                     let img = Self::gen_tile(&alg, &pos, a);
+                    Debug::pop();
                     if let Err(_) = tile_send.send((pos, img)) {
                         break;
                     }

@@ -35,14 +35,14 @@ impl State {
     }
 
     pub fn update(&mut self, window: &Window, input: &Input) {
-        self.debug.push("state.update()");
+        Debug::push("state.update()");
 
         if input.key_click(winit::event::VirtualKeyCode::Key1) {
             self.show_debug = !self.show_debug;
         }
 
         if self.show_debug {
-            self.debug.push("asset.text(Debug)");
+            Debug::push("asset.text(Debug)");
             let font_type = FontType::Mono;
             let font_size = 26.0;
             let text = self.debug.draw();
@@ -64,22 +64,22 @@ impl State {
                 &mut self.gpu,
                 &text,
             );
-            self.debug.pop();
+            Debug::pop();
         }
 
-        self.debug.push("ui.update()");
+        Debug::push("ui.update()");
         self.ui.update(input, &mut self.gpu, &mut self.asset);
-        self.debug.pop();
+        Debug::pop();
 
         // check for asset changes
-        self.debug.push("asset.hot_reload()");
+        Debug::push("asset.hot_reload()");
         self.asset.hot_reload();
-        self.debug.pop();
+        Debug::pop();
 
-        self.debug.push("gpu.update()");
-        self.gpu.render(window, input.resolution, &mut self.debug);
-        self.debug.pop();
-        self.debug.pop();
+        Debug::push("gpu.update()");
+        self.gpu.render(window, input.resolution);
+        Debug::pop();
+        Debug::pop();
 
         self.debug.begin();
     }

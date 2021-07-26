@@ -566,6 +566,7 @@ dependencies = [
  "crossbeam-channel",
  "image",
  "instant",
+ "lazy_static",
  "num_cpus",
  "pollster",
  "rusttype",

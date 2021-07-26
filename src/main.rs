@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 #![feature(stmt_expr_attributes)]
+#![feature(const_btree_new)]
 
 use crate::fractal::Fractal;
 use crate::state::State;

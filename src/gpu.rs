@@ -150,7 +150,7 @@ impl Gpu {
         }
     }
 
-    pub fn render(&mut self, window: &Window, resolution: V2<u32>, debug: &mut Debug) {
+    pub fn render(&mut self, window: &Window, resolution: V2<u32>) {
         let vtx_count = self.draw_tiles.vertex_list.len();
         self.draw_tiles
             .render(&self.device, resolution.map(|x| x as _));
@@ -171,7 +171,7 @@ impl Gpu {
         // How about instead of compute we just render to a texture view?
         // Draw tiles
         {
-            debug.push("begin_render_pass");
+            Debug::push("begin_render_pass");
             let mut rpass = encoder.begin_render_pass(&RenderPassDescriptor {
                 label: None,
                 color_attachments: &[RenderPassColorAttachment {
@@ -196,11 +196,11 @@ impl Gpu {
             rpass.set_vertex_buffer(0, self.draw_ui.vertex_buffer.slice(..));
             rpass.set_bind_group(0, &self.draw_ui.bind_group, &[]);
             rpass.draw(0..ui_vtx_count as u32, 0..1);
-            debug.pop();
+            Debug::pop();
         }
 
-        debug.push("submit");
+        Debug::push("submit");
         self.device.queue.submit(Some(encoder.finish()));
-        debug.pop();
+        Debug::pop();
     }
 }
