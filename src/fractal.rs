@@ -6,12 +6,12 @@ use winit::window::Window;
 use crate::asset_loader::FontType;
 use crate::asset_loader::TextAlignment;
 use crate::builder::TileBuilder;
+use crate::debug::Debug;
 use crate::state::State;
 use crate::update_loop::Input;
 use crate::util::*;
 use crate::viewport::Viewport;
 use crate::viewport::ViewportInput;
-use crate::debug::Debug;
 
 static MANDELBROT: &[FractalStep] = &[FractalStep::Square, FractalStep::AddC];
 

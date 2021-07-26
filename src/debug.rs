@@ -1,7 +1,7 @@
 use std::borrow::BorrowMut;
 use std::cell::RefCell;
-use std::time::Instant;
 use std::collections::BTreeMap;
+use std::time::Instant;
 
 use instant::Duration;
 
@@ -32,11 +32,12 @@ pub struct Debug {
     events: BTreeMap<&'static str, DebugEvent>,
 }
 
-thread_local!{
+thread_local! {
     static STACK: RefCell<Vec<(&'static str, Instant)>> = RefCell::new(Vec::new());
 }
 
 use std::sync::Mutex;
+
 use ::lazy_static::lazy_static;
 lazy_static! {
     static ref EVENTS: Mutex<BTreeMap<&'static str, DebugEvent>> = Mutex::new(BTreeMap::new());
@@ -88,28 +89,33 @@ impl Debug {
         result.push_str("    MIN     MAX     AVG     Calls\n");
         result.push_str("                                 \n");
 
-
         let events = EVENTS.lock().unwrap();
-        let mut table = events.iter().map(|(name, ev)| {
-            let mut t_min = 1_000_000_000;
-            let mut t_max = 0;
-            let mut t_avg = 0;
+        let mut table = events
+            .iter()
+            .map(|(name, ev)| {
+                let mut t_min = 1_000_000_000;
+                let mut t_max = 0;
+                let mut t_avg = 0;
 
-            for e in ev.table.iter().copied() {
-                t_min = t_min.min(e);
-                t_max = t_max.max(e);
-                t_avg += e as u64;
-            }
+                for e in ev.table.iter().copied() {
+                    t_min = t_min.min(e);
+                    t_max = t_max.max(e);
+                    t_avg += e as u64;
+                }
 
-            t_avg /= ev.table.len() as u64;
+                t_avg /= ev.table.len() as u64;
 
-            (name, t_min, t_max, t_avg as u32, ev.calls)
-        }).collect::<Vec<_>>();
+                (name, t_min, t_max, t_avg as u32, ev.calls)
+            })
+            .collect::<Vec<_>>();
 
         table.sort_by_key(|(_, _, _, a, _)| -(*a as i64));
 
         for (name, t_min, t_max, t_avg, calls) in table.into_iter() {
-            result.push_str(&format!("{:7} {:7} {:7} {:7} | {}\n", t_min, t_max, t_avg, calls, name));
+            result.push_str(&format!(
+                "{:7} {:7} {:7} {:7} | {}\n",
+                t_min, t_max, t_avg, calls, name
+            ));
         }
 
         result
