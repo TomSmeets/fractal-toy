@@ -114,36 +114,12 @@ impl Fractal {
         Debug::push("fractal.update()");
 
         {
-            let mut dir: V2<f64> = vec2(0.0, 0.0);
-            let mut speed = 1.0;
-            let mut zoom = 0.0;
-            for k in input.keys_down.iter() {
-                match k {
-                    VirtualKeyCode::W => dir.y += 1.0,
-                    VirtualKeyCode::S => dir.y -= 1.0,
-                    VirtualKeyCode::D => dir.x += 1.0,
-                    VirtualKeyCode::A => dir.x -= 1.0,
-
-                    VirtualKeyCode::Up => dir.y += 1.0,
-                    VirtualKeyCode::Down => dir.y -= 1.0,
-                    VirtualKeyCode::Right => dir.x += 1.0,
-                    VirtualKeyCode::Left => dir.x -= 1.0,
-
-                    VirtualKeyCode::LShift => speed = 3.0,
-                    VirtualKeyCode::RShift => speed = 3.0,
-
-                    VirtualKeyCode::I => zoom += 1.0,
-                    VirtualKeyCode::K => zoom -= 1.0,
-                    _ => (),
-                }
-            }
-            let dir = dir / dir.magnitude().max(1.0) * speed * 1.0;
-
+            let mapped = map_input(input);
             let mut viewport_input = ViewportInput {
                 dt: input.dt as f64,
                 resolution: input.resolution,
-                dir_move: dir,
-                zoom_center: zoom * speed * 4.0,
+                dir_move: mapped.dir,
+                zoom_center: mapped.zoom,
                 drag: None,
                 scroll_at: (input.mouse, 0.0),
             };
@@ -317,4 +293,39 @@ impl Fractal {
 
         result
     }
+}
+
+pub struct MappedInput {
+    dir: V2,
+    zoom: f64,
+}
+
+fn map_input(input: &Input) -> MappedInput {
+    let mut dir: V2<f64> = vec2(0.0, 0.0);
+    let mut speed = 1.0;
+    let mut zoom = 0.0;
+    for k in input.keys_down.iter() {
+        #[rustfmt::skip]
+        match k {
+            VirtualKeyCode::W => dir.y += 1.0,
+            VirtualKeyCode::S => dir.y -= 1.0,
+            VirtualKeyCode::D => dir.x += 1.0,
+            VirtualKeyCode::A => dir.x -= 1.0,
+
+            VirtualKeyCode::Up    => dir.y += 1.0,
+            VirtualKeyCode::Down  => dir.y -= 1.0,
+            VirtualKeyCode::Right => dir.x += 1.0,
+            VirtualKeyCode::Left  => dir.x -= 1.0,
+
+            VirtualKeyCode::LShift => speed = 3.0,
+            VirtualKeyCode::RShift => speed = 3.0,
+
+            VirtualKeyCode::I => zoom += 1.0,
+            VirtualKeyCode::K => zoom -= 1.0,
+            _ => (),
+        }
+    }
+    let dir = dir / dir.magnitude().max(1.0) * speed * 1.0;
+    let zoom = zoom * speed * 4.0;
+    MappedInput { dir, zoom }
 }
