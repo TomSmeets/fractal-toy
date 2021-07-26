@@ -1,9 +1,7 @@
-use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use std::time::Instant;
 
-use instant::Duration;
+use instant::Instant;
 
 const SAMPLE_COUNT: usize = 180;
 

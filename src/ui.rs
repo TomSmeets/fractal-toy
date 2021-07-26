@@ -173,7 +173,7 @@ impl UI {
     pub fn next_col(&mut self) {}
 
     pub fn window(&mut self, name: &'static str) -> &mut Window {
-        let mut window = self.windows.entry(name).or_insert(Window::new(name));
+        let window = self.windows.entry(name).or_insert(Window::new(name));
         window.reset();
         window
     }
@@ -201,7 +201,6 @@ impl UI {
         }
 
         let mouse_pos = input.mouse.map(|x| x as _);
-        let mut had_hover = false;
         for w in self.windows.values_mut() {
             let rect = w.content_rect();
             let hover = rect.contains(mouse_pos);
