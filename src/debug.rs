@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, time::Instant};
+use std::time::Instant;
 
 use instant::Duration;
 
@@ -10,7 +10,9 @@ struct TimeEntry {
 #[derive(Debug, Clone, Copy)]
 struct DebugEvent {
     start_time: Instant,
-    fame_duration:  Duration,
+    fame_duration: Duration,
+    table_index: u32,
+    table: [u32; 180],
 }
 
 enum Item<T> {
@@ -20,18 +22,28 @@ enum Item<T> {
 
 pub struct TreeStorage<T> {
     items: Vec<Item<T>>,
+    prev_items: Vec<Item<T>>,
 }
 
-impl<T> TreeStorage<T> {
-    pub fn new() -> Self { TreeStorage { items: Vec::new() }}
+impl<T: Clone> TreeStorage<T> {
+    pub fn new() -> Self {
+        TreeStorage {
+            items: Vec::new(),
+            prev_items: Vec::new(),
+        }
+    }
 
     pub fn restart(&mut self) {
-        // TODO: keep items
+        std::mem::swap(&mut self.items, &mut self.prev_items);
         self.items.clear();
     }
 
     pub fn push(&mut self, name: &'static str, def: T) -> &mut T {
-        self.items.push(Item::Push(name, def));
+        let ix = self.items.len();
+        match self.prev_items.get(ix) {
+            Some(Item::Push(n, t)) if n == &name => self.items.push(Item::Push(name, t.clone())),
+            _ => self.items.push(Item::Push(name, def)),
+        }
         match self.items.last_mut().unwrap() {
             Item::Push(_, t) => t,
             Item::Pop => unreachable!(),
@@ -55,7 +67,7 @@ impl<T> TreeStorage<T> {
         loop {
             match items[ix] {
                 Item::Push(_, _) => depth -= 1,
-                Item::Pop        => depth += 1,
+                Item::Pop => depth += 1,
             }
 
             if depth == 0 {
@@ -74,8 +86,7 @@ impl<T> TreeStorage<T> {
 pub struct Debug {
     info: String,
     out: String,
-    
-    last_frame_events: TreeStorage<DebugEvent>,
+
     events: TreeStorage<DebugEvent>,
 }
 
@@ -84,14 +95,11 @@ impl Debug {
         Debug {
             info: String::new(),
             out: String::new(),
-
-            last_frame_events: TreeStorage::new(),
             events: TreeStorage::new(),
         }
     }
 
     pub fn begin(&mut self) {
-        std::mem::swap(&mut self.events, &mut self.last_frame_events);
         self.events.restart();
 
         std::mem::swap(&mut self.out, &mut self.info);
@@ -103,6 +111,8 @@ impl Debug {
         let ev = self.events.push(name, DebugEvent {
             start_time: time,
             fame_duration: Duration::ZERO,
+            table_index: 0,
+            table: [0; 180],
         });
         ev.start_time = time;
     }
@@ -111,20 +121,37 @@ impl Debug {
         let ev = self.events.pop();
         let time = Instant::now();
         ev.fame_duration = time - ev.start_time;
+        ev.table[ev.table_index as usize] = ev.fame_duration.as_micros() as u32;
+
+        ev.table_index += 1;
+        if ev.table_index as usize >= ev.table.len() {
+            ev.table_index = 0;
+        }
     }
 
     pub fn draw(&mut self) -> String {
         let mut result = std::mem::take(&mut self.out);
-        result.push_str("-----------\n");
+        result.push_str("                         \n");
+        result.push_str("   MIN    MAX    AVG     \n");
+        result.push_str("                         \n");
 
         let mut depth = 0;
-        for e in self.last_frame_events.items.iter() {
+        for e in self.events.prev_items.iter() {
             match e {
                 Item::Push(name, ev) => {
-                    result.push_str(&format!(
-                        "{:6.2} µs | ",
-                        ev.fame_duration.as_micros()
-                    ));
+                    let mut t_min = 1_000_000_000;
+                    let mut t_max = 0;
+                    let mut t_avg = 0;
+
+                    for e in ev.table.iter().copied() {
+                        t_min = t_min.min(e);
+                        t_max = t_max.max(e);
+                        t_avg += e as u64;
+                    }
+
+                    t_avg /= ev.table.len() as u64;
+
+                    result.push_str(&format!("{:6} {:6} {:6} µs | ", t_min, t_max, t_avg,));
                     for _ in 0..depth {
                         result.push_str("  ");
                     }
