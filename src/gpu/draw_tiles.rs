@@ -29,7 +29,7 @@ pub struct DrawTiles {
 
 impl DrawTiles {
     pub fn load(device: &GpuDevice, fs: &mut AssetLoader) -> DrawTiles {
-        let source = fs.text_file("src/gpu/shader.wgsl");
+        let source = fs.text_file("res/shader/shader.wgsl");
         let shader = ShaderLoader::compile(&device.device, &source).unwrap();
 
         let vertex_buffer = device.device.create_buffer(&BufferDescriptor {

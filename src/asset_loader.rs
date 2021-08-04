@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::time::SystemTime;
 
@@ -65,6 +66,12 @@ pub enum TextAlignment {
     Right = 2,
 }
 
+pub struct Data {
+    id: u32,
+}
+
+include!(concat!(env!("OUT_DIR"), "/static_res_files.rs"));
+
 pub struct AssetLoader {
     // TODO: more font types
     //   mono    for debug text
@@ -81,11 +88,11 @@ pub struct AssetLoader {
 
 impl AssetLoader {
     pub fn new() -> Self {
-        let font_mono = std::fs::read("./res/DejaVuSansMono.ttf").unwrap();
-        let font_mono = Font::try_from_vec(font_mono).unwrap();
+        let font_mono = STATIC_RES_FILES.get("res/DejaVuSansMono.ttf").unwrap();
+        let font_mono = font_from_cow(font_mono);
 
-        let font_norm = std::fs::read("./res/DejaVuSans.ttf").unwrap();
-        let font_norm = Font::try_from_vec(font_norm).unwrap();
+        let font_norm = STATIC_RES_FILES.get("res/DejaVuSans.ttf").unwrap();
+        let font_norm = font_from_cow(font_norm);
 
         AssetLoader {
             image_cache: BTreeMap::new(),
@@ -221,10 +228,14 @@ impl AssetLoader {
     }
 
     pub fn text_file(&mut self, path: &str) -> String {
-        std::fs::read_to_string(path).unwrap()
+        String::from_utf8(STATIC_RES_FILES.get(path).unwrap().into_owned()).unwrap()
     }
 
     pub fn hot_reload(&mut self) {
+        if true {
+            return;
+        }
+
         let mut to_remove = Vec::new();
 
         for (path, (_, stored_mtime)) in self.image_cache.iter() {
@@ -253,7 +264,8 @@ impl AssetLoader {
         }
 
         let img = loop {
-            let buf = ::image::open(path);
+            let data = STATIC_RES_FILES.get(path).unwrap();
+            let buf = ::image::load_from_memory(&data);
             let buf = match buf {
                 Ok(buf) => buf,
                 Err(_) => {
@@ -268,10 +280,15 @@ impl AssetLoader {
             break Image::new(V2::new(w, h), data);
         };
 
-        let mtime = std::fs::metadata(path).unwrap().modified().unwrap();
         self.image_cache
-            .insert(path.to_string(), (img.clone(), mtime));
-
+            .insert(path.to_string(), (img.clone(), SystemTime::now()));
         return img;
+    }
+}
+
+fn font_from_cow(data: Cow<'static, [u8]>) -> Font<'static> {
+    match data {
+        Cow::Owned(data) => Font::try_from_vec(data).unwrap(),
+        Cow::Borrowed(data) => Font::try_from_bytes(data).unwrap(),
     }
 }

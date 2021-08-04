@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use wgpu::*;
 
+use crate::asset_loader::AssetLoader;
 use crate::gpu::GpuDevice;
 use crate::gpu::ShaderLoader;
 use crate::image::Image;
@@ -29,9 +30,11 @@ pub struct DrawUI {
 }
 
 impl DrawUI {
-    pub fn load(device: &GpuDevice) -> Self {
+    pub fn load(device: &GpuDevice, asset_loader: &mut AssetLoader) -> Self {
         let mut loader = ShaderLoader::new();
-        let (shader, _) = loader.load(&device.device, "src/gpu/draw_ui.wgsl");
+
+        let shader = asset_loader.text_file("res/shader/draw_ui.wgsl");
+        let shader = ShaderLoader::compile(&device.device, &shader).unwrap();
 
         let vertex_buffer = device.device.create_buffer(&BufferDescriptor {
             label: None,

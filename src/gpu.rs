@@ -42,7 +42,7 @@ pub struct GpuDevice {
 impl GpuDevice {
     pub fn init(window: &Window) -> Self {
         // NOTE: does not have to be kept alive
-        let instance = Instance::new(BackendBit::all());
+        let instance = Instance::new(BackendBit::GL);
 
         // surface and adapter
         let surface = unsafe { instance.create_surface(window) };
@@ -69,6 +69,7 @@ impl GpuDevice {
         .unwrap();
 
         let swap_chain_format = adapter.get_swap_chain_preferred_format(&surface).unwrap();
+        dbg!(&swap_chain_format);
 
         GpuDevice {
             surface,
@@ -82,7 +83,7 @@ impl GpuDevice {
 impl Gpu {
     pub fn init(window: &Window, asset_loader: &mut AssetLoader) -> Gpu {
         let device = GpuDevice::init(window);
-        let draw_ui = DrawUI::load(&device);
+        let draw_ui = DrawUI::load(&device, asset_loader);
         let draw_tiles = DrawTiles::load(&device, asset_loader);
 
         Gpu {

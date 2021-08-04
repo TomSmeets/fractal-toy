@@ -1,3 +1,4 @@
 imports_granularity = "Item"
 overflow_delimited_expr = true
 group_imports = "StdExternalCrate"
+unstable_features = true
