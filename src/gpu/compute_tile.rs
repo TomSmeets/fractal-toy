@@ -47,14 +47,14 @@ impl ComputeTile {
             label: None,
             size: std::mem::size_of::<Vertex>() as u64 * 6,
             mapped_at_creation: false,
-            usage: BufferUsage::VERTEX | BufferUsage::COPY_DST,
+            usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
         });
 
         let copy_buffer = device.device.create_buffer(&BufferDescriptor {
             label: None,
             size: TILE_SIZE as u64 * TILE_SIZE as u64 * 4,
             mapped_at_creation: false,
-            usage: BufferUsage::MAP_READ | BufferUsage::COPY_DST,
+            usage: BufferUsages::MAP_READ | BufferUsages::COPY_DST,
         });
 
         // Texture
@@ -63,7 +63,7 @@ impl ComputeTile {
             mip_level_count: 1,
             dimension: TextureDimension::D2,
             format: TextureFormat::Bgra8UnormSrgb,
-            usage: TextureUsage::COPY_SRC | TextureUsage::RENDER_ATTACHMENT,
+            usage: TextureUsages::COPY_SRC | TextureUsages::RENDER_ATTACHMENT,
             sample_count: 1,
             size: Extent3d {
                 width: TILE_SIZE,
@@ -102,7 +102,7 @@ impl ComputeTile {
                 entry_point: "vs_main",
                 buffers: &[VertexBufferLayout {
                     array_stride: std::mem::size_of::<Vertex>() as BufferAddress,
-                    step_mode: InputStepMode::Vertex,
+                    step_mode: VertexStepMode::Vertex,
                     attributes: &Vertex::attrs(),
                 }],
             },
@@ -112,7 +112,7 @@ impl ComputeTile {
                 targets: &[ColorTargetState {
                     format: device.swap_chain_format,
                     blend: None,
-                    write_mask: ColorWrite::ALL,
+                    write_mask: ColorWrites::ALL,
                 }],
             }),
             primitive: PrimitiveState::default(),
@@ -181,6 +181,7 @@ impl ComputeTile {
                 texture: &self.texture,
                 mip_level: 0,
                 origin: Origin3d::ZERO,
+                aspect: TextureAspect::All,
             },
             ImageCopyBuffer {
                 buffer: &self.buffer,

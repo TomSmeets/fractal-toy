@@ -36,7 +36,7 @@ impl DrawTiles {
             label: None,
             size: std::mem::size_of::<Vertex>() as u64 * MAX_VERTS,
             mapped_at_creation: false,
-            usage: BufferUsage::VERTEX | BufferUsage::COPY_DST,
+            usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
         });
 
         // Uniform
@@ -44,7 +44,7 @@ impl DrawTiles {
             label: None,
             size: std::mem::size_of::<UniformData>() as u64,
             mapped_at_creation: false,
-            usage: BufferUsage::UNIFORM | BufferUsage::COPY_DST,
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
         });
 
         // Texture
@@ -53,7 +53,7 @@ impl DrawTiles {
             mip_level_count: 1,
             dimension: TextureDimension::D2,
             format: TextureFormat::Rgba8UnormSrgb,
-            usage: TextureUsage::COPY_DST | TextureUsage::SAMPLED,
+            usage: TextureUsages::COPY_DST | TextureUsages::TEXTURE_BINDING,
             sample_count: 1,
             size: Extent3d {
                 width: TILE_SIZE,
@@ -83,7 +83,7 @@ impl DrawTiles {
             entries: &[
                 BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: ShaderStage::FRAGMENT,
+                    visibility: ShaderStages::FRAGMENT,
                     ty: BindingType::Texture {
                         multisampled: false,
                         sample_type: TextureSampleType::Float { filterable: true },
@@ -93,7 +93,7 @@ impl DrawTiles {
                 },
                 BindGroupLayoutEntry {
                     binding: 1,
-                    visibility: ShaderStage::FRAGMENT,
+                    visibility: ShaderStages::FRAGMENT,
                     ty: BindingType::Sampler {
                         comparison: false,
                         filtering: true,
@@ -102,7 +102,7 @@ impl DrawTiles {
                 },
                 BindGroupLayoutEntry {
                     binding: 2,
-                    visibility: ShaderStage::VERTEX,
+                    visibility: ShaderStages::VERTEX,
                     ty: BindingType::Buffer {
                         ty: BufferBindingType::Uniform,
                         has_dynamic_offset: false,
@@ -149,7 +149,7 @@ impl DrawTiles {
                 entry_point: "vs_main",
                 buffers: &[VertexBufferLayout {
                     array_stride: std::mem::size_of::<Vertex>() as BufferAddress,
-                    step_mode: InputStepMode::Vertex,
+                    step_mode: VertexStepMode::Vertex,
                     attributes: &Vertex::attrs(),
                 }],
             },
@@ -159,7 +159,7 @@ impl DrawTiles {
                 targets: &[ColorTargetState {
                     format: device.swap_chain_format,
                     blend: None,
-                    write_mask: ColorWrite::ALL,
+                    write_mask: ColorWrites::ALL,
                 }],
             }),
             primitive: PrimitiveState::default(),
@@ -240,6 +240,7 @@ impl DrawTiles {
                             y: 0,
                             z: ix as u32,
                         },
+                        aspect: TextureAspect::All
                     },
                     img.data(),
                     ImageDataLayout {

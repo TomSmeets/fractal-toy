@@ -42,7 +42,7 @@ pub struct GpuDevice {
 impl GpuDevice {
     pub fn init(window: &Window) -> Self {
         // NOTE: does not have to be kept alive
-        let instance = Instance::new(BackendBit::VULKAN);
+        let instance = Instance::new(Backends::VULKAN);
 
         // surface and adapter
         let surface = unsafe { instance.create_surface(window) };
@@ -53,8 +53,13 @@ impl GpuDevice {
         let adapter = pollster::block_on(instance.request_adapter(&RequestAdapterOptions {
             power_preference: PowerPreference::default(),
             compatible_surface: Some(&surface),
+            force_fallback_adapter: false,
         }))
         .unwrap();
+
+
+        let mut limits = Limits::default();
+        limits.max_texture_array_layers = 1024;
 
         // device, logical handle to the adapter.
         // TODO: setup, and figure out how tracing works.
@@ -62,13 +67,13 @@ impl GpuDevice {
             &DeviceDescriptor {
                 label: None,
                 features: Features::empty(), // TODO: add appropiate features here? SHADER_FLOAT64 does not work yet correctly
-                limits: Limits::default(),   // TODO: also set to whaterver we are using?
+                limits,   // TODO: also set to whaterver we are using?
             },
             None,
         ))
         .unwrap();
 
-        let swap_chain_format = adapter.get_swap_chain_preferred_format(&surface).unwrap();
+        let swap_chain_format = surface.get_preferred_format(&adapter).unwrap();
         dbg!(&swap_chain_format);
 
         GpuDevice {
@@ -107,47 +112,34 @@ impl Gpu {
         self.draw_tiles.blit(&self.device, &rect, img);
     }
 
-    pub fn next_frame(&mut self, resolution: V2<u32>) -> SwapChainFrame {
+    pub fn next_frame(&mut self, resolution: V2<u32>) -> (SurfaceTexture, TextureView) {
         loop {
-            let device = &self.device;
-            let swap_chain = self.swap_chain.get_or_insert_with(|| {
-                let swap_chain =
-                    device
-                        .device
-                        .create_swap_chain(&device.surface, &SwapChainDescriptor {
-                            usage: TextureUsage::RENDER_ATTACHMENT,
-                            format: device.swap_chain_format,
-                            width: resolution.x,
-                            height: resolution.y,
-                            present_mode: PresentMode::Mailbox,
-                        });
-
-                SwapChain {
-                    swap_chain,
-                    resolution,
-                }
-            });
-
-            if swap_chain.resolution != resolution {
-                self.swap_chain = None;
-                continue;
-            }
-
-            let frame = match swap_chain.swap_chain.get_current_frame() {
-                Ok(frame) => frame,
-                Err(e) => {
-                    dbg!(e);
-                    self.swap_chain = None;
-                    continue;
-                }
+            let need_resize = match &self.swap_chain {
+                None => true,
+                Some(sc) => sc.resolution != resolution,
             };
 
-            if frame.suboptimal {
-                self.swap_chain = None;
-                continue;
+            if need_resize {
+                self.device.surface.configure(&self.device.device, &SurfaceConfiguration {
+                    usage: TextureUsages::RENDER_ATTACHMENT,
+                    format: self.device.swap_chain_format,
+                    width: resolution.x,
+                    height: resolution.y,
+                    present_mode: PresentMode::Mailbox,
+                });
+
+                self.swap_chain = Some(SwapChain { resolution });
             }
 
-            break frame;
+            let frame = match self.device.surface.get_current_texture() {
+                Ok(frame) => frame,
+                Err(_) => {
+                    self.swap_chain = None; continue;}
+                ,
+            };
+
+            let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
+            break (frame, view);
         }
     }
 
@@ -166,7 +158,7 @@ impl Gpu {
             .device
             .create_command_encoder(&CommandEncoderDescriptor { label: None });
 
-        let frame = self.next_frame(resolution);
+        let (frame, view) = self.next_frame(resolution);
 
         // TODO: what do we do with compute commands? do they block? do we do them async?
         // How about instead of compute we just render to a texture view?
@@ -176,7 +168,7 @@ impl Gpu {
             let mut rpass = encoder.begin_render_pass(&RenderPassDescriptor {
                 label: None,
                 color_attachments: &[RenderPassColorAttachment {
-                    view: &frame.output.view,
+                    view: &view,
                     resolve_target: None,
                     ops: Operations {
                         load: LoadOp::Clear(Color::RED),
@@ -203,5 +195,6 @@ impl Gpu {
         Debug::push("submit");
         self.device.queue.submit(Some(encoder.finish()));
         Debug::pop();
+        frame.present();
     }
 }

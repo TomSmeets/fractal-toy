@@ -32,7 +32,6 @@ impl ShaderLoader {
         let shader = device.create_shader_module(&ShaderModuleDescriptor {
             label: None,
             source: ShaderSource::Wgsl(Cow::Borrowed(source)),
-            flags: ShaderFlags::all(),
         });
 
         device.on_uncaptured_error(move |e: Error| {

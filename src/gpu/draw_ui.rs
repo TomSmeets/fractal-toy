@@ -40,7 +40,7 @@ impl DrawUI {
             label: None,
             size: std::mem::size_of::<Vertex>() as u64 * MAX_VERTS,
             mapped_at_creation: false,
-            usage: BufferUsage::VERTEX | BufferUsage::COPY_DST,
+            usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
         });
 
         // Uniform
@@ -48,7 +48,7 @@ impl DrawUI {
             label: None,
             size: std::mem::size_of::<UniformData>() as u64,
             mapped_at_creation: false,
-            usage: BufferUsage::UNIFORM | BufferUsage::COPY_DST,
+            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
         });
 
         // Texture
@@ -57,7 +57,7 @@ impl DrawUI {
             mip_level_count: 1,
             dimension: TextureDimension::D2,
             format: TextureFormat::Rgba8UnormSrgb,
-            usage: TextureUsage::COPY_DST | TextureUsage::SAMPLED,
+            usage: TextureUsages::COPY_DST | TextureUsages::TEXTURE_BINDING,
             sample_count: 1,
             size: Extent3d {
                 width: ATLAS_SIZE,
@@ -75,6 +75,7 @@ impl DrawUI {
                     texture: &texture,
                     mip_level: 0,
                     origin: Origin3d { x: 0, y: 0, z: 0 },
+                    aspect: TextureAspect::All,
                 },
                 &vec![0; ATLAS_SIZE as usize * ATLAS_SIZE as usize * 4],
                 ImageDataLayout {
@@ -111,7 +112,7 @@ impl DrawUI {
             entries: &[
                 BindGroupLayoutEntry {
                     binding: 0,
-                    visibility: ShaderStage::FRAGMENT,
+                    visibility: ShaderStages::FRAGMENT,
                     ty: BindingType::Texture {
                         multisampled: false,
                         sample_type: TextureSampleType::Float { filterable: true },
@@ -121,7 +122,7 @@ impl DrawUI {
                 },
                 BindGroupLayoutEntry {
                     binding: 1,
-                    visibility: ShaderStage::FRAGMENT,
+                    visibility: ShaderStages::FRAGMENT,
                     ty: BindingType::Sampler {
                         comparison: false,
                         filtering: true,
@@ -130,7 +131,7 @@ impl DrawUI {
                 },
                 BindGroupLayoutEntry {
                     binding: 2,
-                    visibility: ShaderStage::VERTEX,
+                    visibility: ShaderStages::VERTEX,
                     ty: BindingType::Buffer {
                         ty: BufferBindingType::Uniform,
                         has_dynamic_offset: false,
@@ -176,7 +177,7 @@ impl DrawUI {
                 entry_point: "vs_main",
                 buffers: &[VertexBufferLayout {
                     array_stride: std::mem::size_of::<Vertex>() as BufferAddress,
-                    step_mode: InputStepMode::Vertex,
+                    step_mode: VertexStepMode::Vertex,
                     attributes: &Vertex::attrs(),
                 }],
             },
@@ -189,7 +190,7 @@ impl DrawUI {
                         color: BlendComponent::OVER,
                         alpha: BlendComponent::OVER,
                     }),
-                    write_mask: ColorWrite::ALL,
+                    write_mask: ColorWrites::ALL,
                 }],
             }),
             primitive: PrimitiveState::default(),
@@ -248,6 +249,7 @@ impl DrawUI {
                             y: rect.corner_min().y as u32,
                             z: 0 as u32,
                         },
+                        aspect:TextureAspect::All,
                     },
                     img.data(),
                     ImageDataLayout {

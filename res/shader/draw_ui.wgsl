@@ -15,7 +15,7 @@ var texture: texture_2d<f32>;
 var sampler: sampler;
 
 [[group(0), binding(2)]]
-var uniform: UniformData;
+var<uniform> uniform: UniformData;
 
 
 [[stage(vertex)]]
