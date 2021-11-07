@@ -249,7 +249,7 @@ impl DrawUI {
                             y: rect.corner_min().y as u32,
                             z: 0 as u32,
                         },
-                        aspect:TextureAspect::All,
+                        aspect: TextureAspect::All,
                     },
                     img.data(),
                     ImageDataLayout {

@@ -57,7 +57,6 @@ impl GpuDevice {
         }))
         .unwrap();
 
-
         let mut limits = Limits::default();
         limits.max_texture_array_layers = 1024;
 
@@ -67,7 +66,7 @@ impl GpuDevice {
             &DeviceDescriptor {
                 label: None,
                 features: Features::empty(), // TODO: add appropiate features here? SHADER_FLOAT64 does not work yet correctly
-                limits,   // TODO: also set to whaterver we are using?
+                limits,                      // TODO: also set to whaterver we are using?
             },
             None,
         ))
@@ -120,13 +119,15 @@ impl Gpu {
             };
 
             if need_resize {
-                self.device.surface.configure(&self.device.device, &SurfaceConfiguration {
-                    usage: TextureUsages::RENDER_ATTACHMENT,
-                    format: self.device.swap_chain_format,
-                    width: resolution.x,
-                    height: resolution.y,
-                    present_mode: PresentMode::Mailbox,
-                });
+                self.device
+                    .surface
+                    .configure(&self.device.device, &SurfaceConfiguration {
+                        usage: TextureUsages::RENDER_ATTACHMENT,
+                        format: self.device.swap_chain_format,
+                        width: resolution.x,
+                        height: resolution.y,
+                        present_mode: PresentMode::Mailbox,
+                    });
 
                 self.swap_chain = Some(SwapChain { resolution });
             }
@@ -134,11 +135,14 @@ impl Gpu {
             let frame = match self.device.surface.get_current_texture() {
                 Ok(frame) => frame,
                 Err(_) => {
-                    self.swap_chain = None; continue;}
-                ,
+                    self.swap_chain = None;
+                    continue;
+                }
             };
 
-            let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
+            let view = frame
+                .texture
+                .create_view(&wgpu::TextureViewDescriptor::default());
             break (frame, view);
         }
     }

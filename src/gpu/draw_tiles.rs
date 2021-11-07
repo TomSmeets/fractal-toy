@@ -240,7 +240,7 @@ impl DrawTiles {
                             y: 0,
                             z: ix as u32,
                         },
-                        aspect: TextureAspect::All
+                        aspect: TextureAspect::All,
                     },
                     img.data(),
                     ImageDataLayout {
