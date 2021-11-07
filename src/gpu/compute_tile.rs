@@ -150,7 +150,7 @@ impl ComputeTile {
 
         // write out vertex buffer
         #[rustfmt::skip]
-        // device.queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertex_list));
+        device.queue.write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertex_list));
 
         // We finally have a frame, now it is time to create the render commands
         #[rustfmt::skip]

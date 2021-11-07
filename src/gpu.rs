@@ -42,7 +42,7 @@ pub struct GpuDevice {
 impl GpuDevice {
     pub fn init(window: &Window) -> Self {
         // NOTE: does not have to be kept alive
-        let instance = Instance::new(BackendBit::GL);
+        let instance = Instance::new(BackendBit::VULKAN);
 
         // surface and adapter
         let surface = unsafe { instance.create_surface(window) };
