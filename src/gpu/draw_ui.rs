@@ -31,8 +31,6 @@ pub struct DrawUI {
 
 impl DrawUI {
     pub fn load(device: &GpuDevice, asset_loader: &mut AssetLoader) -> Self {
-        let mut loader = ShaderLoader::new();
-
         let shader = asset_loader.text_file("res/shader/draw_ui.wgsl");
         let shader = ShaderLoader::compile(&device.device, &shader).unwrap();
 

@@ -305,7 +305,6 @@ fn map_input(input: &Input) -> MappedInput {
     let mut speed = 1.0;
     let mut zoom = 0.0;
     for k in input.keys_down.iter() {
-        #[rustfmt::skip]
         match k {
             VirtualKeyCode::W => dir.y += 1.0,
             VirtualKeyCode::S => dir.y -= 1.0,
