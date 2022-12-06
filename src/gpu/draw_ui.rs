@@ -237,7 +237,7 @@ impl DrawUI {
                     }
                 };
 
-                eprintln!("ui upload: {}", img.id());
+                // eprintln!("ui upload: {}", img.id());
                 device.queue.write_texture(
                     ImageCopyTexture {
                         texture: &self.texture,
