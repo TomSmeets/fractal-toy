@@ -1,9 +1,9 @@
-use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::time::SystemTime;
 
 use ::rusttype::Font;
 use ::rusttype::Scale;
+use ::include_dir::{Dir, include_dir};
 
 use crate::debug::Debug;
 use crate::glyph_cache::GlyphCache;
@@ -70,7 +70,8 @@ pub struct Data {
     id: u32,
 }
 
-include!(concat!(env!("OUT_DIR"), "/static_res_files.rs"));
+// include!(concat!(env!("OUT_DIR"), "/static_res_files.rs"));
+static STATIC_RES_FILES: Dir = include_dir!("res");
 
 pub struct AssetLoader {
     // TODO: more font types
@@ -88,10 +89,10 @@ pub struct AssetLoader {
 
 impl AssetLoader {
     pub fn new() -> Self {
-        let font_mono = STATIC_RES_FILES.get("res/DejaVuSansMono.ttf").unwrap();
+        let font_mono = STATIC_RES_FILES.get_file("DejaVuSansMono.ttf").unwrap().contents();
         let font_mono = font_from_cow(font_mono);
 
-        let font_norm = STATIC_RES_FILES.get("res/DejaVuSans.ttf").unwrap();
+        let font_norm = STATIC_RES_FILES.get_file("DejaVuSans.ttf").unwrap().contents();
         let font_norm = font_from_cow(font_norm);
 
         AssetLoader {
@@ -224,7 +225,7 @@ impl AssetLoader {
     }
 
     pub fn text_file(&mut self, path: &str) -> String {
-        String::from_utf8(STATIC_RES_FILES.get(path).unwrap().into_owned()).unwrap()
+        String::from_utf8(STATIC_RES_FILES.get_file(path).unwrap().contents().to_vec()).unwrap()
     }
 
     pub fn hot_reload(&mut self) {
@@ -260,7 +261,7 @@ impl AssetLoader {
         }
 
         let img = loop {
-            let data = STATIC_RES_FILES.get(path).unwrap();
+            let data = STATIC_RES_FILES.get_file(path).unwrap().contents();
             let buf = ::image::load_from_memory(&data);
             let buf = match buf {
                 Ok(buf) => buf,
@@ -282,9 +283,6 @@ impl AssetLoader {
     }
 }
 
-fn font_from_cow(data: Cow<'static, [u8]>) -> Font<'static> {
-    match data {
-        Cow::Owned(data) => Font::try_from_vec(data).unwrap(),
-        Cow::Borrowed(data) => Font::try_from_bytes(data).unwrap(),
-    }
+fn font_from_cow(data: &'static [u8]) -> Font<'static> {
+    Font::try_from_bytes(data).unwrap()
 }

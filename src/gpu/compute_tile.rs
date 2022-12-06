@@ -26,7 +26,7 @@ pub struct ComputeTile {
 
 impl ComputeTile {
     pub fn load(alg: &[FractalStep], device: &GpuDevice, asset_loader: &mut AssetLoader) -> Self {
-        let source = asset_loader.text_file("res/shader/compute_tile.wgsl");
+        let source = asset_loader.text_file("shader/compute_tile.wgsl");
         let source = source.replace("REAL", "f32");
 
         #[rustfmt::skip]

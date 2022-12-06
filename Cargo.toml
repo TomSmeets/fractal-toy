@@ -10,11 +10,11 @@ bytemuck = "1.5"
 cgmath = "0.18"
 crossbeam-channel = "0.5"
 image = "0.24"
-includedir = "0.6.0"
+include_dir = "0.7"
 instant = "0.1.9"
 lazy_static = "1.4.0"
 num_cpus = "1.13"
-phf = "0.8.0"
+phf = "0.11.1"
 pollster = "0.2"
 rusttype = "0.9"
 serde = { version = "1.0", features = [ "derive" ] }
@@ -27,6 +27,3 @@ opt-level = 3
 
 [profile.dev.package.cgmath]
 opt-level = 3
-
-[build-dependencies]
-includedir_codegen = "0.6"

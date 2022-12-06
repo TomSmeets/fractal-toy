@@ -162,7 +162,7 @@ impl Fractal {
 
             fn do_button(state: &mut State, s: FractalStep, rect: Rect) -> bool {
                 let region = state.ui.region(&rect);
-                let image_back = state.asset.image("res/button_back.png");
+                let image_back = state.asset.image("button_back.png");
 
                 state.gpu.blit(&rect, &image_back);
                 state.asset.text(
@@ -178,11 +178,11 @@ impl Fractal {
                 );
 
                 let image_front = state.asset.image(if region.down {
-                    "res/button_front_down.png"
+                    "button_front_down.png"
                 } else if region.hover {
-                    "res/button_front_hot.png"
+                    "button_front_hot.png"
                 } else {
-                    "res/button_front_norm.png"
+                    "button_front_norm.png"
                 });
 
                 state.gpu.blit(&rect, &image_front);

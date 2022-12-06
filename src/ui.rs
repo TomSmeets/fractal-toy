@@ -75,7 +75,7 @@ impl Window {
 
     pub fn draw(&mut self, asset_loader: &mut AssetLoader, gpu: &mut Gpu) {
         let content_rect = self.content_rect();
-        gpu.blit(&content_rect, &asset_loader.image("res/window_back.png"));
+        gpu.blit(&content_rect, &asset_loader.image("window_back.png"));
         for (rect, img) in self.images.iter() {
             let mut rect = *rect;
             rect.translate(-self.bounds.corner_min() + content_rect.corner_min());
@@ -133,7 +133,7 @@ impl UI {
             hover_prev_frame: None,
             down: None,
 
-            button_img: asset.image("res/button_front_hot.png"),
+            button_img: asset.image("button_front_hot.png"),
         }
     }
 

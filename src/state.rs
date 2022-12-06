@@ -53,7 +53,7 @@ impl State {
             let mut rect = Rect::corner_size(vec2(0.0, 0.0), bounds.size()); // Rect::corner_size(vec2(0.0, 0.0), vec2(400.0, 400.0));
             rect.translate(vec2(100.0, 100.0));
             let region = self.ui.region(&rect);
-            let image = self.asset.image("res/window_back.png");
+            let image = self.asset.image("window_back.png");
             self.gpu.blit(&rect, &image);
 
             self.asset.text(

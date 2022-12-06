@@ -31,7 +31,7 @@ pub struct DrawUI {
 
 impl DrawUI {
     pub fn load(device: &GpuDevice, asset_loader: &mut AssetLoader) -> Self {
-        let shader = asset_loader.text_file("res/shader/draw_ui.wgsl");
+        let shader = asset_loader.text_file("shader/draw_ui.wgsl");
         let shader = ShaderLoader::compile(&device.device, &shader).unwrap();
 
         let vertex_buffer = device.device.create_buffer(&BufferDescriptor {
