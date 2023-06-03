@@ -193,11 +193,14 @@ impl TileBuilder {
                 let d = z.x * z.x + z.y * z.y;
 
                 if d > 256.0 {
+                    // apply smooth coloring
                     let t = t - d.log2().log2() + 4.0;
 
                     let pi3 = std::f64::consts::FRAC_PI_3;
                     let a = (1.0 - (t / (1024.0)).powi(2)).min(1.0).max(0.0);
                     let t = t * 0.005;
+
+                    // compute r,g,b rainbow color values from the fractal escape time
                     let r = a * ((0.5 - t) * 3.0 * pi3 + pi3 * 0.0).sin();
                     let g = a * ((0.5 - t) * 3.0 * pi3 + pi3 * 1.0).sin();
                     let b = a * ((0.5 - t) * 3.0 * pi3 + pi3 * 2.0).sin();
