@@ -26,7 +26,7 @@ impl TilePos {
         })
     }
 
-    /// Create a tile at these coordinates and at a spesific depth
+    /// Create a tile at these coordinates and at a specific depth
     pub fn at(x: f64, y: f64, z: u8) -> TilePos {
         let s = (1_u64 << z) as f64;
         TilePos {

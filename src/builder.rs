@@ -76,7 +76,7 @@ impl TileBuilder {
         }
     }
 
-    fn calculate_refernce_with(c: V2) -> [[V2<f32>; 2]; ITER_COUNT] {
+    fn calculate_reference_with(c: V2) -> [[V2<f32>; 2]; ITER_COUNT] {
         let mut z_values = [[V2::zero(); 2]; ITER_COUNT];
         let mut z = V2::zero();
         for i in 0..ITER_COUNT {

@@ -86,7 +86,7 @@ impl Loop {
         let event_loop = self.event_loop;
         let window = self.window;
         event_loop.run(move |event, _, control_flow| {
-            // TODO: Poll vs Wait, what is usefull?
+            // TODO: Poll vs Wait, what is useful?
             // NOTE: using just Wait, will not work. why?
             *control_flow = ControlFlow::WaitUntil(next_frame_time);
 
@@ -167,7 +167,7 @@ impl Loop {
                 // After all events are handled, time to update.
                 // or not, if this is called on any event that might have happened
                 Event::MainEventsCleared => {
-                    // check if we shoud update
+                    // check if we should update
                     let current_time = Instant::now();
 
                     // NOTE: if it was a while loop it would loop forever if we couldent keep up

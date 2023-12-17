@@ -2,7 +2,7 @@
 
 
 * declarative immediate mode is a nice api on the user side.
-* declarative, with full state avaliable is nice on the library side
+* declarative, with full state available is nice on the library side
 
 Apis should be immediate mode, and ensure that the hot pathts are very fast.
 Either they use caching, or just pass ID's so that others can cache and request the data when needed.
@@ -49,7 +49,7 @@ This means:
 ## Compilation time
 * no more top level generics
 * less generics overall
-* acutally prifile compile time
+* actually prifile compile time
 
 
 ## Perturbation theory
@@ -86,7 +86,7 @@ gpu.draw(&viewport);
 
 + functions can return
 + less allocation?
-+ in this cace nicer interface, (but lets  make the borrow checker happy first :/)
++ in this cache nicer interface, (but lets  make the borrow checker happy first :/)
 - more chance of bugs?
 + imgui works like this, and that works very nicely
 + combines lookup and request

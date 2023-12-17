@@ -65,7 +65,7 @@ impl GpuDevice {
         let (device, queue) = pollster::block_on(adapter.request_device(
             &DeviceDescriptor {
                 label: None,
-                features: Features::empty(), // TODO: add appropiate features here? SHADER_FLOAT64 does not work yet correctly
+                features: Features::empty(), // TODO: add appropriate features here? SHADER_FLOAT64 does not work yet correctly
                 limits,                      // TODO: also set to whaterver we are using?
             },
             None,

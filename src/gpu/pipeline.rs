@@ -40,11 +40,11 @@ impl ShaderLoader {
 
         // try to revcieve an error
         match rx.try_recv() {
-            // we failed to recieve the error,
+            // we failed to receive the error,
             // so this is good actually
             Err(_) => Some(shader),
 
-            // a compilation error occured :/
+            // a compilation error occurred :/
             Ok(e) => match e {
                 Error::ValidationError {
                     description,

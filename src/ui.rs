@@ -14,7 +14,7 @@ use crate::util::*;
 //
 // region: (id, parent_id, row, col)
 //
-// we can temporarly use row/col for id
+// we can temporarily use row/col for id
 
 type UIPos = V2<u16>;
 
@@ -95,7 +95,7 @@ pub struct UI {
     //
     // text is also just images. lest just snap those images to the cosest pixel
     // hinting is done when creating an entire string, but that string can be moved in pixel space.
-    // hinting only makes sense wihtin a string.
+    // hinting only makes sense within a string.
     draggin_window: Option<(&'static str, V2)>,
     current_window: Option<Window>,
     windows: BTreeMap<&'static str, Window>,

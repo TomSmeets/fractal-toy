@@ -38,7 +38,7 @@ use crate::util::*;
 //
 // gpu.tile(rect, image) {
 //   match image {
-//      cpu => altas.alloc(imgage) -> use region
+//      cpu => altas.alloc(image) -> use region
 //      gpu => use buffer directly
 //   }
 // }
@@ -48,7 +48,7 @@ use crate::util::*;
 //
 // Maybe maybe, we could even do
 // > Image(id, size, data: Gpu | Vec<u8> | FileSystem(path))
-// but don't know how it would be usefull
+// but don't know how it would be useful
 //
 //
 // Font renderer just has GlyphId -> Image like before
